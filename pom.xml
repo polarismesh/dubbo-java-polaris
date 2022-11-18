@@ -250,7 +250,6 @@
         <snapshotRepository>
             <id>ossrh</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-
         </snapshotRepository>
         <repository>
             <id>ossrh</id>
@@ -260,7 +259,7 @@
 
     <repositories>
         <repository>
-            <id>nexus-snapshots</id>
+            <id>ossrh</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
             <snapshots>
                 <enabled>true</enabled>
