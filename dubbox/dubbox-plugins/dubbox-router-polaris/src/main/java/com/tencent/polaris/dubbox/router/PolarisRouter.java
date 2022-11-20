@@ -123,6 +123,11 @@ public class PolarisRouter implements Router {
     }
 
     @Override
+    public int getPriority() {
+        return priority;
+    }
+
+    @Override
     public int compareTo(Router o) {
         if (o == null || o.getClass() != ScriptRouter.class) {
             return 1;

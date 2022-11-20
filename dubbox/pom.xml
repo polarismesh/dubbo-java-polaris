@@ -15,7 +15,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <alibaba.dubbo.version>2.8.4</alibaba.dubbo.version>
+        <alibaba.dubbo.version>2.6.9</alibaba.dubbo.version>
     </properties>
 
     <modules>
