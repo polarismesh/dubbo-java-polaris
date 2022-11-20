@@ -15,13 +15,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package org.apache.dubbo.demo;
+package com.tencent.polaris.dubbox.discovery.example.api;
 
-public interface ExampleConsts {
+public interface BidService {
 
-    String ENV_KEY_VERSION = "VERSION";
+    BidResponse bid(BidRequest request);
 
-    String ENV_KEY_PORT = "PORT";
-
-    String POLARIS_ADDRESS = "polaris://9.134.5.52:8091";
+    void throwNPE() throws NullPointerException;
 }

@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.dubbo.router.middle;
 
+import com.tencent.polaris.common.utils.ExampleConsts;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.utils.CollectionUtils;
 import org.apache.dubbo.common.utils.StringUtils;
@@ -26,7 +27,6 @@ import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ServiceConfig;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.demo.DemoService;
-import org.apache.dubbo.demo.ExampleConsts;
 
 public class Application {
 

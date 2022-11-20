@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.dubbo.router.front;
 
+import com.tencent.polaris.common.utils.ExampleConsts;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.config.ApplicationConfig;
 import org.apache.dubbo.config.ReferenceConfig;
@@ -24,7 +25,6 @@ import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.config.utils.ReferenceConfigCache;
 import org.apache.dubbo.demo.DemoService;
-import org.apache.dubbo.demo.ExampleConsts;
 import org.apache.dubbo.rpc.RpcContext;
 
 public class Application {

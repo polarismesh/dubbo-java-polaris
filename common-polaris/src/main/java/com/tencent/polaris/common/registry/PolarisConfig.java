@@ -35,6 +35,8 @@ public class PolarisConfig {
 
     private final int ttl;
 
+    private final int timeout;
+
     public PolarisConfig(String host, int port, Map<String, String> parameters) {
         registryAddress = String.format("%s:%d", host, port);
         configAddress = String.format("%s:%d", host, Consts.CONFIG_PORT);
@@ -45,6 +47,16 @@ public class PolarisConfig {
         }
         this.namespace = namespaceStr;
         this.token = parameters.get(Consts.KEY_TOKEN);
+        int timeout = 0;
+        String timeoutStr = parameters.get(Consts.KEY_TIMEOUT);
+        if (null != timeoutStr && timeoutStr.length() > 0) {
+            try {
+                timeout = Integer.parseInt(timeoutStr);
+            } catch (Exception e) {
+                LOG.info("[Common] fail to convert ttlStr {}", timeoutStr, e);
+            }
+        }
+        this.timeout = timeout;
         int healthTTL = Consts.DEFAULT_TTL;
         String ttlStr = System.getProperty(Consts.KEY_TTL);
         if (null != ttlStr && ttlStr.length() > 0) {
@@ -56,6 +68,10 @@ public class PolarisConfig {
         }
         this.ttl = healthTTL;
         LOG.info("[Common] construct polarisConfig {}", this);
+    }
+
+    public int getTimeout() {
+        return timeout;
     }
 
     public String getNamespace() {

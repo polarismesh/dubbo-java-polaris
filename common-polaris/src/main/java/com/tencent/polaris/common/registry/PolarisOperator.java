@@ -106,6 +106,9 @@ public class PolarisOperator {
                 .setAddresses(Collections.singletonList(polarisConfig.getRegistryAddress()));
         ((ConfigurationImpl) configuration).getConfigFile().getServerConnector()
                 .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
+        if (polarisConfig.getTimeout() > 0) {
+            ((ConfigurationImpl) configuration).getGlobal().getAPI().setTimeout(polarisConfig.getTimeout());
+        }
         sdkContext = SDKContext.initContextByConfig(configuration);
         consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
         providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
