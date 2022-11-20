@@ -24,7 +24,8 @@ import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.RpcException;
-import com.alibaba.dubbo.rpc.cluster.router.AbstractRouter;
+import com.alibaba.dubbo.rpc.cluster.Router;
+import com.alibaba.dubbo.rpc.cluster.router.script.ScriptRouter;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
@@ -42,13 +43,17 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PolarisRouter extends AbstractRouter {
+public class PolarisRouter implements Router {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PolarisRouter.class);
 
     private final RuleHandler routeRuleHandler;
 
     private final PolarisOperator polarisOperator;
+
+    private final URL url;
+
+    private final int priority;
 
     public PolarisRouter(URL url) {
         super();
@@ -58,6 +63,11 @@ public class PolarisRouter extends AbstractRouter {
         this.priority = url.getParameter(Constants.PRIORITY_KEY, 0);
         routeRuleHandler = new RuleHandler();
         polarisOperator = PolarisOperators.INSTANCE.getPolarisOperator(url.getHost(), url.getPort());
+    }
+
+    @Override
+    public URL getUrl() {
+        return url;
     }
 
     @Override
@@ -110,5 +120,14 @@ public class PolarisRouter extends AbstractRouter {
         List<Instance> resultInstances = polarisOperator
                 .route(service, invocation.getMethodName(), arguments, instances);
         return (List<Invoker<T>>) ((List<?>) resultInstances);
+    }
+
+    @Override
+    public int compareTo(Router o) {
+        if (o == null || o.getClass() != ScriptRouter.class) {
+            return 1;
+        }
+        PolarisRouter c = (PolarisRouter) o;
+        return this.priority > c.priority ? 1 : -1;
     }
 }

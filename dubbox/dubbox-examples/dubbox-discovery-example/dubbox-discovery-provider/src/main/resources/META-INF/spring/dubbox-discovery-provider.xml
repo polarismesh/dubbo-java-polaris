@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+	http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
+
+    <dubbo:application name="dubbox-discovery-provider" owner="programmer" organization="dubbox"/>
+
+    <dubbo:registry address="polaris://9.134.5.52:8091"/>
+
+    <dubbo:protocol name="dubbo" serialization="kryo"/>
+
+    <dubbo:service interface="com.tencent.polaris.dubbox.discovery.example.api.BidService"
+            ref="bidService" protocol="dubbo">
+    </dubbo:service>
+
+    <bean id="bidService" class="com.tencent.polaris.dubbox.discovery.provider.BidServiceImpl"/>
+</beans>

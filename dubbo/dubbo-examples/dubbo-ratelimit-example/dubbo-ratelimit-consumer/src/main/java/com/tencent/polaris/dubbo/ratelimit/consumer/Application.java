@@ -17,13 +17,13 @@
 
 package com.tencent.polaris.dubbo.ratelimit.consumer;
 
+import com.tencent.polaris.common.utils.ExampleConsts;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.config.ApplicationConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.config.utils.ReferenceConfigCache;
-import org.apache.dubbo.demo.ExampleConsts;
 import org.apache.dubbo.demo.RatelimitDemoService;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
