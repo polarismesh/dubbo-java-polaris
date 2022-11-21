@@ -24,12 +24,12 @@ import com.alibaba.dubbo.common.extension.ExtensionLoader;
 import com.alibaba.dubbo.common.utils.ConcurrentHashSet;
 import com.alibaba.dubbo.registry.NotifyListener;
 import com.alibaba.dubbo.registry.support.FailbackRegistry;
-import com.alibaba.dubbo.rpc.Protocol;
 import com.alibaba.dubbo.rpc.cluster.RouterFactory;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.common.registry.Consts;
 import com.tencent.polaris.common.registry.ConvertUtils;
@@ -56,8 +56,6 @@ public class PolarisRegistry extends FailbackRegistry {
 
     private static final TaskScheduler taskScheduler = new TaskScheduler();
 
-    private final Map<String, Protocol> protocols = new HashMap<>();
-
     private final Set<URL> registeredInstances = new ConcurrentHashSet<>();
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
@@ -70,11 +68,6 @@ public class PolarisRegistry extends FailbackRegistry {
 
     public PolarisRegistry(URL url) {
         super(url);
-        ExtensionLoader<Protocol> extensionLoader = ExtensionLoader.getExtensionLoader(Protocol.class);
-        Set<String> supportedExtensions = extensionLoader.getSupportedExtensions();
-        for (String supportedExtension : supportedExtensions) {
-            protocols.put(supportedExtension, extensionLoader.getExtension(supportedExtension));
-        }
         polarisOperator = new PolarisOperator(url.getHost(), url.getPort(), url.getParameters());
         PolarisOperators.INSTANCE.addPolarisOperator(polarisOperator);
         this.routerURL = buildRouterURL(url.getHost(), url.getPort());
@@ -91,21 +84,6 @@ public class PolarisRegistry extends FailbackRegistry {
         return routerURL;
     }
 
-    public PolarisOperator getPolarisOperator() {
-        return polarisOperator;
-    }
-
-    private int parsePort(String protocolStr, int port) {
-        if (port > 0) {
-            return port;
-        }
-        Protocol protocol = protocols.get(protocolStr);
-        if (null == protocol) {
-            return 0;
-        }
-        return protocol.getDefaultPort();
-    }
-
     @Override
     public void doRegister(URL url) {
         if (!shouldRegister(url)) {
@@ -115,15 +93,19 @@ public class PolarisRegistry extends FailbackRegistry {
         Map<String, String> metadata = new HashMap<>(url.getParameters());
         metadata.put(PATH_KEY, url.getPath());
         int port = url.getPort();
-        int weight = url.getParameter(Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT);
-        String version = url.getParameter(Constants.VERSION_KEY, "");
-        polarisOperator.register(url.getServiceInterface(), url.getHost(), port, url.getProtocol(), version, weight,
-                metadata);
-        registeredInstances.add(url);
+        if (port > 0) {
+            int weight = url.getParameter(Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT);
+            String version = url.getParameter(Constants.VERSION_KEY, "");
+            polarisOperator.register(url.getServiceInterface(), url.getHost(), port, url.getProtocol(), version, weight,
+                    metadata);
+            registeredInstances.add(url);
+        } else {
+            LOGGER.warn("[POLARIS] skip register url {} for zero port value", url);
+        }
     }
 
     private boolean shouldRegister(URL url) {
-        return protocols.containsKey(url.getProtocol());
+        return !StringUtils.equals(url.getProtocol(), Constants.CONSUMER);
     }
 
     @Override
@@ -132,7 +114,7 @@ public class PolarisRegistry extends FailbackRegistry {
             return;
         }
         LOGGER.info("[POLARIS] unregister service from polaris: {}", url.toString());
-        int port = parsePort(url.getProtocol(), url.getPort());
+        int port = url.getPort();
         if (port > 0) {
             polarisOperator.deregister(url.getServiceInterface(), url.getHost(), url.getPort());
             registeredInstances.remove(url);
