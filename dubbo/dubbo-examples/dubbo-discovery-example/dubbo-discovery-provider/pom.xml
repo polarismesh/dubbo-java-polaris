@@ -12,10 +12,6 @@
 
     <artifactId>dubbo-discovery-provider</artifactId>
 
-    <properties>
-        <skip_maven_deploy>true</skip_maven_deploy>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

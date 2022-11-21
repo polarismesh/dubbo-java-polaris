@@ -22,6 +22,7 @@
 
     <properties>
         <slf4j-log4j12.version>1.7.25</slf4j-log4j12.version>
+        <skip_maven_deploy>true</skip_maven_deploy>
     </properties>
 
     <dependencyManagement>
