@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>dubbox-registry-polaris</artifactId>
+            <artifactId>dubbo-registry-polaris</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
