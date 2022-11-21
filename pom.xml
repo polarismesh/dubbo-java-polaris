@@ -38,7 +38,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>0.1.0</revision>
+        <revision>0.1.0-SNAPSHOT</revision>
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
@@ -54,7 +54,7 @@
         <maven.shaded.plugin.version>3.2.4</maven.shaded.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
-        <polaris.version>1.10.0-SNAPSHOT</polaris.version>
+        <polaris.version>1.10.0</polaris.version>
         <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
