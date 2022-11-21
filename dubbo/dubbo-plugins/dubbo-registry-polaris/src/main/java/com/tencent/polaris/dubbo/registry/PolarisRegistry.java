@@ -45,7 +45,6 @@ import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.common.utils.ConcurrentHashSet;
 import org.apache.dubbo.registry.NotifyListener;
 import org.apache.dubbo.registry.support.FailbackRegistry;
-import org.apache.dubbo.rpc.Protocol;
 import org.apache.dubbo.rpc.cluster.Constants;
 import org.apache.dubbo.rpc.cluster.RouterFactory;
 import org.slf4j.Logger;
@@ -83,10 +82,6 @@ public class PolarisRegistry extends FailbackRegistry {
             routerURL = routerURL.addParameter(Constants.ROUTER_KEY, ExtensionConsts.PLUGIN_ROUTER_NAME);
         }
         return routerURL;
-    }
-
-    public PolarisOperator getPolarisOperator() {
-        return polarisOperator;
     }
 
     @Override
