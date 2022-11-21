@@ -130,6 +130,7 @@ public class PolarisRegistry extends FailbackRegistry {
                 doUnregister(url);
             }
             polarisOperator.destroy();
+            taskScheduler.destroy();
         }
     }
 
