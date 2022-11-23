@@ -33,7 +33,7 @@ import com.tencent.polaris.client.pb.ModelProto.MatchArgument;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.common.exception.PolarisBlockException;
 import com.tencent.polaris.common.registry.PolarisOperator;
-import com.tencent.polaris.common.registry.PolarisOperators;
+import com.tencent.polaris.common.registry.PolarisOperatorDelegate;
 import com.tencent.polaris.common.router.ObjectParser;
 import com.tencent.polaris.common.router.RuleHandler;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
@@ -45,23 +45,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Activate(group = Constants.PROVIDER)
-public class RateLimitFilter implements Filter {
+public class RateLimitFilter extends PolarisOperatorDelegate implements Filter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitFilter.class);
 
     private final RuleHandler ruleHandler;
 
-    private final PolarisOperator polarisOperator;
-
     public RateLimitFilter() {
         LOGGER.info("[POLARIS] init polaris ratelimit");
         ruleHandler = new RuleHandler();
-        polarisOperator = PolarisOperators.INSTANCE.getFirstPolarisOperator();
     }
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         String service = invoker.getInterface().getName();
+        PolarisOperator polarisOperator = getPolarisOperator();
         if (null == polarisOperator) {
             return invoker.invoke(invocation);
         }

@@ -19,7 +19,7 @@ package com.tencent.polaris.dubbo.report;
 
 
 import com.tencent.polaris.common.registry.PolarisOperator;
-import com.tencent.polaris.common.registry.PolarisOperators;
+import com.tencent.polaris.common.registry.PolarisOperatorDelegate;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.extension.Activate;
@@ -32,15 +32,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Activate(group = CommonConstants.CONSUMER)
-public class ReportFilter implements Filter {
+public class ReportFilter extends PolarisOperatorDelegate implements Filter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportFilter.class);
 
-    private final PolarisOperator polarisOperator;
-
     public ReportFilter() {
         LOGGER.info("[POLARIS] init polaris reporter");
-        polarisOperator = PolarisOperators.INSTANCE.getFirstPolarisOperator();
     }
 
     @Override
@@ -58,6 +55,7 @@ public class ReportFilter implements Filter {
         if (null != result && result.hasException()) {
             exception = result.getException();
         }
+        PolarisOperator polarisOperator = getPolarisOperator();
         if (null == polarisOperator) {
             return result;
         }
