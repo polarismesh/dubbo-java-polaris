@@ -39,9 +39,7 @@ import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
 import com.tencent.polaris.factory.ConfigAPIFactory;
@@ -63,14 +61,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import shade.polaris.com.google.protobuf.InvalidProtocolBufferException;
 import shade.polaris.com.google.protobuf.Message;
-import shade.polaris.com.google.protobuf.Message.Builder;
-import shade.polaris.com.google.protobuf.util.JsonFormat;
-import shade.polaris.com.google.protobuf.util.JsonFormat.Parser;
 
 public class PolarisOperator {
 
@@ -248,40 +241,6 @@ public class PolarisOperator {
         quotaRequest.setArguments(arguments);
         quotaRequest.setCount(1);
         return limitAPI.getQuota(quotaRequest);
-    }
-
-    public Message getConfigAsMessage(String configGroup, String fileName, Builder builder) {
-        ConfigFile configFile = configFileService.getConfigFile(polarisConfig.getNamespace(), configGroup, fileName);
-        String content = configFile.getContent();
-        if (StringUtils.isBlank(content)) {
-            return null;
-        }
-        String ruleHash = DigestUtils.md2Hex(content.getBytes());
-        TimedCache<Message> messageTimedCache = messageCache.get(ruleHash);
-        if (null != messageTimedCache && !messageTimedCache.isExpired()) {
-            return messageTimedCache.getValue();
-        }
-        synchronized (lock) {
-            messageTimedCache = messageCache.get(ruleHash);
-            if (null != messageTimedCache && !messageTimedCache.isExpired()) {
-                return messageTimedCache.getValue();
-            }
-            boolean hasError = false;
-            Parser parser = JsonFormat.parser();
-            try {
-                parser.merge(content, builder);
-            } catch (InvalidProtocolBufferException e) {
-                LOGGER.error("[POLARIS] fail to unmarshal content {} to message", content, e);
-                hasError = true;
-            }
-            if (hasError) {
-                messageTimedCache = new TimedCache<>(null);
-            } else {
-                messageTimedCache = new TimedCache<>(builder.build());
-            }
-            messageCache.put(ruleHash, messageTimedCache);
-        }
-        return messageTimedCache.getValue();
     }
 
     public ServiceRule getServiceRule(String service, EventType eventType) {
