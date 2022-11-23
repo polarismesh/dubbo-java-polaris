@@ -64,22 +64,32 @@ public class PolarisRegistry extends FailbackRegistry {
 
     private final PolarisOperator polarisOperator;
 
-    private final URL routerURL;
-
     public PolarisRegistry(URL url) {
         super(url);
         polarisOperator = new PolarisOperator(url.getHost(), url.getPort(), url.getParameters());
         PolarisOperators.INSTANCE.addPolarisOperator(polarisOperator);
-        this.routerURL = buildRouterURL(url.getHost(), url.getPort());
     }
 
-    private URL buildRouterURL(String host, int port) {
+    private URL buildRouterURL(URL consumerUrl) {
         ExtensionLoader<RouterFactory> extensionLoader = ExtensionLoader.getExtensionLoader(RouterFactory.class);
         URL routerURL = null;
         if (extensionLoader.hasExtension(ExtensionConsts.PLUGIN_ROUTER_NAME)) {
-            routerURL = new URL(RegistryConstants.ROUTE_PROTOCOL, host, port);
+            URL registryURL = getUrl();
+            routerURL = new URL(RegistryConstants.ROUTE_PROTOCOL, registryURL.getHost(), registryURL.getPort());
             routerURL = routerURL.setServiceInterface(CommonConstants.ANY_VALUE);
             routerURL = routerURL.addParameter(Constants.ROUTER_KEY, ExtensionConsts.PLUGIN_ROUTER_NAME);
+            String consumerGroup = consumerUrl.getParameter(CommonConstants.GROUP_KEY);
+            String consumerVersion = consumerUrl.getParameter(CommonConstants.VERSION_KEY);
+            String consumerClassifier = consumerUrl.getParameter(CommonConstants.CLASSIFIER_KEY);
+            if (null != consumerGroup) {
+                routerURL = routerURL.addParameter(CommonConstants.GROUP_KEY, consumerGroup);
+            }
+            if (null != consumerVersion) {
+                routerURL = routerURL.addParameter(CommonConstants.VERSION_KEY, consumerVersion);
+            }
+            if (null != consumerClassifier) {
+                routerURL = routerURL.addParameter(CommonConstants.CLASSIFIER_KEY, consumerClassifier);
+            }
         }
         return routerURL;
     }
@@ -214,6 +224,7 @@ public class PolarisRegistry extends FailbackRegistry {
                 urls.add(instanceToURL(instance));
             }
         }
+        URL routerURL = buildRouterURL(url);
         if (null != routerURL) {
             urls.add(routerURL);
         }
