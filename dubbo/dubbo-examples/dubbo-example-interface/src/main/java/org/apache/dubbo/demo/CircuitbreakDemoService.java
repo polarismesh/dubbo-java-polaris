@@ -15,15 +15,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.common.utils;
+package org.apache.dubbo.demo;
 
-public interface ExampleConsts {
+public interface CircuitbreakDemoService extends DemoService {
 
-    String ENV_KEY_VERSION = "VERSION";
-
-    String ENV_KEY_PORT = "PORT";
-
-    String ENV_KEY_EXCEPTION = "EXCEPTION";
-
-    String POLARIS_ADDRESS = "polaris://9.134.5.52:8091";
 }
