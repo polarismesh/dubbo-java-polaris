@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.dubbo.discovery.consumer;
 
+import com.tencent.polaris.common.utils.ExampleConsts;
 import org.apache.dubbo.config.ApplicationConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 import org.apache.dubbo.config.RegistryConfig;
@@ -38,7 +39,7 @@ public class Application {
 
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-consumer"))
-                .registry(new RegistryConfig("polaris://9.134.5.52:8091"))
+                .registry(new RegistryConfig(ExampleConsts.POLARIS_ADDRESS))
                 .reference(reference)
                 .start();
 

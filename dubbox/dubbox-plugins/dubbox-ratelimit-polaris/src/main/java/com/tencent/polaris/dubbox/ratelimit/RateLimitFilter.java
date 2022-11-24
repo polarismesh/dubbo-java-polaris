@@ -25,7 +25,6 @@ import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.Result;
 import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.RpcException;
-import com.alibaba.dubbo.rpc.RpcResult;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -100,7 +99,8 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter {
         }
         if (null != quotaResponse && quotaResponse.getCode() == QuotaResultCode.QuotaResultLimited) {
             // 请求被限流，则抛出异常
-            return new RpcResult(new PolarisBlockException(quotaResponse.getInfo()));
+            throw new RpcException(new PolarisBlockException(
+                    String.format("url=%s, info=%s", invoker.getUrl(), quotaResponse.getInfo())));
         }
         return invoker.invoke(invocation);
     }

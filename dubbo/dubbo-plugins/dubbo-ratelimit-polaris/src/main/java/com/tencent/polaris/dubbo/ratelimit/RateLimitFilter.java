@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.Set;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.extension.Activate;
-import org.apache.dubbo.rpc.AppResponse;
 import org.apache.dubbo.rpc.Filter;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
@@ -100,7 +99,8 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter {
         }
         if (null != quotaResponse && quotaResponse.getCode() == QuotaResultCode.QuotaResultLimited) {
             // 请求被限流，则抛出异常
-            return new AppResponse(new PolarisBlockException(quotaResponse.getInfo()));
+            throw new RpcException(RpcException.LIMIT_EXCEEDED_EXCEPTION, new PolarisBlockException(
+                    String.format("url=%s, info=%s", invoker.getUrl(), quotaResponse.getInfo())));
         }
         return invoker.invoke(invocation);
     }

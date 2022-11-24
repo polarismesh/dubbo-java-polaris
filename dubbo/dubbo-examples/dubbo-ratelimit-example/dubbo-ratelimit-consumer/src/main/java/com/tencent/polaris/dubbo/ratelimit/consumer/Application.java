@@ -89,6 +89,7 @@ public class Application {
             service.sayHello("hello");
         } catch (Exception e) {
             if (e instanceof RpcException) {
+                System.out.println("block exception " + e.getMessage());
                 return false;
             }
             throw e;

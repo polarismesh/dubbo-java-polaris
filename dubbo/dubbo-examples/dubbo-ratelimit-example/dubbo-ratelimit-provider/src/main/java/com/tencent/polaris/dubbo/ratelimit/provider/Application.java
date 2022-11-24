@@ -49,7 +49,7 @@ public class Application {
             port = Integer.parseInt(portStr);
         }
         protocolConfig.setPort(port);
-        System.out.println("dubbo middle service started");
+        System.out.println("dubbo ratelimit service started");
         bootstrap.service(service).protocol(protocolConfig).start().await();
     }
 }

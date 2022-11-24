@@ -15,30 +15,41 @@
  * limitations under the License.
  */
 
-package com.tencent.polaris.dubbo.discovery.provider;
+package com.tencent.polaris.dubbo.circuitbreak.provider;
 
 import com.tencent.polaris.common.utils.ExampleConsts;
+import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.config.ApplicationConfig;
+import org.apache.dubbo.config.ProtocolConfig;
 import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ServiceConfig;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
-import org.apache.dubbo.demo.DemoService;
+import org.apache.dubbo.demo.CircuitbreakDemoService;
 
 public class Application {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         startWithBootstrap();
     }
 
     private static void startWithBootstrap() {
         ServiceConfig<DemoServiceImpl> service = new ServiceConfig<>();
-        service.setInterface(DemoService.class);
+        service.setInterface(CircuitbreakDemoService.class);
         service.setRef(new DemoServiceImpl());
-
+        String portStr = System.getenv(ExampleConsts.ENV_KEY_PORT);
+        int port;
+        if (StringUtils.isBlank(portStr)) {
+            port = 10070;
+        } else {
+            port = Integer.parseInt(portStr);
+        }
+        ProtocolConfig protocolConfig = new ProtocolConfig();
+        protocolConfig.setPort(port);
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
-        bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))
+        bootstrap.application(new ApplicationConfig("dubbo-circuitbreak-provider-service"))
                 .registry(new RegistryConfig(ExampleConsts.POLARIS_ADDRESS))
                 .service(service)
+                .protocol(protocolConfig)
                 .start()
                 .await();
     }

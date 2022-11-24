@@ -18,6 +18,7 @@
         <module>dubbo-example-interface</module>
         <module>dubbo-router-example</module>
         <module>dubbo-ratelimit-example</module>
+        <module>dubbo-circuitbreak-example</module>
     </modules>
 
     <properties>
