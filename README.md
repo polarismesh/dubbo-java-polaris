@@ -15,38 +15,31 @@ dubbo-java-polaris 是dubbo框架的扩展，便于使用dubbo框架开发的应
 
 实现dubbo服务往北极星上进行注册，以及服务调用时从北极星拉取服务实例的功能。相关插件：
 
-- Apache Dubbo：com.tencent.polaris.dubbo.registry.PolarisRegistry
-- DubboX：com.tencent.polaris.dubbox.registry.PolarisRegistry
+- Apache Dubbo：dubbo-registry-polaris
+- DubboX：dubbox-registry-polaris
 
 ### 动态路由
 
 实现按照请求头、方法等参数，对请求进行按版本、标签的调度。相关插件：
 
-- Apache Dubbo：com.tencent.polaris.dubbo.router.PolarisRouter
-- DubboX：com.tencent.polaris.dubbox.router.PolarisRouter
+- Apache Dubbo：dubbo-router-polaris
+- DubboX：dubbox-router-polaris
 
 ### 访问限流
 
 实现按照请求头、方法等参数，对流量进行限频。相关插件：
 
-- Apache Dubbo：com.tencent.polaris.dubbo.ratelimit.RateLimitFilter
-- DubboX：com.tencent.polaris.dubbox.ratelimit.RateLimitFilter
+- Apache Dubbo：dubbo-ratelimit-polaris
+- DubboX：dubbox-ratelimit-polaris
 
 ### 节点熔断
 
-实现按请求调用的回包统计（连续错误数、错误率等）指标，对故障节点进行隔离和熔断。
+实现按请求调用的回包统计（连续错误数、错误率等）指标，对故障节点进行隔离和熔断。相关插件：
 
 节点级熔断所需要的指标是复用服务调用的回包，接入北极星就会默认开启。相关插件：
 
-*** 上报回包统计的插件 ***
-
-- Apache Dubbo：com.tencent.polaris.dubbo.report.ReportFilter
-- DubboX：com.tencent.polaris.dubbox.report.ReportFilter
-
-*** 过滤熔断节点插件 ***
-
-- Apache Dubbo：com.tencent.polaris.dubbo.router.PolarisRouter
-- DubboX：com.tencent.polaris.dubbox.router.PolarisRouter
+- Apache Dubbo：dubbo-circuitbreaker-polaris
+- DubboX：dubbox-circuitbreaker-polaris
 
 ## 使用指南
 

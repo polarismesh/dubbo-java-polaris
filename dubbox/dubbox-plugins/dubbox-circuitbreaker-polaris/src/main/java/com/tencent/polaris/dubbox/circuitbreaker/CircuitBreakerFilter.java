@@ -15,15 +15,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.common.utils;
-
-public interface ExtensionConsts {
-
-    String PLUGIN_REGISTRY_NAME = "polaris";
-
-    String PLUGIN_ROUTER_NAME = "polaris_router";
-
-    String PLUGIN_CIRCUITBREAKER_NAME = "polaris_circuitbreaker";
+package com.tencent.polaris.dubbox.circuitbreaker;
 
 
+import com.alibaba.dubbo.common.Constants;
+import com.alibaba.dubbo.common.extension.Activate;
+import com.alibaba.dubbo.rpc.Filter;
+import com.alibaba.dubbo.rpc.Invocation;
+import com.alibaba.dubbo.rpc.Invoker;
+import com.alibaba.dubbo.rpc.Result;
+import com.alibaba.dubbo.rpc.RpcException;
+
+@Activate(group = Constants.CONSUMER)
+public class CircuitBreakerFilter implements Filter {
+
+    @Override
+    public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
+        return invoker.invoke(invocation);
+    }
 }
