@@ -176,10 +176,11 @@ public class PolarisOperator {
      * @param service 服务的service
      * @return Polaris选择的Instance对象
      */
-    public Instance[] getAvailableInstances(String service) {
+    public Instance[] getAvailableInstances(String service, boolean includeCircuitBreakInstances) {
         GetHealthyInstancesRequest request = new GetHealthyInstancesRequest();
         request.setNamespace(polarisConfig.getNamespace());
         request.setService(service);
+        request.setIncludeCircuitBreakInstances(includeCircuitBreakInstances);
         InstancesResponse instances = consumerAPI.getHealthyInstances(request);
         return instances.getInstances();
     }

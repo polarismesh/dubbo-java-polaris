@@ -21,6 +21,7 @@
         <module>dubbox-registry-polaris</module>
         <module>dubbox-router-polaris</module>
         <module>dubbox-ratelimit-polaris</module>
+        <module>dubbox-circuitbreaker-polaris</module>
     </modules>
 
 </project>

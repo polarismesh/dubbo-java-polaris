@@ -45,6 +45,7 @@ import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.common.utils.ConcurrentHashSet;
 import org.apache.dubbo.registry.NotifyListener;
 import org.apache.dubbo.registry.support.FailbackRegistry;
+import org.apache.dubbo.rpc.Filter;
 import org.apache.dubbo.rpc.cluster.Constants;
 import org.apache.dubbo.rpc.cluster.RouterFactory;
 import org.slf4j.Logger;
@@ -64,16 +65,23 @@ public class PolarisRegistry extends FailbackRegistry {
 
     private final PolarisOperator polarisOperator;
 
+    private final boolean hasCircuitBreaker;
+
+    private final boolean hasRouter;
+
     public PolarisRegistry(URL url) {
         super(url);
         polarisOperator = new PolarisOperator(url.getHost(), url.getPort(), url.getParameters());
         PolarisOperators.INSTANCE.addPolarisOperator(polarisOperator);
+        ExtensionLoader<RouterFactory> routerExtensionLoader = ExtensionLoader.getExtensionLoader(RouterFactory.class);
+        hasRouter = routerExtensionLoader.hasExtension(ExtensionConsts.PLUGIN_ROUTER_NAME);
+        ExtensionLoader<Filter> filterExtensionLoader = ExtensionLoader.getExtensionLoader(Filter.class);
+        hasCircuitBreaker = filterExtensionLoader.hasExtension(ExtensionConsts.PLUGIN_CIRCUITBREAKER_NAME);
     }
 
     private URL buildRouterURL(URL consumerUrl) {
-        ExtensionLoader<RouterFactory> extensionLoader = ExtensionLoader.getExtensionLoader(RouterFactory.class);
         URL routerURL = null;
-        if (extensionLoader.hasExtension(ExtensionConsts.PLUGIN_ROUTER_NAME)) {
+        if (hasRouter) {
             URL registryURL = getUrl();
             routerURL = new URL(RegistryConstants.ROUTE_PROTOCOL, registryURL.getHost(), registryURL.getPort());
             routerURL = routerURL.setServiceInterface(CommonConstants.ANY_VALUE);
@@ -147,7 +155,7 @@ public class PolarisRegistry extends FailbackRegistry {
     @Override
     public void doSubscribe(URL url, NotifyListener listener) {
         String service = url.getServiceInterface();
-        Instance[] instances = polarisOperator.getAvailableInstances(service);
+        Instance[] instances = polarisOperator.getAvailableInstances(service, !hasCircuitBreaker);
         onInstances(url, listener, instances);
         LOGGER.info("[POLARIS] submit watch task for service {}", service);
         taskScheduler.submitWatchTask(new WatchTask(url, listener, service));
@@ -206,7 +214,7 @@ public class PolarisRegistry extends FailbackRegistry {
         public void run() {
             Instance[] instances;
             try {
-                instances = polarisOperator.getAvailableInstances(service);
+                instances = polarisOperator.getAvailableInstances(service, !hasCircuitBreaker);
             } catch (PolarisException e) {
                 LOGGER.error("[POLARIS] fail to fetch instances for service {}: {}", service, e.toString());
                 return;

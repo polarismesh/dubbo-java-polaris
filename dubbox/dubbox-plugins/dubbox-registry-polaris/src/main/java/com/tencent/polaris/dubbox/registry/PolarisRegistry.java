@@ -24,6 +24,7 @@ import com.alibaba.dubbo.common.extension.ExtensionLoader;
 import com.alibaba.dubbo.common.utils.ConcurrentHashSet;
 import com.alibaba.dubbo.registry.NotifyListener;
 import com.alibaba.dubbo.registry.support.FailbackRegistry;
+import com.alibaba.dubbo.rpc.Filter;
 import com.alibaba.dubbo.rpc.cluster.RouterFactory;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
@@ -66,17 +67,24 @@ public class PolarisRegistry extends FailbackRegistry {
 
     private final URL routerURL;
 
+    private final boolean hasCircuitBreaker;
+
+    private final boolean hasRouter;
+
     public PolarisRegistry(URL url) {
         super(url);
         polarisOperator = new PolarisOperator(url.getHost(), url.getPort(), url.getParameters());
         PolarisOperators.INSTANCE.addPolarisOperator(polarisOperator);
         this.routerURL = buildRouterURL(url.getHost(), url.getPort());
+        ExtensionLoader<RouterFactory> routerExtensionLoader = ExtensionLoader.getExtensionLoader(RouterFactory.class);
+        hasRouter = routerExtensionLoader.hasExtension(ExtensionConsts.PLUGIN_ROUTER_NAME);
+        ExtensionLoader<Filter> filterExtensionLoader = ExtensionLoader.getExtensionLoader(Filter.class);
+        hasCircuitBreaker = filterExtensionLoader.hasExtension(ExtensionConsts.PLUGIN_CIRCUITBREAKER_NAME);
     }
 
     private URL buildRouterURL(String host, int port) {
-        ExtensionLoader<RouterFactory> extensionLoader = ExtensionLoader.getExtensionLoader(RouterFactory.class);
         URL routerURL = null;
-        if (extensionLoader.hasExtension(ExtensionConsts.PLUGIN_ROUTER_NAME)) {
+        if (hasRouter) {
             routerURL = new URL(Constants.ROUTE_PROTOCOL, host, port);
             routerURL = routerURL.setServiceInterface(Constants.ANY_VALUE);
             routerURL = routerURL.addParameter(Constants.ROUTER_KEY, ExtensionConsts.PLUGIN_ROUTER_NAME);
@@ -137,7 +145,7 @@ public class PolarisRegistry extends FailbackRegistry {
     @Override
     public void doSubscribe(URL url, NotifyListener listener) {
         String service = url.getServiceInterface();
-        Instance[] instances = polarisOperator.getAvailableInstances(service);
+        Instance[] instances = polarisOperator.getAvailableInstances(service, !hasCircuitBreaker);
         onInstances(url, listener, instances);
         LOGGER.info("[POLARIS] submit watch task for service {}", service);
         taskScheduler.submitWatchTask(new WatchTask(url, listener, service));
@@ -196,7 +204,7 @@ public class PolarisRegistry extends FailbackRegistry {
         public void run() {
             Instance[] instances;
             try {
-                instances = polarisOperator.getAvailableInstances(service);
+                instances = polarisOperator.getAvailableInstances(service, !hasCircuitBreaker);
             } catch (PolarisException e) {
                 LOGGER.error("[POLARIS] fail to fetch instances for service {}: {}", service, e.toString());
                 return;
