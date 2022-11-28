@@ -53,5 +53,10 @@
             <artifactId>dubbo-registry-polaris</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-router-polaris</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>
