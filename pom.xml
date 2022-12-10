@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
     <version>${revision}</version>
     <modules>
-        <module>common-polaris</module>
+        <module>polaris-adapter-dubbo</module>
         <module>dubbo</module>
         <module>dubbox</module>
     </modules>
@@ -38,7 +38,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>0.1.1-SNAPSHOT</revision>
+        <revision>0.1.2-SNAPSHOT</revision>
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
@@ -51,7 +51,6 @@
         <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
-        <maven.shaded.plugin.version>3.2.4</maven.shaded.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
         <polaris.version>1.10.1</polaris.version>

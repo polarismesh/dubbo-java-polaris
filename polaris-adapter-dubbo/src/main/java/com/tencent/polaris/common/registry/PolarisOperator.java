@@ -25,18 +25,21 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
+import com.tencent.polaris.api.rpc.GetServicesRequest;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.client.api.SDKContext;
@@ -251,6 +254,13 @@ public class PolarisOperator {
         getServiceRuleRequest.setRuleType(eventType);
         ServiceRuleResponse serviceRule = consumerAPI.getServiceRule(getServiceRuleRequest);
         return serviceRule.getServiceRule();
+    }
+
+    public List<ServiceInfo> getServices() {
+        GetServicesRequest getServicesRequest = new GetServicesRequest();
+        getServicesRequest.setNamespace(polarisConfig.getNamespace());
+        ServicesResponse services = consumerAPI.getServices(getServicesRequest);
+        return services.getServices();
     }
 
     public PolarisConfig getPolarisConfig() {
