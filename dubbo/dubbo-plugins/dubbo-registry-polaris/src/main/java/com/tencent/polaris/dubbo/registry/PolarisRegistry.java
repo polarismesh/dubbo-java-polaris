@@ -22,6 +22,8 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.common.registry.BaseBootConfigHandler;
+import com.tencent.polaris.common.registry.BootConfigHandler;
 import com.tencent.polaris.common.registry.Consts;
 import com.tencent.polaris.common.registry.ConvertUtils;
 import com.tencent.polaris.common.registry.PolarisOperator;
@@ -70,8 +72,13 @@ public class PolarisRegistry extends FailbackRegistry {
     private final boolean hasRouter;
 
     public PolarisRegistry(URL url) {
+        this(url, new BaseBootConfigHandler());
+    }
+
+    // for test
+    public PolarisRegistry(URL url, BootConfigHandler... handlers) {
         super(url);
-        polarisOperator = new PolarisOperator(url.getHost(), url.getPort(), url.getParameters());
+        polarisOperator = new PolarisOperator(url.getHost(), url.getPort(), url.getParameters(), handlers);
         PolarisOperators.INSTANCE.addPolarisOperator(polarisOperator);
         ExtensionLoader<RouterFactory> routerExtensionLoader = ExtensionLoader.getExtensionLoader(RouterFactory.class);
         hasRouter = routerExtensionLoader.hasExtension(ExtensionConsts.PLUGIN_ROUTER_NAME);
