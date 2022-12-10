@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>common-polaris</artifactId>
+            <artifactId>polaris-adapter-dubbo</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

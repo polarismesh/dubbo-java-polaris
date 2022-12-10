@@ -45,4 +45,9 @@ public class PolarisOperators {
         return polarisOperatorMap.values().iterator().next();
     }
 
+    public void deletePolarisOperator(String host, int port) {
+        String address = String.format("%s:%d", host, port);
+        polarisOperatorMap.remove(address);
+    }
+
 }
