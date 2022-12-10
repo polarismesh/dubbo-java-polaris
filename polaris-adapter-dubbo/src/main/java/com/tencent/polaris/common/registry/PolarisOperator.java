@@ -16,7 +16,6 @@
 
 package com.tencent.polaris.common.registry;
 
-import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
@@ -90,20 +89,22 @@ public class PolarisOperator {
 
     private final Map<String, TimedCache<Message>> messageCache = new ConcurrentHashMap<>();
 
-    public PolarisOperator(String host, int port, Map<String, String> parameters) {
+    public PolarisOperator(String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
         polarisConfig = new PolarisConfig(host, port, parameters);
-        init();
+        init(parameters, handlers);
     }
 
-    private void init() {
-        Configuration configuration = ConfigAPIFactory.defaultConfig();
-        ((ConfigurationImpl) configuration).setDefault();
-        ((ConfigurationImpl) configuration).getGlobal().getServerConnector()
+    private void init(Map<String, String> parameters, BootConfigHandler... handlers) {
+        ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
+        configuration.setDefault();
+        configuration.getGlobal().getServerConnector()
                 .setAddresses(Collections.singletonList(polarisConfig.getRegistryAddress()));
-        ((ConfigurationImpl) configuration).getConfigFile().getServerConnector()
+        configuration.getConfigFile().getServerConnector()
                 .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
-        if (polarisConfig.getTimeout() > 0) {
-            ((ConfigurationImpl) configuration).getGlobal().getAPI().setTimeout(polarisConfig.getTimeout());
+        if (null != handlers && handlers.length > 0) {
+            for (BootConfigHandler bootConfigHandler : handlers) {
+                bootConfigHandler.handle(parameters, configuration);
+            }
         }
         sdkContext = SDKContext.initContextByConfig(configuration);
         consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);

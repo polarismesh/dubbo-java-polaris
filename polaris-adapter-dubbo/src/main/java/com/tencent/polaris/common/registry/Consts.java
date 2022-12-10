@@ -28,6 +28,8 @@ public interface Consts {
 
     String KEY_TIMEOUT = "timeout";
 
+    String KEY_PERSIST_ENABLE = "persist_enable";
+
     String KEY_TOKEN = "token";
 
     String KEY_TTL = "ttl";
