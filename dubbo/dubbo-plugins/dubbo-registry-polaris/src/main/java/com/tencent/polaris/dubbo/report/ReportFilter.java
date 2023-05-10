@@ -19,6 +19,9 @@ package com.tencent.polaris.dubbo.report;
 
 
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
+import com.tencent.polaris.common.exception.PolarisBlockException;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperatorDelegate;
 import com.tencent.polaris.common.utils.ExampleConsts;
@@ -50,14 +53,11 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter {
         RpcException rpcException = null;
         try {
             result = invoker.invoke(invocation);
-        } catch (Throwable e) {
-            exception = e;
+        } catch (RpcException e) {
+            rpcException = e;
         }
         if (null != result && result.hasException()) {
             exception = result.getException();
-        }
-        if (exception instanceof RpcException) {
-            rpcException = (RpcException) exception;
         }
         PolarisOperator polarisOperator = getPolarisOperator();
         if (null == polarisOperator) {
@@ -67,14 +67,20 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter {
         int code = 0;
         if (null != exception) {
             retStatus = RetStatus.RetFail;
-            if (null != rpcException) {
-                code = rpcException.getCode();
-                if (code == RpcException.LIMIT_EXCEEDED_EXCEPTION) {
-                    // 限流异常不进行熔断
-                    retStatus = RetStatus.RetSuccess;
-                }
-            } else {
-                code = -1;
+            code = -1;
+        }
+        if (null != rpcException) {
+            code = rpcException.getCode();
+            if (StringUtils.isNotBlank(rpcException.getMessage()) && rpcException.getMessage()
+                    .contains(PolarisBlockException.PREFIX)) {
+                // 限流异常不进行熔断
+                retStatus = RetStatus.RetFlowControl;
+            }
+            if (rpcException.isTimeout()) {
+                retStatus = RetStatus.RetTimeout;
+            }
+            if (rpcException.getCause() instanceof CallAbortedException) {
+                retStatus = RetStatus.RetReject;
             }
         }
         URL url = invoker.getUrl();

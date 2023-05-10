@@ -26,6 +26,7 @@ import com.alibaba.dubbo.rpc.Result;
 import com.alibaba.dubbo.rpc.RpcException;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 import com.tencent.polaris.common.exception.PolarisBlockException;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperatorDelegate;
@@ -35,57 +36,58 @@ import org.slf4j.LoggerFactory;
 @Activate(group = Constants.CONSUMER)
 public class ReportFilter extends PolarisOperatorDelegate implements Filter {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReportFilter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ReportFilter.class);
 
-    public ReportFilter() {
-        LOGGER.info("[POLARIS] init polaris reporter");
-    }
+	public ReportFilter() {
+		LOGGER.info("[POLARIS] init polaris reporter");
+	}
 
-    @Override
-    public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        long startTimeMilli = System.currentTimeMillis();
-        Result result = null;
-        RpcException rpcException = null;
-        Throwable exception = null;
-        try {
-            result = invoker.invoke(invocation);
-        } catch (Throwable e) {
-            exception = e;
-        }
-        if (null != result && result.hasException()) {
-            exception = result.getException();
-        }
-        if (exception instanceof RpcException) {
-            rpcException = (RpcException) exception;
-        }
-        PolarisOperator polarisOperator = getPolarisOperator();
-        if (null == polarisOperator) {
-            return result;
-        }
-        RetStatus retStatus = RetStatus.RetSuccess;
-        int code = 0;
-        if (null != exception) {
-            retStatus = RetStatus.RetFail;
-            if (null != rpcException) {
-                code = rpcException.getCode();
-                if (StringUtils.isNotBlank(rpcException.getMessage()) && rpcException.getMessage()
-                        .contains(PolarisBlockException.PREFIX)) {
-                    // 限流异常不进行熔断
-                    retStatus = RetStatus.RetSuccess;
-                }
-            } else {
-                code = -1;
-            }
-        }
-        URL url = invoker.getUrl();
-        long delay = System.currentTimeMillis() - startTimeMilli;
-        polarisOperator.reportInvokeResult(url.getServiceInterface(), invocation.getMethodName(), url.getHost(),
-                url.getPort(), delay, retStatus, code);
-        if (null != rpcException) {
-            throw rpcException;
-        } else if (null != exception) {
-            throw new RpcException(exception);
-        }
-        return result;
-    }
+	@Override
+	public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
+		long startTimeMilli = System.currentTimeMillis();
+		Result result = null;
+		RpcException rpcException = null;
+		Throwable exception = null;
+		try {
+			result = invoker.invoke(invocation);
+		}
+		catch (RpcException e) {
+			rpcException = e;
+		}
+		if (null != result && result.hasException()) {
+			exception = result.getException();
+		}
+		PolarisOperator polarisOperator = getPolarisOperator();
+		if (null == polarisOperator) {
+			return result;
+		}
+		RetStatus retStatus = RetStatus.RetSuccess;
+		int code = 0;
+		if (null != exception) {
+			retStatus = RetStatus.RetFail;
+			code = -1;
+		}
+		if (null != rpcException) {
+			code = rpcException.getCode();
+			if (StringUtils.isNotBlank(rpcException.getMessage()) && rpcException.getMessage()
+					.contains(PolarisBlockException.PREFIX)) {
+				// 限流异常不进行熔断
+				retStatus = RetStatus.RetFlowControl;
+			}
+			if (rpcException.getCause() instanceof CallAbortedException) {
+				retStatus = RetStatus.RetReject;
+			}
+		}
+		URL url = invoker.getUrl();
+		long delay = System.currentTimeMillis() - startTimeMilli;
+		polarisOperator.reportInvokeResult(url.getServiceInterface(), invocation.getMethodName(), url.getHost(),
+				url.getPort(), delay, retStatus, code);
+		if (null != rpcException) {
+			throw rpcException;
+		}
+		else if (null != exception) {
+			throw new RpcException(exception);
+		}
+		return result;
+	}
 }

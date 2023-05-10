@@ -21,11 +21,11 @@ import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.StatusDimension;
-import com.tencent.polaris.common.registry.Consts;
-import com.tencent.polaris.common.registry.ConvertUtils;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+
+import com.tencent.polaris.common.registry.Consts;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.rpc.Invocation;
@@ -57,10 +57,6 @@ public class InstanceInvoker<T> implements Instance, Invoker<T> {
         defaultInstance.setIsolated(Boolean.parseBoolean(url.getParameter(Consts.INSTANCE_KEY_ISOLATED)));
         defaultInstance.setVersion(url.getParameter(CommonConstants.VERSION_KEY));
         defaultInstance.setWeight(url.getParameter(Constants.WEIGHT_KEY, 100));
-        String circuitBreakerStr = url.getParameter(Consts.INSTANCE_KEY_CIRCUIT_BREAKER);
-        Map<StatusDimension, CircuitBreakerStatus> statusDimensionCircuitBreakerStatusMap = ConvertUtils
-                .stringToCircuitBreakers(circuitBreakerStr);
-        defaultInstance.getCircuitBreakerStatuses().putAll(statusDimensionCircuitBreakerStatusMap);
         defaultInstance.setMetadata(url.getParameters());
         LOGGER.info("[POLARIS] construct instance from invoker, url {}, instance {}", url, defaultInstance);
     }

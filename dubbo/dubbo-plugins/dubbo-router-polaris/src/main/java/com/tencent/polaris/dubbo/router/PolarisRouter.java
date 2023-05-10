@@ -22,7 +22,6 @@ import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.pb.RoutingProto.Routing;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.router.ObjectParser;
@@ -31,6 +30,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
@@ -81,7 +82,7 @@ public class PolarisRouter extends AbstractRouter {
         Object ruleObject = serviceRule.getRule();
         Set<RouteArgument> arguments = new HashSet<>();
         if (null != ruleObject) {
-            Routing routing = (Routing) ruleObject;
+            RoutingProto.Routing routing = (RoutingProto.Routing) ruleObject;
             Set<String> routeLabels = routeRuleHandler.getRouteLabels(routing);
             for (String routeLabel : routeLabels) {
                 if (StringUtils.equals(RouteArgument.LABEL_KEY_PATH, routeLabel)) {

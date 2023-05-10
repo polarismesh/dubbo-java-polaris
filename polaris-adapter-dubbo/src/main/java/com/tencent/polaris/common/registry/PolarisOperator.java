@@ -19,6 +19,7 @@ package com.tencent.polaris.common.registry;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
+import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
@@ -41,6 +42,8 @@ import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
+import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
+import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
@@ -83,6 +86,8 @@ public class PolarisOperator {
 
     private RouterAPI routerAPI;
 
+    private CircuitBreakAPI circuitBreakAPI;
+
     private ConfigFileService configFileService;
 
     private final Object lock = new Object();
@@ -111,6 +116,7 @@ public class PolarisOperator {
         providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
         limitAPI = LimitAPIFactory.createLimitAPIByContext(sdkContext);
         routerAPI = RouterAPIFactory.createRouterAPIByContext(sdkContext);
+        circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByContext(sdkContext);
         configFileService = ConfigFileServiceFactory.createConfigFileService(sdkContext);
     }
 
@@ -266,5 +272,25 @@ public class PolarisOperator {
 
     public PolarisConfig getPolarisConfig() {
         return polarisConfig;
+    }
+
+    public  ConsumerAPI getConsumerAPI() {
+        return consumerAPI;
+    }
+
+    public  ProviderAPI getProviderAPI() {
+        return providerAPI;
+    }
+
+    public  LimitAPI getLimitAPI() {
+        return limitAPI;
+    }
+
+    public  RouterAPI getRouterAPI() {
+        return routerAPI;
+    }
+
+    public  CircuitBreakAPI getCircuitBreakAPI() {
+        return circuitBreakAPI;
     }
 }

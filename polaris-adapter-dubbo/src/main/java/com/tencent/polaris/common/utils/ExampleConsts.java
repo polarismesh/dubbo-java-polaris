@@ -25,5 +25,5 @@ public interface ExampleConsts {
 
     String ENV_KEY_EXCEPTION = "EXCEPTION";
 
-    String POLARIS_ADDRESS = "polaris://9.134.5.52:8091";
+    String POLARIS_ADDRESS = "polaris://127.0.0.1:8091";
 }
