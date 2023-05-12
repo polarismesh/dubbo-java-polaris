@@ -20,6 +20,7 @@ package com.tencent.polaris.dubbo.circuitbreak.consumer;
 import com.tencent.polaris.common.utils.ExampleConsts;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.config.ApplicationConfig;
+import org.apache.dubbo.config.ConsumerConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
@@ -39,10 +40,16 @@ public class Application {
         DubboBootstrap bootstrap = DubboBootstrap.getInstance()
                 .application(new ApplicationConfig("dubbo-circuitbreak-consumer-service"))
                 .registry(new RegistryConfig(ExampleConsts.POLARIS_ADDRESS));
+
+        bootstrap.consumer(builder -> {
+            builder.filter("polaris_report,polaris_circuitbreaker");
+        });
         bootstrap.reference(reference).start();
         DemoService service = ReferenceConfigCache.getCache().get(reference);
 
-        for (int i = 0; i < 50; i++) {
+        int i = 0;
+        for (;;) {
+            i ++;
             long startTimeMilli = System.currentTimeMillis();
             sayHello(service);
             long endTimeMilli = System.currentTimeMillis();

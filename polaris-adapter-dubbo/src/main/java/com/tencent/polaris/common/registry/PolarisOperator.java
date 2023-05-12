@@ -200,7 +200,7 @@ public class PolarisOperator {
      *
      * @param delay 本次服务调用延迟，单位ms
      */
-    public void reportInvokeResult(String service, String method, String host, int port, long delay, RetStatus retStatus,
+    public void reportInvokeResult(String service, String method, String host, int port, String callerIp, long delay, RetStatus retStatus,
             int code) {
         ServiceCallResult serviceCallResult = new ServiceCallResult();
         serviceCallResult.setNamespace(polarisConfig.getNamespace());
@@ -211,6 +211,7 @@ public class PolarisOperator {
         serviceCallResult.setDelay(delay);
         serviceCallResult.setRetStatus(retStatus);
         serviceCallResult.setRetCode(code);
+        serviceCallResult.setCallerIp(callerIp);
         consumerAPI.updateServiceCallResult(serviceCallResult);
     }
 

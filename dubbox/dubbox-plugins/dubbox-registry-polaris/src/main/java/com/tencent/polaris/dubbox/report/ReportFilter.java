@@ -23,6 +23,7 @@ import com.alibaba.dubbo.rpc.Filter;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.Result;
+import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.RpcException;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -81,7 +82,7 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter {
 		URL url = invoker.getUrl();
 		long delay = System.currentTimeMillis() - startTimeMilli;
 		polarisOperator.reportInvokeResult(url.getServiceInterface(), invocation.getMethodName(), url.getHost(),
-				url.getPort(), delay, retStatus, code);
+				url.getPort(), RpcContext.getContext().getRemoteHost(), delay, retStatus, code);
 		if (null != rpcException) {
 			throw rpcException;
 		}
