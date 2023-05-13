@@ -18,7 +18,7 @@
 package com.tencent.polaris.dubbox.circuitbreaker;
 
 
-import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
@@ -55,28 +55,39 @@ public class CircuitBreakerFilter extends PolarisOperatorDelegate implements Fil
 
 		CircuitBreakAPI circuitBreakAPI = getPolarisOperator().getCircuitBreakAPI();
 		InvokeContext.RequestContext context = new InvokeContext.RequestContext(createCalleeService(invoker), invocation.getMethodName());
+		context.setResultToErrorCode(this);
 		InvokeHandler handler = circuitBreakAPI.makeInvokeHandler(context);
-		Result result = null;
-		Throwable exception = null;
-		long startTimeMilli = System.currentTimeMillis();
-		InvokeContext.ResponseContext responseContext = new InvokeContext.ResponseContext();
 		try {
+			long startTimeMilli = System.currentTimeMillis();
+			InvokeContext.ResponseContext responseContext = new InvokeContext.ResponseContext();
+			responseContext.setDurationUnit(TimeUnit.MILLISECONDS);
+			Result result = null;
+			RpcException exception = null;
 			handler.acquirePermission();
 			try {
 				result = invoker.invoke(invocation);
-				responseContext.setResult(result);
 				responseContext.setDuration(System.currentTimeMillis() - startTimeMilli);
-				handler.onSuccess(responseContext);
+				if (result.hasException()) {
+					responseContext.setError(result.getException());
+					handler.onError(responseContext);
+				}
+				else {
+					responseContext.setResult(result);
+					handler.onSuccess(responseContext);
+				}
 			}
-			catch (Throwable e) {
+			catch (RpcException e) {
 				exception = e;
 				responseContext.setError(e);
 				responseContext.setDuration(System.currentTimeMillis() - startTimeMilli);
 				handler.onError(responseContext);
 			}
-			ResourceStat resourceStat = createInstanceResourceStat(invoker, invocation, result, exception, responseContext.getDuration());
+			ResourceStat resourceStat = createInstanceResourceStat(invoker, invocation, responseContext, responseContext.getDuration());
 			circuitBreakAPI.report(resourceStat);
-			return result;
+			if (result != null) {
+				return result;
+			}
+			throw exception;
 		}
 		catch (CallAbortedException abortedException) {
 			throw new RpcException(abortedException);
@@ -84,20 +95,15 @@ public class CircuitBreakerFilter extends PolarisOperatorDelegate implements Fil
 	}
 
 	private ResourceStat createInstanceResourceStat(Invoker<?> invoker, Invocation invocation,
-			Result result, Throwable exception, long delay) {
+			InvokeContext.ResponseContext context, long delay) {
 		URL url = invoker.getUrl();
-		RpcException rpcException = null;
-		if (null != result && result.hasException()) {
-			exception = result.getException();
-		}
-		if (exception instanceof RpcException) {
-			rpcException = (RpcException) exception;
-		}
+		Throwable exception = context.getError();
 		RetStatus retStatus = RetStatus.RetSuccess;
 		int code = 0;
 		if (null != exception) {
 			retStatus = RetStatus.RetFail;
-			if (null != rpcException) {
+			if (exception instanceof RpcException) {
+				RpcException rpcException = (RpcException) exception;
 				code = rpcException.getCode();
 				if (StringUtils.isNotBlank(rpcException.getMessage()) && rpcException.getMessage()
 						.contains(PolarisBlockException.PREFIX)) {
@@ -108,6 +114,7 @@ public class CircuitBreakerFilter extends PolarisOperatorDelegate implements Fil
 					retStatus = RetStatus.RetTimeout;
 				}
 			}
+
 			else {
 				code = -1;
 			}
@@ -130,11 +137,6 @@ public class CircuitBreakerFilter extends PolarisOperatorDelegate implements Fil
 
 	@Override
 	public int onSuccess(Object value) {
-		Result result = (Result) value;
-		if (result.hasException()) {
-			Throwable throwable = result.getException();
-			return onError(throwable);
-		}
 		return 0;
 	}
 
