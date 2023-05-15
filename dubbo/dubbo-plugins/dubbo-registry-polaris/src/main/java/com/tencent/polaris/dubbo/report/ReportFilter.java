@@ -39,6 +39,10 @@ import org.slf4j.LoggerFactory;
 @Activate(group = CommonConstants.CONSUMER, order = Integer.MIN_VALUE)
 public class ReportFilter extends PolarisOperatorDelegate implements Filter, Filter.Listener {
 
+	private static final String LABEL_START_TIME = "reporter_filter_start_time";
+
+	private static final String LABEL_REMOTE_HOST = "reporter_remote_host_store";
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReportFilter.class);
 
 	public ReportFilter() {
@@ -47,8 +51,8 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 
 	@Override
 	public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-		invocation.put("reporter_filter_start_time", System.currentTimeMillis());
-		invocation.put("reporter_remote_host_store", RpcContext.getContext().getRemoteHost());
+		invocation.put(LABEL_START_TIME, System.currentTimeMillis());
+		invocation.put(LABEL_REMOTE_HOST, RpcContext.getContext().getRemoteHost());
         return invoker.invoke(invocation);
 	}
 
@@ -58,8 +62,8 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
         if (null == polarisOperator) {
             return;
         }
-        String callerIp = (String) invocation.get("monitor_remote_host_store");
-        Long startTimeMilli = (Long) invocation.get("monitor_filter_start_time");
+        String callerIp = (String) invocation.get(LABEL_REMOTE_HOST);
+        Long startTimeMilli = (Long) invocation.get(LABEL_START_TIME);
         RetStatus retStatus = RetStatus.RetSuccess;
         int code = 0;
         if (appResponse.hasException()) {
@@ -78,8 +82,8 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 		if (null == polarisOperator) {
 			return;
 		}
-		String callerIp = (String) invocation.get("monitor_remote_host_store");
-		Long startTimeMilli = (Long) invocation.get("monitor_filter_start_time");
+		String callerIp = (String) invocation.get(LABEL_REMOTE_HOST);
+		Long startTimeMilli = (Long) invocation.get(LABEL_START_TIME);
 		RetStatus retStatus = RetStatus.RetFail;
 		int code = -1;
 		if (t instanceof RpcException) {
