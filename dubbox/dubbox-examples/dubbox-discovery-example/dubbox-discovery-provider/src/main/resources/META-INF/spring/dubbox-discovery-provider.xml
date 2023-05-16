@@ -8,7 +8,7 @@
 
     <dubbo:application name="dubbox-discovery-provider" owner="programmer" organization="dubbox"/>
 
-    <dubbo:registry address="polaris://9.134.5.52:8091"/>
+    <dubbo:registry address="polaris://127.0.0.1:8091"/>
 
     <dubbo:protocol name="dubbo" serialization="kryo"/>
 

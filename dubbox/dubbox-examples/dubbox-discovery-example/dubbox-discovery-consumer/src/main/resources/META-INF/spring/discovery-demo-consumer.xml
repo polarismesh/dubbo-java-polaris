@@ -7,7 +7,7 @@
 
     <dubbo:application name="discovery-demo-consumer" owner="programmer" organization="dubbox"/>
 
-    <dubbo:registry address="polaris://9.134.5.52:8091?timeout=5000"/>
+    <dubbo:registry address="polaris://127.0.0.1:8091?timeout=5000"/>
 
     <!--uncomment this if you want to test dubbo's monitor-->
     <!--<dubbo:monitor protocol="registry"/>-->

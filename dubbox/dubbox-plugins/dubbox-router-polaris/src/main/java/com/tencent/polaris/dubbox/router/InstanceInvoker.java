@@ -56,10 +56,6 @@ public class InstanceInvoker<T> implements Instance, Invoker<T> {
         defaultInstance.setIsolated(Boolean.parseBoolean(url.getParameter(Consts.INSTANCE_KEY_ISOLATED)));
         defaultInstance.setVersion(url.getParameter(Constants.VERSION_KEY));
         defaultInstance.setWeight(url.getParameter(Constants.WEIGHT_KEY, 100));
-        String circuitBreakerStr = url.getParameter(Consts.INSTANCE_KEY_CIRCUIT_BREAKER);
-        Map<StatusDimension, CircuitBreakerStatus> statusDimensionCircuitBreakerStatusMap = ConvertUtils
-                .stringToCircuitBreakers(circuitBreakerStr);
-        defaultInstance.getCircuitBreakerStatuses().putAll(statusDimensionCircuitBreakerStatusMap);
         defaultInstance.setMetadata(url.getParameters());
         LOGGER.info("[POLARIS] construct instance from invoker, url {}, instance {}", url, defaultInstance);
     }

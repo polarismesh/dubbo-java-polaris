@@ -18,14 +18,12 @@
 package com.tencent.polaris.common.router;
 
 import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.client.pb.ModelProto.MatchArgument;
-import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
-import com.tencent.polaris.client.pb.RateLimitProto.Rule;
-import com.tencent.polaris.client.pb.RoutingProto.Route;
-import com.tencent.polaris.client.pb.RoutingProto.Routing;
-import com.tencent.polaris.client.pb.RoutingProto.Source;
+
 import com.tencent.polaris.common.registry.TimedCache;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -37,11 +35,11 @@ public class RuleHandler {
 
     private final Map<String, TimedCache<Set<String>>> routeRuleMatchLabels = new ConcurrentHashMap<>();
 
-    private final Map<String, TimedCache<Set<MatchArgument>>> ratelimitArguments = new ConcurrentHashMap<>();
+    private final Map<String, TimedCache<Set<RateLimitProto.MatchArgument>>> ratelimitArguments = new ConcurrentHashMap<>();
 
     private final Object lock = new Object();
 
-    public Set<String> getRouteLabels(Routing routing) {
+    public Set<String> getRouteLabels(RoutingProto.Routing routing) {
         TimedCache<Set<String>> setTimedCache = routeRuleMatchLabels.get(routing.getRevision().getValue());
         if (null != setTimedCache && !setTimedCache.isExpired()) {
             return setTimedCache.getValue();
@@ -57,46 +55,46 @@ public class RuleHandler {
         }
     }
 
-    private static Set<String> buildRouteLabels(Routing routing) {
+    private static Set<String> buildRouteLabels(RoutingProto.Routing routing) {
         Set<String> labels = new HashSet<>();
-        List<Route> inboundsList = routing.getInboundsList();
-        List<Route> outboundsList = routing.getOutboundsList();
+        List<RoutingProto.Route> inboundsList = routing.getInboundsList();
+        List<RoutingProto.Route> outboundsList = routing.getOutboundsList();
         routeRulesToLabels(inboundsList, labels);
         routeRulesToLabels(outboundsList, labels);
         return labels;
     }
 
-    private static void routeRulesToLabels(List<Route> routes, Collection<String> labels) {
+    private static void routeRulesToLabels(List<RoutingProto.Route> routes, Collection<String> labels) {
         if (CollectionUtils.isEmpty(routes)) {
             return;
         }
-        for (Route route : routes) {
-            List<Source> sourcesList = route.getSourcesList();
+        for (RoutingProto.Route route : routes) {
+            List<RoutingProto.Source> sourcesList = route.getSourcesList();
             if (CollectionUtils.isEmpty(sourcesList)) {
                 continue;
             }
-            for (Source source : sourcesList) {
-                Map<String, MatchString> metadataMap = source.getMetadataMap();
+            for (RoutingProto.Source source : sourcesList) {
+                Map<String, ModelProto.MatchString> metadataMap = source.getMetadataMap();
                 labels.addAll(metadataMap.keySet());
             }
         }
     }
 
-    private static Set<MatchArgument> buildRatelimitLabels(RateLimit rateLimit) {
-        List<Rule> rulesList = rateLimit.getRulesList();
-        Set<MatchArgument> arguments = new HashSet<>();
-        for (Rule rule : rulesList) {
-            List<MatchArgument> argumentsList = rule.getArgumentsList();
-            for (MatchArgument matchArgument : argumentsList) {
-                arguments.add(MatchArgument.newBuilder().setType(matchArgument.getType()).setKey(matchArgument.getKey())
+    private static Set<RateLimitProto.MatchArgument> buildRatelimitLabels(RateLimitProto.RateLimit rateLimit) {
+        List<RateLimitProto.Rule> rulesList = rateLimit.getRulesList();
+        Set<RateLimitProto.MatchArgument> arguments = new HashSet<>();
+        for (RateLimitProto.Rule rule : rulesList) {
+            List<RateLimitProto.MatchArgument> argumentsList = rule.getArgumentsList();
+            for (RateLimitProto.MatchArgument matchArgument : argumentsList) {
+                arguments.add(RateLimitProto.MatchArgument.newBuilder().setType(matchArgument.getType()).setKey(matchArgument.getKey())
                         .build());
             }
         }
         return arguments;
     }
 
-    public Set<MatchArgument> getRatelimitLabels(RateLimit rateLimit) {
-        TimedCache<Set<MatchArgument>> setTimedCache = ratelimitArguments.get(rateLimit.getRevision().getValue());
+    public Set<RateLimitProto.MatchArgument> getRatelimitLabels(RateLimitProto.RateLimit rateLimit) {
+        TimedCache<Set<RateLimitProto.MatchArgument>> setTimedCache = ratelimitArguments.get(rateLimit.getRevision().getValue());
         if (null != setTimedCache && !setTimedCache.isExpired()) {
             return setTimedCache.getValue();
         }
@@ -105,7 +103,7 @@ public class RuleHandler {
             if (null != setTimedCache && !setTimedCache.isExpired()) {
                 return setTimedCache.getValue();
             }
-            TimedCache<Set<MatchArgument>> timedCache = new TimedCache<>(buildRatelimitLabels(rateLimit));
+            TimedCache<Set<RateLimitProto.MatchArgument>> timedCache = new TimedCache<>(buildRatelimitLabels(rateLimit));
             ratelimitArguments.put(rateLimit.getRevision().getValue(), timedCache);
             return timedCache.getValue();
         }

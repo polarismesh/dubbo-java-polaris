@@ -28,8 +28,6 @@ import com.alibaba.dubbo.rpc.RpcException;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.pb.ModelProto.MatchArgument;
-import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.common.exception.PolarisBlockException;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperatorDelegate;
@@ -40,6 +38,8 @@ import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,11 +67,11 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter {
         if (null == ruleObject) {
             return invoker.invoke(invocation);
         }
-        RateLimit rateLimit = (RateLimit) ruleObject;
-        Set<MatchArgument> ratelimitLabels = ruleHandler.getRatelimitLabels(rateLimit);
+        RateLimitProto.RateLimit rateLimit = (RateLimitProto.RateLimit) ruleObject;
+        Set<RateLimitProto.MatchArgument> ratelimitLabels = ruleHandler.getRatelimitLabels(rateLimit);
         String method = invocation.getMethodName();
         Set<Argument> arguments = new HashSet<>();
-        for (MatchArgument matchArgument : ratelimitLabels) {
+        for (RateLimitProto.MatchArgument matchArgument : ratelimitLabels) {
             switch (matchArgument.getType()) {
                 case HEADER:
                     String attachmentValue = RpcContext.getContext().getAttachment(matchArgument.getKey());
