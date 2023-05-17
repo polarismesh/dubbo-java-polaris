@@ -10,7 +10,7 @@
 
     <dubbo:registry address="polaris://127.0.0.1:8091"/>
 
-    <dubbo:protocol name="dubbo" serialization="kryo"/>
+    <dubbo:protocol name="dubbo"/>
 
     <dubbo:service interface="com.tencent.polaris.dubbox.discovery.example.api.BidService"
             ref="bidService" protocol="dubbo">

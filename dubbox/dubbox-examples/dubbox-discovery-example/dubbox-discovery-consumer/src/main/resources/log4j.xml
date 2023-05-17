@@ -26,7 +26,7 @@
 		<!-- 日志文件全路径名 -->
 		<!--<param name="File" value="${polaris.log.home}/polaris/log/polaris.log"/> -->
 		<param name="File"
-				value="${sys:polaris.log.home}/polaris.log"/>
+				value="${user.dir}/polaris/polaris.log"/>
 		<!--是否在已存在的文件追加写：默认时true，若为false则每次启动都会删除并重新新建文件-->
 		<param name="Append" value="true"/>
 		<!-- 保存备份日志的最大个数，默认值是：1  -->
