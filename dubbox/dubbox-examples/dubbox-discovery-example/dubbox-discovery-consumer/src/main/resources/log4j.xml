@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
  - Copyright 1999-2011 Alibaba Group.
- -  
+ -
  - Licensed under the Apache License, Version 2.0 (the "License");
  - you may not use this file except in compliance with the License.
  - You may obtain a copy of the License at
- -  
+ -
  -      http://www.apache.org/licenses/LICENSE-2.0
- -  
+ -
  - Unless required by applicable law or agreed to in writing, software
  - distributed under the License is distributed on an "AS IS" BASIS,
  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,34 +16,11 @@
 -->
 <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
-
 	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%d{dd/MM/yy hh:mm:ss:sss z}] %t %5p %c{2}: %m%n" />
 		</layout>
 	</appender>
-	<appender name="rollingAppender" class="org.apache.log4j.RollingFileAppender">
-		<!-- 日志文件全路径名 -->
-		<!--<param name="File" value="${polaris.log.home}/polaris/log/polaris.log"/> -->
-		<param name="File"
-				value="${sys:polaris.log.home}/polaris.log"/>
-		<!--是否在已存在的文件追加写：默认时true，若为false则每次启动都会删除并重新新建文件-->
-		<param name="Append" value="true"/>
-		<!-- 保存备份日志的最大个数，默认值是：1  -->
-		<param name="MaxBackupIndex" value="10"/>
-		<!-- 设置当日志文件达到此阈值的时候自动回滚，单位可以是KB，MB，GB，默认单位是KB，默认值是：10MB -->
-		<param name="MaxFileSize" value="10MB"/>
-		<!-- 设置日志输出的样式 -->`
-		<layout class="org.apache.log4j.PatternLayout">
-			<!-- 日志输出格式 -->
-			<param name="ConversionPattern"
-					value="[%d{yyyy-MM-dd HH:mm:ss:SSS}] [%-5p] [method:%l]%n%m%n%n"/>
-		</layout>
-	</appender>
-	<logger name="com.tencent.polaris" additivity="false">
-		<level value="INFO"/>
-		<appender-ref ref="rollingAppender"/>
-	</logger>
 	<root>
 		<level value="INFO" />
 		<appender-ref ref="CONSOLE" />
