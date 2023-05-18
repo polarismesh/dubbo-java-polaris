@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.dubbox.discovery.consumer;
 
+import com.alibaba.dubbo.config.ReferenceConfig;
 import com.tencent.polaris.dubbox.discovery.example.api.BidRequest;
 import com.tencent.polaris.dubbox.discovery.example.api.BidService;
 import com.tencent.polaris.dubbox.discovery.example.api.Device;
