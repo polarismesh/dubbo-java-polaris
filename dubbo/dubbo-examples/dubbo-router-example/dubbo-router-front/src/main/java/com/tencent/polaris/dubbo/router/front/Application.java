@@ -34,9 +34,12 @@ public class Application {
         reference.setRegistry(new RegistryConfig(ExampleConsts.POLARIS_ADDRESS));
         reference.setInterface(DemoService.class);
         reference.setVersion(CommonConstants.ANY_VALUE);
+        reference.setRouter("polaris_router");
         DubboBootstrap bootstrap = DubboBootstrap.getInstance()
                 .application(new ApplicationConfig("dubbo-router-front-service"))
                 .registry(new RegistryConfig(ExampleConsts.POLARIS_ADDRESS));
+        bootstrap.consumer(consumerBuilder -> {
+        });
         bootstrap.reference(reference).start();
         DemoService service = ReferenceConfigCache.getCache().get(reference);
 

@@ -21,7 +21,7 @@ public interface ExampleConsts {
 
     String ENV_KEY_VERSION = "VERSION";
 
-    String ENV_KEY_PORT = "PORT";
+    String ENV_KEY_PORT = "DUBBO_PORT_TO_BIND";
 
     String ENV_KEY_EXCEPTION = "EXCEPTION";
 
