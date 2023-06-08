@@ -106,8 +106,7 @@ public class PolarisRouter extends AbstractRouter {
         }
         LOGGER.debug("[POLARIS] list service {}, method {}, labels {}, url {}", service,
                 invocation.getMethodName(), arguments, url);
-        List<Instance> resultInstances = polarisOperator
-                .route(service, invocation.getMethodName(), arguments, instances);
+        List<Instance> resultInstances = polarisOperator.route(service, invocation.getMethodName(), arguments, instances);
         return (List<Invoker<T>>) ((List<?>) resultInstances);
     }
 }

@@ -19,9 +19,11 @@
 package com.tencent.polaris.dubbox.router;
 
 import com.alibaba.dubbo.common.URL;
+import com.alibaba.dubbo.common.extension.Activate;
 import com.alibaba.dubbo.rpc.cluster.Router;
 import com.alibaba.dubbo.rpc.cluster.RouterFactory;
 
+@Activate
 public class PolarisRouterFactory implements RouterFactory {
 
     @Override
