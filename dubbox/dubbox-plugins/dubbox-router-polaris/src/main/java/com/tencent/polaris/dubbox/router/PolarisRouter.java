@@ -31,9 +31,10 @@ import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.common.parser.QueryParser;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
-import com.tencent.polaris.common.router.ObjectParser;
+import com.tencent.polaris.common.parser.JavaObjectQueryParser;
 import com.tencent.polaris.common.router.RuleHandler;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -56,6 +57,8 @@ public class PolarisRouter implements Router {
 
     private final int priority;
 
+    private final QueryParser parser;
+
     public PolarisRouter(URL url) {
         super();
         LOGGER.info("[POLARIS] init service router, url is {}, parameters are {}", url,
@@ -64,6 +67,7 @@ public class PolarisRouter implements Router {
         this.priority = url.getParameter(Constants.PRIORITY_KEY, 0);
         routeRuleHandler = new RuleHandler();
         polarisOperator = PolarisOperators.INSTANCE.getPolarisOperator(url.getHost(), url.getPort());
+        parser = QueryParser.load();
     }
 
     @Override
@@ -108,7 +112,7 @@ public class PolarisRouter implements Router {
                 } else if (routeLabel.startsWith(RouteArgument.LABEL_KEY_QUERY)) {
                     String queryName = routeLabel.substring(RouteArgument.LABEL_KEY_QUERY.length());
                     if (!StringUtils.isBlank(queryName)) {
-                        Object value = ObjectParser.parseArgumentsByExpression(queryName, invocation.getArguments());
+                        Object value = parser.parse(queryName, invocation.getArguments());
                         if (null != value) {
                             arguments.add(RouteArgument.buildQuery(queryName, String.valueOf(value)));
                         }

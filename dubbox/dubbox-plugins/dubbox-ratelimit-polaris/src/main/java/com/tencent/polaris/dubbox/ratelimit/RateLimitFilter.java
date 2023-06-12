@@ -29,9 +29,10 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.exception.PolarisBlockException;
+import com.tencent.polaris.common.parser.QueryParser;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperatorDelegate;
-import com.tencent.polaris.common.router.ObjectParser;
+import com.tencent.polaris.common.parser.JavaObjectQueryParser;
 import com.tencent.polaris.common.router.RuleHandler;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
@@ -50,9 +51,12 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter {
 
     private final RuleHandler ruleHandler;
 
+    private final QueryParser parser;
+
     public RateLimitFilter() {
         LOGGER.info("[POLARIS] init polaris ratelimit");
         ruleHandler = new RuleHandler();
+        parser = QueryParser.load();
     }
 
     @Override
@@ -80,8 +84,7 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter {
                     }
                     break;
                 case QUERY:
-                    Object queryValue = ObjectParser
-                            .parseArgumentsByExpression(matchArgument.getKey(), invocation.getArguments());
+                    Object queryValue = parser.parse(matchArgument.getKey(), invocation.getArguments());
                     if (null != queryValue) {
                         arguments.add(Argument
                                 .buildQuery(matchArgument.getKey(), String.valueOf(queryValue)));
