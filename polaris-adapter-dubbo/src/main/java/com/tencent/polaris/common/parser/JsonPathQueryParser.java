@@ -33,6 +33,12 @@ class JsonPathQueryParser implements QueryParser {
 
     private static final String PREFIX_PARAM_ARRAY = "param[";
 
+
+    @Override
+    public String name() {
+        return "JsonPath";
+    }
+
     @Override
     public Optional<String> parse(String query, Object[] parameters) {
         if (Objects.isNull(parameters) || parameters.length == 0) {

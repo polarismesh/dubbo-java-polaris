@@ -40,6 +40,11 @@ public class JavaObjectQueryParser implements QueryParser {
 
     private static final String PREFIX_PARAM_ARRAY = "param[";
 
+    @Override
+    public String name() {
+        return "JavaObject";
+    }
+
 
     @Override
     public Optional<String> parse(String restKey, Object[] parameters) {

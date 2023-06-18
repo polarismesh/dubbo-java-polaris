@@ -30,7 +30,9 @@ import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 import org.apache.dubbo.common.constants.CommonConstants;
@@ -84,11 +86,8 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter {
                     }
                     break;
                 case QUERY:
-                    Object queryValue = parser.parse(matchArgument.getKey(), invocation.getArguments());
-                    if (null != queryValue) {
-                        arguments.add(Argument
-                                .buildQuery(matchArgument.getKey(), String.valueOf(queryValue)));
-                    }
+                    Optional<String> queryValue = parser.parse(matchArgument.getKey(), invocation.getArguments());
+                    queryValue.ifPresent(s -> arguments.add(Argument.buildQuery(matchArgument.getKey(), s)));
                     break;
                 default:
                     break;

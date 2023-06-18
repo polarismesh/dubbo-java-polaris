@@ -34,11 +34,11 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.parser.QueryParser;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
-import com.tencent.polaris.common.parser.JavaObjectQueryParser;
 import com.tencent.polaris.common.router.RuleHandler;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
@@ -112,10 +112,8 @@ public class PolarisRouter implements Router {
                 } else if (routeLabel.startsWith(RouteArgument.LABEL_KEY_QUERY)) {
                     String queryName = routeLabel.substring(RouteArgument.LABEL_KEY_QUERY.length());
                     if (!StringUtils.isBlank(queryName)) {
-                        Object value = parser.parse(queryName, invocation.getArguments());
-                        if (null != value) {
-                            arguments.add(RouteArgument.buildQuery(queryName, String.valueOf(value)));
-                        }
+                        Optional<String> value = parser.parse(queryName, invocation.getArguments());
+                        value.ifPresent(v -> arguments.add(RouteArgument.buildQuery(queryName, v)));
                     }
                 }
             }
