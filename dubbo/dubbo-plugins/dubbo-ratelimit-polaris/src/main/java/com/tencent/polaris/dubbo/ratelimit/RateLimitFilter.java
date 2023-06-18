@@ -31,6 +31,7 @@ import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 import org.apache.dubbo.common.constants.CommonConstants;
