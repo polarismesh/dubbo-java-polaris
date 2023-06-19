@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.common.router;
+package com.tencent.polaris.common.parser;
 
 import com.tencent.polaris.api.utils.StringUtils;
 import java.lang.reflect.Field;
@@ -23,22 +23,31 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ObjectParser {
+public class JavaObjectQueryParser implements QueryParser {
 
     private static final Pattern ARRAY_PATTERN = Pattern.compile("^.+\\[[0-9]+\\]");
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ObjectParser.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JavaObjectQueryParser.class);
 
     private static final String PREFIX_PARAM = "param";
 
     private static final String PREFIX_PARAM_ARRAY = "param[";
 
-    public static Object parseArgumentsByExpression(String restKey, Object[] parameters) {
+    @Override
+    public String name() {
+        return "JavaObject";
+    }
+
+
+    @Override
+    public Optional<String> parse(String restKey, Object[] parameters) {
         int index = -1;
         if (restKey.startsWith(PREFIX_PARAM)) {
             index = 0;
@@ -52,11 +61,14 @@ public class ObjectParser {
             LOGGER.warn("invalid object expression for {}", restKey);
         }
         if (index == -1 || parameters.length <= index) {
-            return null;
+            return Optional.empty();
         }
         Object targetValue = parameters[index];
         if (restKey.length() == 0) {
-            return targetValue;
+            if (Objects.isNull(targetValue)) {
+                return Optional.empty();
+            }
+            return Optional.ofNullable(Objects.toString(targetValue));
         }
         // omit the starting dot
         restKey = restKey.substring(1);
@@ -66,10 +78,13 @@ public class ObjectParser {
                 if (null == targetValue) {
                     break;
                 }
-                targetValue = ObjectParser.resolveValue(token, targetValue);
+                targetValue = JavaObjectQueryParser.resolveValue(token, targetValue);
             }
         }
-        return targetValue;
+        if (Objects.isNull(targetValue)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(Objects.toString(targetValue));
     }
 
     private static Object resolveValue(String path, Object value) {
@@ -194,4 +209,5 @@ public class ObjectParser {
         field.setAccessible(true);
         return field.get(target);
     }
+
 }

@@ -29,19 +29,20 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.exception.PolarisBlockException;
+import com.tencent.polaris.common.parser.QueryParser;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperatorDelegate;
-import com.tencent.polaris.common.router.ObjectParser;
 import com.tencent.polaris.common.router.RuleHandler;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
-import java.util.HashSet;
-import java.util.Set;
-
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 @Activate(group = Constants.PROVIDER)
 public class RateLimitFilter extends PolarisOperatorDelegate implements Filter {
@@ -50,9 +51,12 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter {
 
     private final RuleHandler ruleHandler;
 
+    private final QueryParser parser;
+
     public RateLimitFilter() {
         LOGGER.info("[POLARIS] init polaris ratelimit");
         ruleHandler = new RuleHandler();
+        parser = QueryParser.load();
     }
 
     @Override
@@ -80,12 +84,8 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter {
                     }
                     break;
                 case QUERY:
-                    Object queryValue = ObjectParser
-                            .parseArgumentsByExpression(matchArgument.getKey(), invocation.getArguments());
-                    if (null != queryValue) {
-                        arguments.add(Argument
-                                .buildQuery(matchArgument.getKey(), String.valueOf(queryValue)));
-                    }
+                    Optional<String> queryValue = parser.parse(matchArgument.getKey(), invocation.getArguments());
+                    queryValue.ifPresent(value -> arguments.add(Argument.buildQuery(matchArgument.getKey(), value)));
                     break;
                 default:
                     break;
