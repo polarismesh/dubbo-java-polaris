@@ -13,10 +13,6 @@
     <artifactId>dubbox-plugins</artifactId>
     <packaging>pom</packaging>
 
-    <properties>
-        <skip_maven_deploy>false</skip_maven_deploy>
-    </properties>
-
     <modules>
         <module>dubbox-registry-polaris</module>
         <module>dubbox-router-polaris</module>
