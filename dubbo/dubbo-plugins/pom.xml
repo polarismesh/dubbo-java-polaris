@@ -13,9 +13,6 @@
     <artifactId>dubbo-plugins</artifactId>
     <packaging>pom</packaging>
 
-    <properties>
-        <skip_maven_deploy>false</skip_maven_deploy>
-    </properties>
     <modules>
         <module>dubbo-registry-polaris</module>
         <module>dubbo-router-polaris</module>
