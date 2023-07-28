@@ -17,7 +17,9 @@
 
 package com.tencent.polaris.dubbox.router.example.api;
 
-public class FooRequest {
+import java.io.Serializable;
+
+public class FooRequest implements Serializable {
 
     private String user;
 
