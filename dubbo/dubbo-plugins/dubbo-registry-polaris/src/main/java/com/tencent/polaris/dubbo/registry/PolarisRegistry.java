@@ -231,12 +231,13 @@ public class PolarisRegistry extends FailbackRegistry {
     }
 
     private void onInstances(URL url, NotifyListener listener, Instance[] instances) {
+        String requireInterface = url.getServiceInterface();
         LOGGER.info("[POLARIS] update instances count: {}, service: {}", null == instances ? 0 : instances.length,
-                url.getServiceInterface());
+                requireInterface);
         List<URL> urls = new ArrayList<>();
         if (null != instances) {
             for (Instance instance : instances) {
-                urls.add(instanceToURL(instance));
+                urls.add(instanceToURL(requireInterface, instance));
             }
         }
         URL routerURL = buildRouterURL(url);
@@ -246,9 +247,10 @@ public class PolarisRegistry extends FailbackRegistry {
         PolarisRegistry.this.notify(url, listener, urls);
     }
 
-    private static URL instanceToURL(Instance instance) {
+    private static URL instanceToURL(String requireInterface, Instance instance) {
         Map<String, String> newMetadata = new HashMap<>(instance.getMetadata());
         boolean hasWeight = false;
+        newMetadata.put("interface", requireInterface);
         if (newMetadata.containsKey(Constants.WEIGHT_KEY)) {
             String weightStr = newMetadata.get(Constants.WEIGHT_KEY);
             try {

@@ -17,7 +17,9 @@
 
 package com.tencent.polaris.dubbox.router.example.api;
 
-public class FooResponse {
+import java.io.Serializable;
+
+public class FooResponse implements Serializable {
 
     private String message;
 
