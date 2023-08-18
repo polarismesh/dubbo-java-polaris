@@ -17,6 +17,7 @@
 package com.tencent.polaris.dubbo.registry;
 
 
+import com.tencent.polaris.dubbo.servicealias.RegistryServiceAliasOperator;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.registry.Registry;
 import org.apache.dubbo.registry.support.AbstractRegistryFactory;
