@@ -87,8 +87,6 @@ public class PolarisRegistry extends FailbackRegistry {
         hasRouter = routerExtensionLoader.hasExtension(ExtensionConsts.PLUGIN_ROUTER_NAME);
         ExtensionLoader<Filter> filterExtensionLoader = ExtensionLoader.getExtensionLoader(Filter.class);
         hasCircuitBreaker = filterExtensionLoader.hasExtension(ExtensionConsts.PLUGIN_CIRCUITBREAKER_NAME);
-
-        RegistryServiceAliasOperator.setup(url);
     }
 
     private URL buildRouterURL(URL consumerUrl) {

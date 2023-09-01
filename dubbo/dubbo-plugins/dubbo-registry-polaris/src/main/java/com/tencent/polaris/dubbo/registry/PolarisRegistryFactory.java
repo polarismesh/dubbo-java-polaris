@@ -26,6 +26,7 @@ public class PolarisRegistryFactory extends AbstractRegistryFactory {
 
     @Override
     protected Registry createRegistry(URL url) {
+        url = RegistryServiceAliasOperator.setup(url);
         PolarisRegistry polarisRegistry = new PolarisRegistry(url);
         return polarisRegistry;
     }
