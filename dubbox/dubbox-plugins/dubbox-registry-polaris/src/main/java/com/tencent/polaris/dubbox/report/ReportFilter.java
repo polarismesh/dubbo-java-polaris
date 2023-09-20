@@ -46,31 +46,46 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter {
 	@Override
 	public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
 		long startTimeMilli = System.currentTimeMillis();
-		Result result = null;
-		RpcException rpcException = null;
-		Throwable exception = null;
 		try {
-			result = invoker.invoke(invocation);
-		}
-		catch (RpcException e) {
-			rpcException = e;
-		}
-		if (null != result && result.hasException()) {
-			exception = result.getException();
-		}
-		PolarisOperator polarisOperator = getPolarisOperator();
-		if (null == polarisOperator) {
+			Result result = invoker.invoke(invocation);
+			long delay = System.currentTimeMillis() - startTimeMilli;
+			if (result.hasException()) {
+				onError(invoker, invocation, result.getException(), delay);
+			} else {
+				onSuccess(invoker, invocation, result, delay);
+			}
 			return result;
 		}
-		RetStatus retStatus = RetStatus.RetSuccess;
-		int code = 0;
-		if (null != exception) {
-			retStatus = RetStatus.RetFail;
-			code = -1;
+		catch (RpcException e) {
+			long delay = System.currentTimeMillis() - startTimeMilli;
+			onError(invoker, invocation, e, delay);
+			throw e;
 		}
-		if (null != rpcException) {
+	}
+
+	private void onSuccess(Invoker<?> invoker, Invocation invocation, Result result, long costMill) {
+		PolarisOperator polarisOperator = getPolarisOperator();
+		if (null == polarisOperator) {
+			return;
+		}
+		RetStatus retStatus = RetStatus.RetSuccess;
+		URL url = invoker.getUrl();
+		polarisOperator.reportInvokeResult(url.getServiceInterface(), invocation.getMethodName(), url.getHost(),
+				url.getPort(), RpcContext.getContext().getLocalHost(), costMill, retStatus, 0);
+	}
+
+	private void onError(Invoker<?> invoker, Invocation invocation, Throwable exception, long costMill) {
+		PolarisOperator polarisOperator = getPolarisOperator();
+		if (null == polarisOperator) {
+			return;
+		}
+		RetStatus retStatus = RetStatus.RetFail;
+		URL url = invoker.getUrl();
+		int code = -1;
+		if (exception instanceof RpcException) {
+			RpcException rpcException = (RpcException) exception;
 			code = rpcException.getCode();
-			if (StringUtils.isNotBlank(rpcException.getMessage()) && rpcException.getMessage()
+			if (StringUtils.isNotBlank(exception.getMessage()) && exception.getMessage()
 					.contains(PolarisBlockException.PREFIX)) {
 				// 限流异常不进行熔断
 				retStatus = RetStatus.RetFlowControl;
@@ -79,16 +94,7 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter {
 				retStatus = RetStatus.RetReject;
 			}
 		}
-		URL url = invoker.getUrl();
-		long delay = System.currentTimeMillis() - startTimeMilli;
 		polarisOperator.reportInvokeResult(url.getServiceInterface(), invocation.getMethodName(), url.getHost(),
-				url.getPort(), RpcContext.getContext().getRemoteHost(), delay, retStatus, code);
-		if (null != rpcException) {
-			throw rpcException;
-		}
-		else if (null != exception) {
-			throw new RpcException(exception);
-		}
-		return result;
+				url.getPort(), RpcContext.getContext().getLocalHost(), costMill, retStatus, code);
 	}
 }

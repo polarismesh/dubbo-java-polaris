@@ -41,8 +41,6 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 
 	private static final String LABEL_START_TIME = "reporter_filter_start_time";
 
-	private static final String LABEL_REMOTE_HOST = "reporter_remote_host_store";
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReportFilter.class);
 
 	public ReportFilter() {
@@ -52,7 +50,6 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 	@Override
 	public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
 		invocation.put(LABEL_START_TIME, System.currentTimeMillis());
-		invocation.put(LABEL_REMOTE_HOST, RpcContext.getContext().getRemoteHost());
         return invoker.invoke(invocation);
 	}
 
@@ -62,7 +59,6 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
         if (null == polarisOperator) {
             return;
         }
-        String callerIp = (String) invocation.get(LABEL_REMOTE_HOST);
         Long startTimeMilli = (Long) invocation.get(LABEL_START_TIME);
         RetStatus retStatus = RetStatus.RetSuccess;
         int code = 0;
@@ -73,7 +69,7 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
         URL url = invoker.getUrl();
         long delay = System.currentTimeMillis() - startTimeMilli;
         polarisOperator.reportInvokeResult(url.getServiceInterface(), invocation.getMethodName(), url.getHost(),
-                url.getPort(), callerIp, delay, retStatus, code);
+                url.getPort(), RpcContext.getContext().getLocalHost(), delay, retStatus, code);
 	}
 
 	@Override
@@ -82,7 +78,6 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 		if (null == polarisOperator) {
 			return;
 		}
-		String callerIp = (String) invocation.get(LABEL_REMOTE_HOST);
 		Long startTimeMilli = (Long) invocation.get(LABEL_START_TIME);
 		RetStatus retStatus = RetStatus.RetFail;
 		int code = -1;
@@ -102,7 +97,7 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 		URL url = invoker.getUrl();
 		long delay = System.currentTimeMillis() - startTimeMilli;
 		polarisOperator.reportInvokeResult(url.getServiceInterface(), invocation.getMethodName(), url.getHost(),
-				url.getPort(), callerIp, delay, retStatus, code);
+				url.getPort(), RpcContext.getContext().getLocalHost(), delay, retStatus, code);
 	}
 
     private boolean isFlowControl(RpcException rpcException) {
