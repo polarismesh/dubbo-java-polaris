@@ -24,7 +24,6 @@ import com.tencent.polaris.common.exception.PolarisBlockException;
 import com.tencent.polaris.common.parser.QueryParser;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperatorDelegate;
-import com.tencent.polaris.common.parser.JavaObjectQueryParser;
 import com.tencent.polaris.common.router.RuleHandler;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
