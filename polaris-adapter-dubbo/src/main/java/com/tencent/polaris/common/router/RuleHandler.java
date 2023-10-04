@@ -23,7 +23,9 @@ import com.tencent.polaris.common.registry.TimedCache;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+import com.google.protobuf.StringValue;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -39,18 +41,43 @@ public class RuleHandler {
 
     private final Object lock = new Object();
 
+
+    static Method getRevision;
+    static {
+        /* 直接调用 getRevision() 方法会抛出异常:
+            java.lang.NoSuchMethodError: com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto$Routing.getRevision()Lshade/polaris/com/google/protobuf/StringValue;
+           暂时通过反射调用方法.
+        */
+        try {
+            getRevision = RoutingProto.Routing.class.getMethod("getRevision");
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static String getRevision(RoutingProto.Routing routing) {
+        try {
+            Object revision = getRevision.invoke(routing);
+            if (revision instanceof StringValue)
+                return ((StringValue) revision).getValue();
+            return revision.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Set<String> getRouteLabels(RoutingProto.Routing routing) {
-        TimedCache<Set<String>> setTimedCache = routeRuleMatchLabels.get(routing.getRevision().getValue());
+        String revision = getRevision(routing);
+        TimedCache<Set<String>> setTimedCache = routeRuleMatchLabels.get(revision);
         if (null != setTimedCache && !setTimedCache.isExpired()) {
             return setTimedCache.getValue();
         }
         synchronized (lock) {
-            setTimedCache = routeRuleMatchLabels.get(routing.getRevision().getValue());
+            setTimedCache = routeRuleMatchLabels.get(revision);
             if (null != setTimedCache && !setTimedCache.isExpired()) {
                 return setTimedCache.getValue();
             }
             TimedCache<Set<String>> timedCache = new TimedCache<>(buildRouteLabels(routing));
-            routeRuleMatchLabels.put(routing.getRevision().getValue(), timedCache);
+            routeRuleMatchLabels.put(revision, timedCache);
             return timedCache.getValue();
         }
     }

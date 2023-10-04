@@ -38,7 +38,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>0.2.2</revision>
+        <revision>0.3.0-20230901</revision>
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -52,7 +52,7 @@
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
-        <polaris.version>1.12.10</polaris.version>
+        <polaris.version>1.13.0</polaris.version>
         <slf4j.version>1.7.25</slf4j.version>
         <json_path_version>2.8.0</json_path_version>
     </properties>

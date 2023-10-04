@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.common.parser;
 
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -28,13 +29,13 @@ public interface QueryParser {
     String name();
 
     static QueryParser load() {
-        ServiceLoader<QueryParser> loader = ServiceLoader.load(QueryParser.class);
-        QueryParser instance = loader.iterator().next();
+        Iterator<QueryParser> queryParserIter = ServiceLoader.load(QueryParser.class).iterator();
+        QueryParser instance = queryParserIter.hasNext() ? queryParserIter.next() : null;
         if (Objects.nonNull(instance)) {
             return instance;
         }
         String parser = System.getProperty("dubbo.polaris.query_parser");
-        if (parser.equals("JsonPath")) {
+        if ("JsonPath".equals(parser)) {
             return new JsonPathQueryParser();
         }
         return new JavaObjectQueryParser();

@@ -59,7 +59,7 @@ public class PolarisRouter extends AbstractRouter {
                 url.getParameters());
         this.priority = url.getParameter(Constants.PRIORITY_KEY, 0);
         routeRuleHandler = new RuleHandler();
-        polarisOperator = PolarisOperators.INSTANCE.getPolarisOperator(url.getHost(), url.getPort());
+        polarisOperator = PolarisOperators.INSTANCE.getFirstPolarisOperator(); //这里url是provider，根据地址信息是获取不到的
         parser = QueryParser.load();
     }
 

@@ -40,6 +40,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.tencent.polaris.dubbo.servicealias.RegistryServiceAliasOperator;
+import com.tencent.polaris.dubbo.servicealias.ServiceAlias;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.constants.RegistryConstants;
@@ -121,8 +124,11 @@ public class PolarisRegistry extends FailbackRegistry {
         if (port > 0) {
             int weight = url.getParameter(Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT);
             String version = url.getParameter(CommonConstants.VERSION_KEY, "");
-            polarisOperator.register(url.getServiceInterface(), url.getHost(), port, url.getProtocol(), version, weight,
-                    metadata);
+            polarisOperator.register(RegistryServiceAliasOperator.getService(url), url.getHost(), port,
+                    url.getProtocol(), version, weight, metadata);
+            if (RegistryServiceAliasOperator.enabled()) {
+                RegistryServiceAliasOperator.saveServiceAlias(new ServiceAlias(url));
+            }
             registeredInstances.add(url);
         } else {
             LOGGER.warn("[POLARIS] skip register url {} for zero port value", url);
@@ -141,7 +147,7 @@ public class PolarisRegistry extends FailbackRegistry {
         LOGGER.info("[POLARIS] unregister service from polaris: {}", url.toString());
         int port = url.getPort();
         if (port > 0) {
-            polarisOperator.deregister(url.getServiceInterface(), url.getHost(), url.getPort());
+            polarisOperator.deregister(RegistryServiceAliasOperator.getService(url), url.getHost(), url.getPort());
             registeredInstances.remove(url);
         }
     }

@@ -17,6 +17,7 @@
 package com.tencent.polaris.dubbo.registry;
 
 
+import com.tencent.polaris.dubbo.servicealias.RegistryServiceAliasOperator;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.registry.Registry;
 import org.apache.dubbo.registry.support.AbstractRegistryFactory;
@@ -25,6 +26,7 @@ public class PolarisRegistryFactory extends AbstractRegistryFactory {
 
     @Override
     protected Registry createRegistry(URL url) {
+        url = RegistryServiceAliasOperator.setup(url);
         PolarisRegistry polarisRegistry = new PolarisRegistry(url);
         return polarisRegistry;
     }
