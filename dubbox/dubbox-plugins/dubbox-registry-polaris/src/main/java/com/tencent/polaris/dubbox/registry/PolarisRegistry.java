@@ -16,11 +16,10 @@
 
 package com.tencent.polaris.dubbox.registry;
 
-import static com.alibaba.dubbo.common.Constants.PATH_KEY;
-
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
+import com.alibaba.dubbo.common.utils.CollectionUtils;
 import com.alibaba.dubbo.common.utils.ConcurrentHashSet;
 import com.alibaba.dubbo.registry.NotifyListener;
 import com.alibaba.dubbo.registry.support.FailbackRegistry;
@@ -29,14 +28,15 @@ import com.alibaba.dubbo.rpc.cluster.RouterFactory;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.common.registry.Consts;
 import com.tencent.polaris.common.registry.ConvertUtils;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.utils.ExtensionConsts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,17 +45,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.alibaba.dubbo.common.Constants.CATEGORY_KEY;
+import static com.alibaba.dubbo.common.Constants.DEFAULT_CATEGORY;
+import static com.alibaba.dubbo.common.Constants.EMPTY_PROTOCOL;
+import static com.alibaba.dubbo.common.Constants.PATH_KEY;
 
 public class PolarisRegistry extends FailbackRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PolarisRegistry.class);
-
-    private static final TaskScheduler taskScheduler = new TaskScheduler();
 
     private final Set<URL> registeredInstances = new ConcurrentHashSet<>();
 
@@ -65,31 +64,9 @@ public class PolarisRegistry extends FailbackRegistry {
 
     private final PolarisOperator polarisOperator;
 
-    private final URL routerURL;
-
-    private final boolean hasCircuitBreaker;
-
-    private final boolean hasRouter;
-
     public PolarisRegistry(URL url) {
         super(url);
-        polarisOperator = new PolarisOperator(url.getHost(), url.getPort(), url.getParameters());
-        PolarisOperators.INSTANCE.addPolarisOperator(polarisOperator);
-        this.routerURL = buildRouterURL(url.getHost(), url.getPort());
-        ExtensionLoader<RouterFactory> routerExtensionLoader = ExtensionLoader.getExtensionLoader(RouterFactory.class);
-        hasRouter = routerExtensionLoader.hasExtension(ExtensionConsts.PLUGIN_ROUTER_NAME);
-        ExtensionLoader<Filter> filterExtensionLoader = ExtensionLoader.getExtensionLoader(Filter.class);
-        hasCircuitBreaker = filterExtensionLoader.hasExtension(ExtensionConsts.PLUGIN_CIRCUITBREAKER_NAME);
-    }
-
-    private URL buildRouterURL(String host, int port) {
-        URL routerURL = null;
-        if (hasRouter) {
-            routerURL = new URL(Constants.ROUTE_PROTOCOL, host, port);
-            routerURL = routerURL.setServiceInterface(Constants.ANY_VALUE);
-            routerURL = routerURL.addParameter(Constants.ROUTER_KEY, ExtensionConsts.PLUGIN_ROUTER_NAME);
-        }
-        return routerURL;
+        polarisOperator = PolarisOperators.INSTANCE.loadOrStore(url.getHost(), url.getPort(), url.getParameters());
     }
 
     @Override
@@ -138,79 +115,28 @@ public class PolarisRegistry extends FailbackRegistry {
                 doUnregister(url);
             }
             polarisOperator.destroy();
-            taskScheduler.destroy();
         }
     }
 
     @Override
     public void doSubscribe(URL url, NotifyListener listener) {
         String service = url.getServiceInterface();
-        Instance[] instances = polarisOperator.getAvailableInstances(service, !hasCircuitBreaker);
+        Instance[] instances = polarisOperator.getAvailableInstances(service, true);
         onInstances(url, listener, instances);
         LOGGER.info("[POLARIS] submit watch task for service {}", service);
-        taskScheduler.submitWatchTask(new WatchTask(url, listener, service));
-    }
 
-    private class WatchTask implements Runnable {
-
-        private final String service;
-
-        private final ServiceListener serviceListener;
-
-        private final NotifyListener listener;
-
-        private final FetchTask fetchTask;
-
-        public WatchTask(URL url, NotifyListener listener,
-                String service) {
-            this.service = service;
-            this.listener = listener;
-            fetchTask = new FetchTask(url, listener);
-            serviceListener = new ServiceListener() {
-                @Override
-                public void onEvent(ServiceChangeEvent event) {
-                    PolarisRegistry.taskScheduler.submitFetchTask(fetchTask);
+        serviceListeners.computeIfAbsent(listener, notifyListener -> {
+            ServiceListener serviceListener = event -> {
+                try {
+                    Instance[] curInstances = polarisOperator.getAvailableInstances(service, true);
+                    onInstances(url, listener, curInstances);
+                } catch (PolarisException e) {
+                    LOGGER.error("[POLARIS] fail to fetch instances for service {}: {}", service, e.toString());
                 }
             };
-        }
-
-        @Override
-        public void run() {
-            boolean result = polarisOperator.watchService(service, serviceListener);
-            if (result) {
-                serviceListeners.put(listener, serviceListener);
-                PolarisRegistry.taskScheduler.submitFetchTask(fetchTask);
-                return;
-            }
-            PolarisRegistry.taskScheduler.submitWatchTask(this);
-        }
-    }
-
-    private class FetchTask implements Runnable {
-
-        private final String service;
-
-        private final URL url;
-
-        private final NotifyListener listener;
-
-        public FetchTask(URL url, NotifyListener listener) {
-            this.service = url.getServiceInterface();
-            this.url = url;
-            this.listener = listener;
-        }
-
-        @Override
-        public void run() {
-            Instance[] instances;
-            try {
-                instances = polarisOperator.getAvailableInstances(service, !hasCircuitBreaker);
-            } catch (PolarisException e) {
-                LOGGER.error("[POLARIS] fail to fetch instances for service {}: {}", service, e.toString());
-                return;
-            }
-            onInstances(url, listener, instances);
-        }
+            polarisOperator.watchService(service, serviceListener);
+            return serviceListener;
+        });
     }
 
     private void onInstances(URL url, NotifyListener listener, Instance[] instances) {
@@ -222,10 +148,7 @@ public class PolarisRegistry extends FailbackRegistry {
                 urls.add(instanceToURL(instance));
             }
         }
-        if (null != routerURL) {
-            urls.add(routerURL);
-        }
-        PolarisRegistry.this.notify(url, listener, urls);
+        notify(url, listener, toUrlWithEmpty(url, urls));
     }
 
     private static URL instanceToURL(Instance instance) {
@@ -255,68 +178,24 @@ public class PolarisRegistry extends FailbackRegistry {
                 newMetadata);
     }
 
-    private static class TaskScheduler {
-
-        private final ExecutorService fetchExecutor = Executors
-                .newSingleThreadExecutor(new NamedThreadFactory("agent-fetch"));
-
-        private final ExecutorService watchExecutor = Executors
-                .newSingleThreadExecutor(new NamedThreadFactory("agent-retry-watch"));
-
-        private final AtomicBoolean executorDestroyed = new AtomicBoolean(false);
-
-        private final Object lock = new Object();
-
-        void submitFetchTask(Runnable fetchTask) {
-            if (executorDestroyed.get()) {
-                return;
-            }
-            synchronized (lock) {
-                if (executorDestroyed.get()) {
-                    return;
-                }
-                fetchExecutor.submit(fetchTask);
-            }
+    private List<URL> toUrlWithEmpty(URL providerUrl, List<URL> urls) {
+        if (CollectionUtils.isEmpty(urls)) {
+            LOGGER.warn("[POLARIS] received empty url address list, will clear current available addresses");
+            URL empty = providerUrl
+                    .setProtocol(EMPTY_PROTOCOL)
+                    .addParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
+            urls.add(empty);
         }
-
-        void submitWatchTask(Runnable watchTask) {
-            if (executorDestroyed.get()) {
-                return;
-            }
-            synchronized (lock) {
-                if (executorDestroyed.get()) {
-                    return;
-                }
-                watchExecutor.submit(watchTask);
-            }
-        }
-
-        boolean isDestroyed() {
-            return executorDestroyed.get();
-        }
-
-        void destroy() {
-            synchronized (lock) {
-                if (executorDestroyed.compareAndSet(false, true)) {
-                    fetchExecutor.shutdown();
-                    watchExecutor.shutdown();
-                }
-            }
-        }
+        return urls;
     }
 
     @Override
     public void doUnsubscribe(URL url, NotifyListener listener) {
         LOGGER.info("[polaris] unsubscribe service: {}", url.toString());
-        taskScheduler.submitWatchTask(new Runnable() {
-            @Override
-            public void run() {
-                ServiceListener serviceListener = serviceListeners.get(listener);
-                if (null != serviceListener) {
-                    polarisOperator.unwatchService(url.getServiceInterface(), serviceListener);
-                }
-            }
-        });
+        ServiceListener serviceListener = serviceListeners.get(listener);
+        if (serviceListener != null) {
+            polarisOperator.unwatchService(url.getServiceInterface(), serviceListener);
+        }
     }
 
     @Override

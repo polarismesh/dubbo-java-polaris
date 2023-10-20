@@ -88,12 +88,6 @@ public class PolarisOperator {
 
     private CircuitBreakAPI circuitBreakAPI;
 
-    private ConfigFileService configFileService;
-
-    private final Object lock = new Object();
-
-    private final Map<String, TimedCache<Message>> messageCache = new ConcurrentHashMap<>();
-
     public PolarisOperator(String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
         polarisConfig = new PolarisConfig(host, port, parameters);
         init(parameters, handlers);
@@ -117,7 +111,6 @@ public class PolarisOperator {
         limitAPI = LimitAPIFactory.createLimitAPIByContext(sdkContext);
         routerAPI = RouterAPIFactory.createRouterAPIByContext(sdkContext);
         circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByContext(sdkContext);
-        configFileService = ConfigFileServiceFactory.createConfigFileService(sdkContext);
     }
 
     public void destroy() {
