@@ -27,7 +27,9 @@ import com.tencent.polaris.common.registry.ConvertUtils;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.common.URLBuilder;
 import org.apache.dubbo.common.constants.CommonConstants;
+import org.apache.dubbo.common.utils.CollectionUtils;
 import org.apache.dubbo.common.utils.ConcurrentHashSet;
 import org.apache.dubbo.registry.NotifyListener;
 import org.apache.dubbo.registry.support.FailbackRegistry;
@@ -44,6 +46,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.apache.dubbo.common.constants.RegistryConstants.CATEGORY_KEY;
+import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_CATEGORY;
+import static org.apache.dubbo.common.constants.RegistryConstants.EMPTY_PROTOCOL;
 
 public class PolarisRegistry extends FailbackRegistry {
 
@@ -147,7 +153,7 @@ public class PolarisRegistry extends FailbackRegistry {
                 urls.add(instanceToURL(requireInterface, instance));
             }
         }
-        notify(url, listener, urls);
+        notify(url, listener, toUrlWithEmpty(url, urls));
     }
 
     private static URL instanceToURL(String requireInterface, Instance instance) {
@@ -176,6 +182,18 @@ public class PolarisRegistry extends FailbackRegistry {
                 instance.getPort(),
                 newMetadata.get(CommonConstants.PATH_KEY),
                 newMetadata);
+    }
+
+    private List<URL> toUrlWithEmpty(URL providerUrl, List<URL> urls) {
+        if (CollectionUtils.isEmpty(urls)) {
+            LOGGER.warn("[POLARIS] received empty url address list, will clear current available addresses");
+            URL empty = URLBuilder.from(providerUrl)
+                    .setProtocol(EMPTY_PROTOCOL)
+                    .addParameter(CATEGORY_KEY, DEFAULT_CATEGORY)
+                    .build();
+            urls.add(empty);
+        }
+        return urls;
     }
 
     @Override

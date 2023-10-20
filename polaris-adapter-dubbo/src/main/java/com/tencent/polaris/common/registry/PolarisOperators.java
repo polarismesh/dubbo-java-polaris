@@ -29,6 +29,10 @@ public class PolarisOperators {
 
     public static final PolarisOperators INSTANCE = new PolarisOperators();
 
+    public PolarisOperator loadOrStore(String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
+        return null;
+    }
+
     public void addPolarisOperator(PolarisOperator polarisOperator) {
         polarisOperatorMap.put(polarisOperator.getPolarisConfig().getRegistryAddress(), polarisOperator);
     }

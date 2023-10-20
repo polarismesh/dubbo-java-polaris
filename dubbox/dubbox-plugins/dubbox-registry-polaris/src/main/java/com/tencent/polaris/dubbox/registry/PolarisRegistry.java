@@ -19,6 +19,7 @@ package com.tencent.polaris.dubbox.registry;
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
+import com.alibaba.dubbo.common.utils.CollectionUtils;
 import com.alibaba.dubbo.common.utils.ConcurrentHashSet;
 import com.alibaba.dubbo.registry.NotifyListener;
 import com.alibaba.dubbo.registry.support.FailbackRegistry;
@@ -46,6 +47,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.alibaba.dubbo.common.Constants.CATEGORY_KEY;
+import static com.alibaba.dubbo.common.Constants.DEFAULT_CATEGORY;
+import static com.alibaba.dubbo.common.Constants.EMPTY_PROTOCOL;
 import static com.alibaba.dubbo.common.Constants.PATH_KEY;
 
 public class PolarisRegistry extends FailbackRegistry {
@@ -145,7 +149,7 @@ public class PolarisRegistry extends FailbackRegistry {
                 urls.add(instanceToURL(instance));
             }
         }
-        notify(url, listener, urls);
+        notify(url, listener, toUrlWithEmpty(url, urls));
     }
 
     private static URL instanceToURL(Instance instance) {
@@ -173,6 +177,17 @@ public class PolarisRegistry extends FailbackRegistry {
                 instance.getPort(),
                 newMetadata.get(PATH_KEY),
                 newMetadata);
+    }
+
+    private List<URL> toUrlWithEmpty(URL providerUrl, List<URL> urls) {
+        if (CollectionUtils.isEmpty(urls)) {
+            LOGGER.warn("[POLARIS] received empty url address list, will clear current available addresses");
+            URL empty = providerUrl
+                    .setProtocol(EMPTY_PROTOCOL)
+                    .addParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
+            urls.add(empty);
+        }
+        return urls;
     }
 
     @Override
