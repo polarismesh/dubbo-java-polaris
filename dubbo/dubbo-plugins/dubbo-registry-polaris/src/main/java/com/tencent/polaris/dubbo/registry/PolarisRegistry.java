@@ -70,8 +70,7 @@ public class PolarisRegistry extends FailbackRegistry {
     // for test
     public PolarisRegistry(URL url, BootConfigHandler... handlers) {
         super(url);
-        polarisOperator = new PolarisOperator(url.getHost(), url.getPort(), url.getParameters(), handlers);
-        PolarisOperators.INSTANCE.addPolarisOperator(polarisOperator);
+        polarisOperator = PolarisOperators.INSTANCE.loadOrStore(url.getHost(), url.getPort(), url.getParameters(), handlers);
     }
 
     @Override

@@ -17,8 +17,14 @@
 
 package com.tencent.polaris.common.registry;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 public class PolarisOperators {
 
@@ -30,11 +36,10 @@ public class PolarisOperators {
     public static final PolarisOperators INSTANCE = new PolarisOperators();
 
     public PolarisOperator loadOrStore(String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
-        return null;
-    }
-
-    public void addPolarisOperator(PolarisOperator polarisOperator) {
-        polarisOperatorMap.put(polarisOperator.getPolarisConfig().getRegistryAddress(), polarisOperator);
+        Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.EMPTY_MAP);
+        String key = host + ":" + port + "|hash_code:" + params.hashCode();
+        PolarisOperator saveVal = polarisOperatorMap.computeIfAbsent(key, s -> new PolarisOperator(host, port, parameters, handlers));
+        return saveVal;
     }
 
     public PolarisOperator getPolarisOperator(String host, int port) {
