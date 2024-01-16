@@ -17,11 +17,6 @@
     <artifactId>dubbo-examples</artifactId>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>dubbo-api-example</module>
-        <module>dubbo-discovery-example</module>
-    </modules>
-
     <profiles>
         <!-- For jdk 11 above JavaEE annotation -->
         <profile>
