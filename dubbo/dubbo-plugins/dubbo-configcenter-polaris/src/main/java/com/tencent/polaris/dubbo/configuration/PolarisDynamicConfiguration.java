@@ -55,7 +55,7 @@ public class PolarisDynamicConfiguration implements DynamicConfiguration {
     private Map<String, Set<ConfigurationListener>> listeners = new ConcurrentHashMap<>();
 
     PolarisDynamicConfiguration(URL url) {
-        this.operator = PolarisOperators.loadOrStoreForConfig(url.getHost(), url.getPort(), url.getParameters());
+        this.operator = PolarisOperators.INSTANCE.loadOrStoreForConfig(url.getHost(), url.getPort(), url.getParameters());
         this.polarisConfig = operator.getPolarisConfig();
         this.fileQuerier = operator.getConfigFileAPI();
         this.filePublisher = operator.getConfigFilePublishAPI();

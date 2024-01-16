@@ -41,6 +41,7 @@ import org.apache.dubbo.rpc.cluster.router.AbstractRouter;
 import org.apache.dubbo.rpc.cluster.router.RouterResult;
 import org.apache.dubbo.rpc.model.ApplicationModel;
 import org.apache.dubbo.rpc.model.ScopeModelAware;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,7 +49,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class PolarisRouter extends AbstractRouter implements ScopeModelAware {
 
@@ -67,7 +67,7 @@ public class PolarisRouter extends AbstractRouter implements ScopeModelAware {
         logger.info(String.format("[POLARIS] init service router, url is %s, parameters are %s", url,
                 url.getParameters()));
         this.routeRuleHandler = new RuleHandler();
-        this.operator = PolarisOperators.getGovernancePolarisOperator();
+        this.operator = PolarisOperators.INSTANCE.getGovernancePolarisOperator();
         this.parser = QueryParser.load();
     }
 
@@ -76,55 +76,40 @@ public class PolarisRouter extends AbstractRouter implements ScopeModelAware {
         if (CollectionUtils.isEmpty(invokers) || Objects.isNull(operator)) {
             return new RouterResult<>(invokers);
         }
-        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeRemoteDubboServiceInfo(invokers.get(0), invocation);
+        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, url, invocation);
         for (DubboServiceInfo serviceInfo : serviceInfos) {
-            RouterResult<Invoker<T>> result = realRoute(invokers, url, invocation, serviceInfo);
-            if (!result.getResult().isEmpty()) {
-                return result;
-            }
+           RouterResult<Invoker<T>> result = realRoute(invokers, url, invocation, serviceInfo);
+           if (!result.getResult().isEmpty()) {
+               return result;
+           }
         }
         return new RouterResult<>(invokers);
     }
 
     @SuppressWarnings("unchecked")
     public <T> RouterResult<Invoker<T>> realRoute(List<Invoker<T>> invokers, URL url, Invocation invocation, DubboServiceInfo serviceInfo) {
-        List<Instance> dubboInstances = new ArrayList<>(invokers.size());
+        List<Instance> instances = new ArrayList<>(invokers.size());
         for (Invoker<T> invoker : invokers) {
-            dubboInstances.add(new InstanceInvoker<>(invoker, serviceInfo, operator.getPolarisConfig().getNamespace()));
+            instances.add(new InstanceInvoker<>(invoker, null, operator.getPolarisConfig().getNamespace()));
         }
-        // 这里先把熔断的实例过滤掉
-        List<Instance> instances = dubboInstances.stream().filter(operator::checkCircuitBreakerPassing).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(instances)) {
-            instances = dubboInstances;
-        }
-
         ServiceRule serviceRule = operator.getServiceRule(serviceInfo.getService(), EventType.ROUTING);
         Object ruleObject = serviceRule.getRule();
         if (Objects.isNull(ruleObject)) {
-            return new RouterResult<>((List<Invoker<T>>) ((List<?>) instances));
+            return new RouterResult<>(invokers);
         }
         Set<RouteArgument> arguments = new HashSet<>();
         RoutingProto.Routing routing = (RoutingProto.Routing) ruleObject;
         Set<String> routeLabels = routeRuleHandler.getRouteLabels(routing);
         for (String routeLabel : routeLabels) {
-            // 接口全路径名称，仅支持 Dubbo 应用级注册场景
             if (StringUtils.equals(RouteArgument.LABEL_KEY_PATH, routeLabel)) {
-                if (StringUtils.isNotBlank(serviceInfo.getDubboInterface())) {
-                    arguments.add(RouteArgument.buildPath(serviceInfo.getDubboInterface()));
-                }
-            }
-            // 设置具体的 Dubbo interface 下的某一个 method 名称
-            if (StringUtils.equals(RouteArgument.LABEL_KEY_METHOD, routeLabel)) {
-                arguments.add(RouteArgument.buildMethod(invocation.getMethodName()));
-            }
-            if (routeLabel.startsWith(RouteArgument.LABEL_KEY_HEADER)) {
+                arguments.add(RouteArgument.buildPath(invocation.getMethodName()));
+            } else if (routeLabel.startsWith(RouteArgument.LABEL_KEY_HEADER)) {
                 String headerName = routeLabel.substring(RouteArgument.LABEL_KEY_HEADER.length());
                 String value = RpcContext.getClientAttachment().getAttachment(headerName);
                 if (!StringUtils.isBlank(value)) {
                     arguments.add(RouteArgument.buildHeader(headerName, value));
                 }
-            }
-            if (routeLabel.startsWith(RouteArgument.LABEL_KEY_QUERY)) {
+            } else if (routeLabel.startsWith(RouteArgument.LABEL_KEY_QUERY)) {
                 String queryName = routeLabel.substring(RouteArgument.LABEL_KEY_QUERY.length());
                 if (!StringUtils.isBlank(queryName)) {
                     Optional<String> value = parser.parse(queryName, invocation.getArguments());
@@ -142,5 +127,4 @@ public class PolarisRouter extends AbstractRouter implements ScopeModelAware {
     public void setApplicationModel(ApplicationModel applicationModel) {
         this.applicationModel = applicationModel;
     }
-
 }
