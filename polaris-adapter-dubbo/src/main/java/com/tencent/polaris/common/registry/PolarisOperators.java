@@ -28,35 +28,42 @@ import java.util.function.Function;
 
 public class PolarisOperators {
 
-    private final Map<String, PolarisOperator> polarisOperatorMap = new ConcurrentHashMap<>();
+    enum OperatorType {
+        GOVERNANCE,
+        CONFIG,
+    }
+
+    private final Map<OperatorType, Map<String, PolarisOperator>> polarisOperatorMap;
 
     private PolarisOperators() {
+        polarisOperatorMap = new ConcurrentHashMap<>();
+        polarisOperatorMap.put(OperatorType.GOVERNANCE, new ConcurrentHashMap<>());
+        polarisOperatorMap.put(OperatorType.CONFIG, new ConcurrentHashMap<>());
     }
 
     public static final PolarisOperators INSTANCE = new PolarisOperators();
 
-    public PolarisOperator loadOrStore(String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
-        Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.EMPTY_MAP);
+    public PolarisOperator loadOrStoreForGovernance(String host, int port, Map<String, String> parameters) {
+        Map<String, PolarisOperator> operatorMap = polarisOperatorMap.get(OperatorType.GOVERNANCE);
+        Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
         String key = host + ":" + port + "|hash_code:" + params.hashCode();
-        PolarisOperator saveVal = polarisOperatorMap.computeIfAbsent(key, s -> new PolarisOperator(host, port, parameters, handlers));
-        return saveVal;
+        return operatorMap.computeIfAbsent(key, s -> new PolarisOperator(OperatorType.GOVERNANCE, host, port, parameters, new BaseBootConfigHandler()));
     }
 
-    public PolarisOperator getPolarisOperator(String host, int port) {
-        String address = String.format("%s:%d", host, port);
-        return polarisOperatorMap.get(address);
+    public PolarisOperator loadOrStoreForConfig(String host, int port, Map<String, String> parameters) {
+        Map<String, PolarisOperator> operatorMap = polarisOperatorMap.get(OperatorType.CONFIG);
+        Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
+        String key = host + ":" + port + "|hash_code:" + params.hashCode();
+        return operatorMap.computeIfAbsent(key, s -> new PolarisOperator(OperatorType.CONFIG, host, port, parameters, new BaseBootConfigHandler()));
     }
 
-    public PolarisOperator getFirstPolarisOperator() {
-        if (polarisOperatorMap.isEmpty()) {
+
+    public PolarisOperator getGovernancePolarisOperator() {
+        Map<String, PolarisOperator> operatorMap = polarisOperatorMap.get(OperatorType.GOVERNANCE);
+        if (operatorMap.isEmpty()) {
             return null;
         }
-        return polarisOperatorMap.values().iterator().next();
-    }
-
-    public void deletePolarisOperator(String host, int port) {
-        String address = String.format("%s:%d", host, port);
-        polarisOperatorMap.remove(address);
+        return operatorMap.values().iterator().next();
     }
 
 }

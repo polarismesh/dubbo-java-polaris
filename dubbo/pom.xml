@@ -13,42 +13,9 @@
     <artifactId>dubbo</artifactId>
     <packaging>pom</packaging>
 
-    <properties>
-        <apache.dubbo.version>2.7.18</apache.dubbo.version>
-    </properties>
-
     <modules>
         <module>dubbo-plugins</module>
         <module>dubbo-examples</module>
     </modules>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo</artifactId>
-                <version>${apache.dubbo.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo-config-api</artifactId>
-                <version>${apache.dubbo.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo-rpc-dubbo</artifactId>
-                <version>${apache.dubbo.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo-remoting-netty4</artifactId>
-                <version>${apache.dubbo.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo-serialization-hessian2</artifactId>
-                <version>${apache.dubbo.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 </project>

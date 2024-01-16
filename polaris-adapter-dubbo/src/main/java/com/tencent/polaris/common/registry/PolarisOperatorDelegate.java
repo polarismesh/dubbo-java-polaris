@@ -17,13 +17,23 @@
 
 package com.tencent.polaris.common.registry;
 
-public class PolarisOperatorDelegate {
+import org.apache.dubbo.rpc.model.ApplicationModel;
+import org.apache.dubbo.rpc.model.ScopeModelAware;
+
+public class PolarisOperatorDelegate implements ScopeModelAware {
 
     private PolarisOperator polarisOperator;
 
     private final Object lock = new Object();
 
-    public PolarisOperator getPolarisOperator() {
+    protected ApplicationModel applicationModel;
+
+    @Override
+    public void setApplicationModel(ApplicationModel applicationModel) {
+        this.applicationModel = applicationModel;
+    }
+
+    public PolarisOperator getGovernancePolarisOperator() {
         if (null != polarisOperator) {
             return polarisOperator;
         }
@@ -31,8 +41,12 @@ public class PolarisOperatorDelegate {
             if (null != polarisOperator) {
                 return polarisOperator;
             }
-            polarisOperator = PolarisOperators.INSTANCE.getFirstPolarisOperator();
+            polarisOperator = PolarisOperators.INSTANCE.getGovernancePolarisOperator();
             return polarisOperator;
         }
+    }
+
+    protected String formatCode(Object val) {
+        return "POLARIS:" + val;
     }
 }

@@ -22,8 +22,10 @@ import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 import com.tencent.polaris.common.exception.PolarisBlockException;
+import com.tencent.polaris.common.registry.DubboServiceInfo;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperatorDelegate;
+import com.tencent.polaris.common.utils.DubboUtils;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.extension.Activate;
@@ -33,8 +35,12 @@ import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.Result;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
+import org.apache.dubbo.rpc.model.ApplicationModel;
+import org.apache.dubbo.rpc.model.ScopeModelAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 @Activate(group = CommonConstants.CONSUMER, order = Integer.MIN_VALUE)
 public class ReportFilter extends PolarisOperatorDelegate implements Filter, Filter.Listener {
@@ -42,6 +48,8 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 	private static final String LABEL_START_TIME = "reporter_filter_start_time";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReportFilter.class);
+
+	private ApplicationModel applicationModel;
 
 	public ReportFilter() {
 		LOGGER.info("[POLARIS] init polaris reporter");
@@ -55,26 +63,29 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 
 	@Override
 	public void onResponse(Result appResponse, Invoker<?> invoker, Invocation invocation) {
-        PolarisOperator polarisOperator = getPolarisOperator();
-        if (null == polarisOperator) {
-            return;
-        }
-        Long startTimeMilli = (Long) invocation.get(LABEL_START_TIME);
-        RetStatus retStatus = RetStatus.RetSuccess;
-        int code = 0;
-        if (appResponse.hasException()) {
-            retStatus = RetStatus.RetFail;
-            code = -1;
-        }
-        URL url = invoker.getUrl();
-        long delay = System.currentTimeMillis() - startTimeMilli;
-        polarisOperator.reportInvokeResult(url.getServiceInterface(), invocation.getMethodName(), url.getHost(),
-                url.getPort(), RpcContext.getContext().getLocalHost(), delay, retStatus, code);
+		PolarisOperator polarisOperator = getGovernancePolarisOperator();
+		if (null == polarisOperator) {
+			return;
+		}
+		Long startTimeMilli = (Long) invocation.get(LABEL_START_TIME);
+		RetStatus retStatus = RetStatus.RetSuccess;
+		int code = 0;
+		if (appResponse.hasException()) {
+			retStatus = RetStatus.RetFail;
+			code = -1;
+		}
+		URL url = invoker.getUrl();
+		long delay = System.currentTimeMillis() - startTimeMilli;
+		List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, invoker, invocation);
+		for (DubboServiceInfo serviceInfo : serviceInfos) {
+			polarisOperator.reportInvokeResult(serviceInfo.getService(), serviceInfo.getReportMethodName(), url.getHost(),
+					url.getPort(), RpcContext.getServiceContext().getLocalHost(), delay, retStatus, code);
+		}
 	}
 
 	@Override
 	public void onError(Throwable t, Invoker<?> invoker, Invocation invocation) {
-		PolarisOperator polarisOperator = getPolarisOperator();
+		PolarisOperator polarisOperator = getGovernancePolarisOperator();
 		if (null == polarisOperator) {
 			return;
 		}
@@ -96,8 +107,11 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 		}
 		URL url = invoker.getUrl();
 		long delay = System.currentTimeMillis() - startTimeMilli;
-		polarisOperator.reportInvokeResult(url.getServiceInterface(), invocation.getMethodName(), url.getHost(),
-				url.getPort(), RpcContext.getContext().getLocalHost(), delay, retStatus, code);
+		List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, invoker, invocation);
+		for (DubboServiceInfo serviceInfo : serviceInfos) {
+			polarisOperator.reportInvokeResult(serviceInfo.getService(), serviceInfo.getReportMethodName(), url.getHost(),
+					url.getPort(), RpcContext.getServiceContext().getLocalHost(), delay, retStatus, code);
+		}
 	}
 
     private boolean isFlowControl(RpcException rpcException) {
@@ -106,4 +120,5 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
         boolean b = rpcException.isLimitExceed();
         return a || b;
     }
+
 }

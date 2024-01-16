@@ -29,15 +29,13 @@ public interface QueryParser {
 
     static QueryParser load() {
         ServiceLoader<QueryParser> loader = ServiceLoader.load(QueryParser.class);
-        QueryParser instance = loader.iterator().next();
-        if (Objects.nonNull(instance)) {
-            return instance;
+        if (loader.iterator().hasNext()) {
+            QueryParser instance = loader.iterator().next();
+            if (Objects.nonNull(instance)) {
+                return instance;
+            }
         }
-        String parser = System.getProperty("dubbo.polaris.query_parser");
-        if (parser.equals("JsonPath")) {
-            return new JsonPathQueryParser();
-        }
-        return new JavaObjectQueryParser();
+        return new JsonPathQueryParser();
     }
 
 }

@@ -11,7 +11,6 @@
     <modules>
         <module>polaris-adapter-dubbo</module>
         <module>dubbo</module>
-        <module>dubbox</module>
     </modules>
     <name>Polaris Parent</name>
     <description>Dubbox Java Polaris POM</description>
@@ -38,7 +37,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>0.2.3-SNAPSHOT</revision>
+        <revision>0.1.0-3.2.7-SNAPSHOT</revision>
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -52,7 +51,8 @@
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
-        <polaris.version>1.12.10</polaris.version>
+        <polaris.version>1.15.0-SNAPSHOT</polaris.version>
+        <apache.dubbo.version>3.2.7</apache.dubbo.version>
         <slf4j.version>1.7.25</slf4j.version>
         <json_path_version>2.8.0</json_path_version>
     </properties>

@@ -23,92 +23,108 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.parser.QueryParser;
+import com.tencent.polaris.common.registry.DubboServiceInfo;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.router.RuleHandler;
+import com.tencent.polaris.common.utils.DubboUtils;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
+import org.apache.dubbo.common.logger.LoggerFactory;
+import org.apache.dubbo.common.utils.CollectionUtils;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
-import org.apache.dubbo.rpc.cluster.Constants;
 import org.apache.dubbo.rpc.cluster.router.AbstractRouter;
+import org.apache.dubbo.rpc.cluster.router.RouterResult;
+import org.apache.dubbo.rpc.model.ApplicationModel;
+import org.apache.dubbo.rpc.model.ScopeModelAware;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public class PolarisRouter extends AbstractRouter {
+public class PolarisRouter extends AbstractRouter implements ScopeModelAware {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PolarisRouter.class);
+    protected final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(getClass());
 
     private final RuleHandler routeRuleHandler;
 
-    private final PolarisOperator polarisOperator;
+    private final PolarisOperator operator;
 
     private final QueryParser parser;
 
+    private ApplicationModel applicationModel;
+
     public PolarisRouter(URL url) {
         super(url);
-        LOGGER.info("[POLARIS] init service router, url is {}, parameters are {}", url,
-                url.getParameters());
-        this.priority = url.getParameter(Constants.PRIORITY_KEY, 0);
-        routeRuleHandler = new RuleHandler();
-        polarisOperator = PolarisOperators.INSTANCE.getPolarisOperator(url.getHost(), url.getPort());
-        parser = QueryParser.load();
+        logger.info(String.format("[POLARIS] init service router, url is %s, parameters are %s", url,
+                url.getParameters()));
+        this.routeRuleHandler = new RuleHandler();
+        this.operator = PolarisOperators.INSTANCE.getGovernancePolarisOperator();
+        this.parser = QueryParser.load();
     }
 
     @Override
-    public <T> List<Invoker<T>> route(List<Invoker<T>> invokers, URL url, Invocation invocation) throws RpcException {
-        if (null == invokers || invokers.size() == 0) {
-            return invokers;
+    public <T> RouterResult<Invoker<T>> route(List<Invoker<T>> invokers, URL url, Invocation invocation, boolean needToPrintMessage) throws RpcException {
+        if (CollectionUtils.isEmpty(invokers) || Objects.isNull(operator)) {
+            return new RouterResult<>(invokers);
         }
-        if (null == polarisOperator) {
-            return invokers;
+        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, url, invocation);
+        for (DubboServiceInfo serviceInfo : serviceInfos) {
+           RouterResult<Invoker<T>> result = realRoute(invokers, url, invocation, serviceInfo);
+           if (!result.getResult().isEmpty()) {
+               return result;
+           }
         }
-        List<Instance> instances;
-        if (invokers.get(0) instanceof Instance) {
-            instances = (List<Instance>) ((List<?>) invokers);
-        } else {
-            instances = new ArrayList<>();
-            for (Invoker<T> invoker : invokers) {
-                instances.add(new InstanceInvoker<>(invoker, polarisOperator.getPolarisConfig().getNamespace()));
-            }
-        }
+        return new RouterResult<>(invokers);
+    }
 
-        String service = url.getServiceInterface();
-        ServiceRule serviceRule = polarisOperator.getServiceRule(service, EventType.ROUTING);
+    @SuppressWarnings("unchecked")
+    public <T> RouterResult<Invoker<T>> realRoute(List<Invoker<T>> invokers, URL url, Invocation invocation, DubboServiceInfo serviceInfo) {
+        List<Instance> instances = new ArrayList<>(invokers.size());
+        for (Invoker<T> invoker : invokers) {
+            instances.add(new InstanceInvoker<>(invoker, null, operator.getPolarisConfig().getNamespace()));
+        }
+        ServiceRule serviceRule = operator.getServiceRule(serviceInfo.getService(), EventType.ROUTING);
         Object ruleObject = serviceRule.getRule();
+        if (Objects.isNull(ruleObject)) {
+            return new RouterResult<>(invokers);
+        }
         Set<RouteArgument> arguments = new HashSet<>();
-        if (null != ruleObject) {
-            RoutingProto.Routing routing = (RoutingProto.Routing) ruleObject;
-            Set<String> routeLabels = routeRuleHandler.getRouteLabels(routing);
-            for (String routeLabel : routeLabels) {
-                if (StringUtils.equals(RouteArgument.LABEL_KEY_PATH, routeLabel)) {
-                    arguments.add(RouteArgument.buildPath(invocation.getMethodName()));
-                } else if (routeLabel.startsWith(RouteArgument.LABEL_KEY_HEADER)) {
-                    String headerName = routeLabel.substring(RouteArgument.LABEL_KEY_HEADER.length());
-                    String value = RpcContext.getContext().getAttachment(headerName);
-                    if (!StringUtils.isBlank(value)) {
-                        arguments.add(RouteArgument.buildHeader(headerName, value));
-                    }
-                } else if (routeLabel.startsWith(RouteArgument.LABEL_KEY_QUERY)) {
-                    String queryName = routeLabel.substring(RouteArgument.LABEL_KEY_QUERY.length());
-                    if (!StringUtils.isBlank(queryName)) {
-                        Optional<String> value = parser.parse(queryName, invocation.getArguments());
-                        value.ifPresent(s -> arguments.add(RouteArgument.buildQuery(queryName, s)));
-                    }
+        RoutingProto.Routing routing = (RoutingProto.Routing) ruleObject;
+        Set<String> routeLabels = routeRuleHandler.getRouteLabels(routing);
+        for (String routeLabel : routeLabels) {
+            if (StringUtils.equals(RouteArgument.LABEL_KEY_PATH, routeLabel)) {
+                arguments.add(RouteArgument.buildPath(invocation.getMethodName()));
+            } else if (routeLabel.startsWith(RouteArgument.LABEL_KEY_HEADER)) {
+                String headerName = routeLabel.substring(RouteArgument.LABEL_KEY_HEADER.length());
+                String value = RpcContext.getClientAttachment().getAttachment(headerName);
+                if (!StringUtils.isBlank(value)) {
+                    arguments.add(RouteArgument.buildHeader(headerName, value));
+                }
+            } else if (routeLabel.startsWith(RouteArgument.LABEL_KEY_QUERY)) {
+                String queryName = routeLabel.substring(RouteArgument.LABEL_KEY_QUERY.length());
+                if (!StringUtils.isBlank(queryName)) {
+                    Optional<String> value = parser.parse(queryName, invocation.getArguments());
+                    value.ifPresent(s -> arguments.add(RouteArgument.buildQuery(queryName, s)));
                 }
             }
         }
-        LOGGER.debug("[POLARIS] list service {}, method {}, labels {}, url {}", service,
-                invocation.getMethodName(), arguments, url);
-        List<Instance> resultInstances = polarisOperator.route(service, invocation.getMethodName(), arguments, instances);
-        return (List<Invoker<T>>) ((List<?>) resultInstances);
+        logger.debug(String.format("[POLARIS] list service(%s), method(%s), labels(%s), url(%s)", serviceInfo.getService(),
+                invocation.getMethodName(), arguments, url));
+        List<Instance> resultInstances = operator.route(serviceInfo.getService(), invocation.getMethodName(), arguments, instances);
+        return new RouterResult<>((List<Invoker<T>>) ((List<?>) resultInstances));
+    }
+
+    @Override
+    public void setApplicationModel(ApplicationModel applicationModel) {
+        this.applicationModel = applicationModel;
     }
 }
