@@ -15,6 +15,7 @@
 
     <modules>
         <module>dubbo-plugins</module>
+        <module>dubbo-examples</module>
     </modules>
 
 </project>

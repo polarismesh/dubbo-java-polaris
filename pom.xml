@@ -11,10 +11,6 @@
     <modules>
         <module>polaris-adapter-dubbo</module>
         <module>dubbo</module>
-        <module>dubbo/dubbo-examples</module>
-        <module>dubbo/dubbo-examples/dubbo-discovery-example</module>
-        <module>dubbo/dubbo-examples/dubbo-discovery-example/provider</module>
-        <module>dubbo/dubbo-examples/dubbo-api-example</module>
     </modules>
     <name>Polaris Parent</name>
     <description>Dubbox Java Polaris POM</description>

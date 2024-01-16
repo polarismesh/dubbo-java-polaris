@@ -10,7 +10,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>provider</artifactId>
+    <artifactId>dubbo-quick-consumer</artifactId>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -63,31 +63,21 @@
             <version>${revision}</version>
         </dependency>
 
-        <!--    引入 polaris 注册能力    -->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>dubbo-registry-polaris</artifactId>
             <version>${revision}</version>
         </dependency>
 
-        <!--    引入 polaris 元数据中心能力    -->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>dubbo-metadatareport-polaris</artifactId>
             <version>${revision}</version>
         </dependency>
 
-        <!--    引入 polaris 配置中心能力    -->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>dubbo-configcenter-polaris</artifactId>
-            <version>${revision}</version>
-        </dependency>
-
-        <!--    引入 polaris 限流能力    -->
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>dubbo-ratelimit-polaris</artifactId>
             <version>${revision}</version>
         </dependency>
 
@@ -109,5 +99,42 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.tencent.polaris.dubbo.discovery.example.consumer.Main
+                                    </mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
