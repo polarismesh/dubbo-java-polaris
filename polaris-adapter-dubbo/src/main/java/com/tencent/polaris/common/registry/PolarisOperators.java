@@ -40,6 +40,7 @@ public class PolarisOperators {
         polarisOperatorMap = new ConcurrentHashMap<>();
         polarisOperatorMap.put(OperatorType.GOVERNANCE, new ConcurrentHashMap<>());
         polarisOperatorMap.put(OperatorType.CONFIG, new ConcurrentHashMap<>());
+        polarisOperatorMap.put(OperatorType.METADATA_REPORT, new ConcurrentHashMap<>());
     }
 
     private static final PolarisOperators INSTANCE = new PolarisOperators();

@@ -51,8 +51,8 @@ public class DubboServiceInfo {
         this.methodName = methodName;
     }
 
-    public String getDubboInterface() {
-        if (StringUtils.isNotBlank(interfaceName)) {
+    public String getRateLimitInterface() {
+        if (StringUtils.isEmpty(interfaceName)) {
             return interfaceName;
         }
         return methodName;
