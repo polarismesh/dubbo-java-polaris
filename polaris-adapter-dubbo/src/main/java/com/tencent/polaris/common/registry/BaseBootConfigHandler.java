@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import java.util.Map;
 import org.slf4j.Logger;

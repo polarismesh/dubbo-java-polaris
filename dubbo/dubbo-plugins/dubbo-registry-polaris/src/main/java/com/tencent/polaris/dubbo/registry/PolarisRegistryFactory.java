@@ -17,11 +17,23 @@
 package com.tencent.polaris.dubbo.registry;
 
 
+import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.common.utils.Consts;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.registry.Registry;
 import org.apache.dubbo.registry.support.AbstractRegistryFactory;
 
 public class PolarisRegistryFactory extends AbstractRegistryFactory {
+
+    @Override
+    protected String createRegistryCacheKey(URL url) {
+        String namespace = url.getParameter(Consts.KEY_NAMESPACE);
+        url = URL.valueOf(url.toServiceStringWithoutResolving());
+        if (StringUtils.isNotEmpty(namespace)) {
+            url = url.addParameter(Consts.KEY_NAMESPACE, namespace);
+        }
+        return url.toFullString();
+    }
 
     @Override
     protected Registry createRegistry(URL url) {

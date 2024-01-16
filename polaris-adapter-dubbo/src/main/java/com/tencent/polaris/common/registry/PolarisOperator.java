@@ -19,7 +19,6 @@ package com.tencent.polaris.common.registry;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
-import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
@@ -45,8 +44,10 @@ import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
+import com.tencent.polaris.configuration.factory.ConfigFileServicePublishFactory;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.api.RouterAPIFactory;
@@ -61,14 +62,13 @@ import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import shade.polaris.com.google.protobuf.Message;
 
 public class PolarisOperator {
 
@@ -88,29 +88,39 @@ public class PolarisOperator {
 
     private CircuitBreakAPI circuitBreakAPI;
 
-    public PolarisOperator(String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
-        polarisConfig = new PolarisConfig(host, port, parameters);
-        init(parameters, handlers);
+    private ConfigFileService configFileAPI;
+
+    private ConfigFilePublishService configFilePublishAPI;
+
+    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
+        polarisConfig = new PolarisConfig(operatorType, host, port, parameters);
+        init(operatorType, parameters, handlers);
     }
 
-    private void init(Map<String, String> parameters, BootConfigHandler... handlers) {
+    private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters, BootConfigHandler... handlers) {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
-        configuration.getGlobal().getServerConnector()
-                .setAddresses(Collections.singletonList(polarisConfig.getRegistryAddress()));
-        configuration.getConfigFile().getServerConnector()
-                .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
         if (null != handlers && handlers.length > 0) {
             for (BootConfigHandler bootConfigHandler : handlers) {
                 bootConfigHandler.handle(parameters, configuration);
             }
         }
+
+        // 设置服务治理连接地址
+        configuration.getGlobal().getServerConnector()
+                .setAddresses(Collections.singletonList(polarisConfig.getDiscoverAddress()));
+        // 设置配置中心连接地址
+        configuration.getConfigFile().getServerConnector()
+                .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
         sdkContext = SDKContext.initContextByConfig(configuration);
         consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
         providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
         limitAPI = LimitAPIFactory.createLimitAPIByContext(sdkContext);
         routerAPI = RouterAPIFactory.createRouterAPIByContext(sdkContext);
         circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByContext(sdkContext);
+        // 
+        configFileAPI = ConfigFileServiceFactory.createConfigFileService(sdkContext);
+        configFilePublishAPI = ConfigFileServicePublishFactory.createConfigFilePublishService(sdkContext);
     }
 
     public void destroy() {
@@ -121,7 +131,7 @@ public class PolarisOperator {
      * 服务注册
      */
     public void register(String service, String host, int port, String protocol, String version, int weight,
-            Map<String, String> metadata) {
+                         Map<String, String> metadata) {
         LOGGER.info(
                 "[POLARIS] start to register: service {}, host {}, port {}， protocol {}, version {}, weight {}, metadata {}",
                 service, host, port, protocol, version, weight, metadata);
@@ -194,7 +204,7 @@ public class PolarisOperator {
      * @param delay 本次服务调用延迟，单位ms
      */
     public void reportInvokeResult(String service, String method, String host, int port, String callerIp, long delay, RetStatus retStatus,
-            int code) {
+                                   int code) {
         ServiceCallResult serviceCallResult = new ServiceCallResult();
         serviceCallResult.setNamespace(polarisConfig.getNamespace());
         serviceCallResult.setService(service);
@@ -268,23 +278,31 @@ public class PolarisOperator {
         return polarisConfig;
     }
 
-    public  ConsumerAPI getConsumerAPI() {
+    public ConsumerAPI getConsumerAPI() {
         return consumerAPI;
     }
 
-    public  ProviderAPI getProviderAPI() {
+    public ProviderAPI getProviderAPI() {
         return providerAPI;
     }
 
-    public  LimitAPI getLimitAPI() {
+    public LimitAPI getLimitAPI() {
         return limitAPI;
     }
 
-    public  RouterAPI getRouterAPI() {
+    public RouterAPI getRouterAPI() {
         return routerAPI;
     }
 
-    public  CircuitBreakAPI getCircuitBreakAPI() {
+    public ConfigFileService getConfigFileAPI() {
+        return configFileAPI;
+    }
+
+    public ConfigFilePublishService getConfigFilePublishAPI() {
+        return configFilePublishAPI;
+    }
+
+    public CircuitBreakAPI getCircuitBreakAPI() {
         return circuitBreakAPI;
     }
 }

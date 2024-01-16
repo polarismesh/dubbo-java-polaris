@@ -20,10 +20,8 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.common.registry.BaseBootConfigHandler;
-import com.tencent.polaris.common.registry.BootConfigHandler;
-import com.tencent.polaris.common.registry.Consts;
-import com.tencent.polaris.common.registry.ConvertUtils;
+import com.tencent.polaris.common.utils.Consts;
+import com.tencent.polaris.common.utils.ConvertUtils;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import org.apache.dubbo.common.URL;
@@ -64,13 +62,8 @@ public class PolarisRegistry extends FailbackRegistry {
     private final PolarisOperator polarisOperator;
 
     public PolarisRegistry(URL url) {
-        this(url, new BaseBootConfigHandler());
-    }
-
-    // for test
-    public PolarisRegistry(URL url, BootConfigHandler... handlers) {
         super(url);
-        polarisOperator = PolarisOperators.INSTANCE.loadOrStore(url.getHost(), url.getPort(), url.getParameters(), handlers);
+        polarisOperator = PolarisOperators.INSTANCE.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
     }
 
     @Override
@@ -84,7 +77,7 @@ public class PolarisRegistry extends FailbackRegistry {
         int port = url.getPort();
         if (port > 0) {
             int weight = url.getParameter(Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT);
-            String version = url.getParameter(CommonConstants.VERSION_KEY, "");
+            String version = url.getParameter(CommonConstants.VERSION_KEY, "1.0.0");
             polarisOperator.register(url.getServiceInterface(), url.getHost(), port, url.getProtocol(), version, weight,
                     metadata);
             registeredInstances.add(url);
@@ -94,7 +87,7 @@ public class PolarisRegistry extends FailbackRegistry {
     }
 
     private boolean shouldRegister(URL url) {
-        return !StringUtils.equals(url.getProtocol(), CommonConstants.CONSUMER);
+        return StringUtils.equals(url.getProtocol(), CommonConstants.PROVIDER);
     }
 
     @Override

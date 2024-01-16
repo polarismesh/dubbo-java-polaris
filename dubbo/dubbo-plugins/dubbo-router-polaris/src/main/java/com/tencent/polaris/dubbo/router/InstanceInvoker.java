@@ -25,7 +25,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
-import com.tencent.polaris.common.registry.Consts;
+import com.tencent.polaris.common.registry.DubboServiceInfo;
+import com.tencent.polaris.common.utils.Consts;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.rpc.Invocation;
@@ -44,7 +45,7 @@ public class InstanceInvoker<T> implements Instance, Invoker<T> {
 
     private final DefaultInstance defaultInstance;
 
-    public InstanceInvoker(Invoker<T> invoker, String namespace) {
+    public InstanceInvoker(Invoker<T> invoker, DubboServiceInfo serviceInfo, String namespace) {
         this.invoker = invoker;
         defaultInstance = new DefaultInstance();
         defaultInstance.setNamespace(namespace);
