@@ -17,33 +17,20 @@
 
 package com.tencent.polaris.dubbo.discovery.example.provider;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
 
 public class Main {
-
-    private static final int LISTEN_PORT = 15700;
-
-    private static final String PATH = "/reload";
-
     public static void main(String[] args) throws Exception {
-        int defaultListenPort = Integer.getInteger("LISTEN_PORT", LISTEN_PORT);
-        HttpServer server = HttpServer.create(new InetSocketAddress(defaultListenPort), 0);
-        server.createContext(PATH, new EchoClientHandler());
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            server.stop(1);
-        }));
-        server.start();
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ConsumerConfiguration.class);
+        context.start();
+        System.out.println("dubbo service started");
+        new CountDownLatch(1).await();
     }
 
     @Configuration
@@ -53,24 +40,4 @@ public class Main {
     static class ConsumerConfiguration {
 
     }
-
-    private static class EchoClientHandler implements HttpHandler {
-
-        private AnnotationConfigApplicationContext context;
-
-        public EchoClientHandler() throws InterruptedException {
-            if ("true".equals(System.getenv("DELAY_REGISTER"))) {
-                TimeUnit.MINUTES.sleep(5);
-            }
-            context = new AnnotationConfigApplicationContext(ConsumerConfiguration.class);
-            context.start();
-        }
-
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            System.exit(0);
-        }
-
-    }
-
 }

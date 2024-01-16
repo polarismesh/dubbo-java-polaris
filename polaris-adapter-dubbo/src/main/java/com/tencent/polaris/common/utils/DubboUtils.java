@@ -16,7 +16,6 @@
 
 package com.tencent.polaris.common.utils;
 
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.registry.DubboServiceInfo;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.ConfigurationUtils;
@@ -32,14 +31,14 @@ import java.util.List;
 public class DubboUtils {
 
     // 这里需要获取注册粒度
+
     public static String getRegisterMode(ScopeModel model) {
         return ConfigurationUtils.getCachedDynamicProperty(model,
                 RegistryConstants.DUBBO_REGISTER_MODE_DEFAULT_KEY,
                 RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE);
     }
 
-    public static List<DubboServiceInfo> analyzeLocalDubboServiceInfo(ScopeModel model, Invoker<?> invoker, Invocation invocation) {
-        URL url = invoker.getUrl();
+    public static List<DubboServiceInfo> analyzeDubboServiceInfo(ScopeModel model, URL url, Invocation invocation) {
         String registerMode = getRegisterMode(model);
 
         switch (registerMode) {
@@ -73,30 +72,8 @@ public class DubboUtils {
         }
     }
 
-    public static List<DubboServiceInfo> analyzeRemoteDubboServiceInfo(Invoker invoker, Invocation invocation) {
-        URL url = invoker.getUrl();
-        return analyzeRemoteDubboServiceInfo(url, invocation);
-    }
-
-    public static List<DubboServiceInfo> analyzeRemoteDubboServiceInfo(URL url, Invocation invocation) {
-        List<DubboServiceInfo> serviceInfos = new ArrayList<>(2);
-        String remoteApplication = url.getApplication();
-
-        // 这里需要判断下用户是希望应用优先，还是接口优先，还是 both
-
-        // 判断下对方是否存在应用级名称
-        if (StringUtils.isNotBlank(remoteApplication)) {
-            serviceInfos.add(DubboServiceInfo.builder()
-                    .service(url.getRemoteApplication())
-                    .interfaceName(url.getServiceInterface())
-                    .methodName(invocation.getMethodName())
-                    .build());
-        }
-        serviceInfos.add(DubboServiceInfo.builder()
-                .service(url.getServiceInterface())
-                .methodName(invocation.getMethodName())
-                .build());
-        return serviceInfos;
+    public static List<DubboServiceInfo> analyzeDubboServiceInfo(ScopeModel model, Invoker invoker, Invocation invocation) {
+        return analyzeDubboServiceInfo(model, invoker.getUrl(), invocation);
     }
 
 }

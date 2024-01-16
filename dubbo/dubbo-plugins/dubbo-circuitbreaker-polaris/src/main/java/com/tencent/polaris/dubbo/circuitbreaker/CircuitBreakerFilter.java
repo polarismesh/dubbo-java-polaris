@@ -42,7 +42,6 @@ import org.apache.dubbo.rpc.Filter;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.Result;
-import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
 
 import java.util.List;
@@ -66,14 +65,13 @@ public class CircuitBreakerFilter extends PolarisOperatorDelegate implements Fil
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeRemoteDubboServiceInfo(invoker, invocation);
+        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, invoker, invocation);
         if (serviceInfos.isEmpty() || Objects.isNull(operator)) {
             return invoker.invoke(invocation);
         }
-        // 如果是熔断，只处理第一个的请求
         DubboServiceInfo firstService = serviceInfos.get(0);
 
-        InvokeContext.RequestContext context = new InvokeContext.RequestContext(createCalleeService(firstService), firstService.getDubboInterface());
+        InvokeContext.RequestContext context = new InvokeContext.RequestContext(createCalleeService(firstService), firstService.getInterfaceName());
         context.setResultToErrorCode(this);
         InvokeHandler handler = circuitBreakAPI.makeInvokeHandler(context);
         try {

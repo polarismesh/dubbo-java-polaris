@@ -49,6 +49,8 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReportFilter.class);
 
+	private ApplicationModel applicationModel;
+
 	public ReportFilter() {
 		LOGGER.info("[POLARIS] init polaris reporter");
 	}
@@ -74,7 +76,7 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 		}
 		URL url = invoker.getUrl();
 		long delay = System.currentTimeMillis() - startTimeMilli;
-		List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeRemoteDubboServiceInfo(invoker, invocation);
+		List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, invoker, invocation);
 		for (DubboServiceInfo serviceInfo : serviceInfos) {
 			polarisOperator.reportInvokeResult(serviceInfo.getService(), serviceInfo.getReportMethodName(), url.getHost(),
 					url.getPort(), RpcContext.getServiceContext().getLocalHost(), delay, retStatus, code);
@@ -105,7 +107,7 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 		}
 		URL url = invoker.getUrl();
 		long delay = System.currentTimeMillis() - startTimeMilli;
-		List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeRemoteDubboServiceInfo(invoker, invocation);
+		List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, invoker, invocation);
 		for (DubboServiceInfo serviceInfo : serviceInfos) {
 			polarisOperator.reportInvokeResult(serviceInfo.getService(), serviceInfo.getReportMethodName(), url.getHost(),
 					url.getPort(), RpcContext.getServiceContext().getLocalHost(), delay, retStatus, code);

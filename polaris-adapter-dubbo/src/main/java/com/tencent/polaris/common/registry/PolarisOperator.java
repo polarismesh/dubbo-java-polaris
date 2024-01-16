@@ -18,10 +18,7 @@ package com.tencent.polaris.common.registry;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
-import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
-import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
-import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
@@ -44,12 +41,9 @@ import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.client.pojo.ServiceRuleByProto;
-import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
@@ -58,7 +52,6 @@ import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
-import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
@@ -69,7 +62,6 @@ import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
-import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,8 +71,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class PolarisOperator {
-
-    protected static final ErrorTypeAwareLogger DUBBO_LOGGER = org.apache.dubbo.common.logger.LoggerFactory.getErrorTypeAwareLogger(PolarisOperator.class);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PolarisOperator.class);
 
@@ -110,54 +100,11 @@ public class PolarisOperator {
     private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters, BootConfigHandler... handlers) {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
-        if (null != handlers) {
+        if (null != handlers && handlers.length > 0) {
             for (BootConfigHandler bootConfigHandler : handlers) {
                 bootConfigHandler.handle(parameters, configuration);
             }
         }
-
-        PrometheusHandlerConfig prometheusHandlerConfig = configuration.getGlobal().getStatReporter()
-                .getPluginConfig("prometheus", PrometheusHandlerConfig.class);
-
-        // 如果设置了改开关
-        if (parameters.containsKey(Consts.KEY_METRIC_TYPE)) {
-            String statType = parameters.get(Consts.KEY_METRIC_TYPE);
-            switch (statType) {
-                case "push":
-                    String pushAddr = parameters.get(Consts.KEY_METRIC_PUSH_ADDR);
-                    if (StringUtils.isBlank(pushAddr)) {
-                        pushAddr = polarisConfig.getDiscoverAddress().split(":")[0] + ":9091";
-                    }
-                    configuration.getGlobal().getStatReporter().setEnable(true);
-                    prometheusHandlerConfig.setType("push");
-                    prometheusHandlerConfig.setAddress(pushAddr);
-
-                    // 默认为 10s
-                    long interval = 10 * 1000L;
-                    if (parameters.containsKey(Consts.KEY_METRIC_PUSH_INTERVAL)) {
-                        try {
-                            interval = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PUSH_INTERVAL));
-                        } catch (NumberFormatException ignore) {}
-                    }
-                    prometheusHandlerConfig.setPushInterval(interval);
-                    break;
-                case "pull":
-                    int port = 9091;
-                    if (parameters.containsKey(Consts.KEY_METRIC_PULL_PORT)) {
-                        try {
-                            port = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PULL_PORT));
-                        } catch (NumberFormatException ignore) {}
-                    }
-                    configuration.getGlobal().getStatReporter().setEnable(true);
-                    prometheusHandlerConfig.setType("pull");
-                    prometheusHandlerConfig.setPort(port);
-                    break;
-            }
-        } else {
-            configuration.getGlobal().getStatReporter().setEnable(false);
-        }
-        configuration.getGlobal().getStatReporter().setPluginConfig("prometheus", prometheusHandlerConfig);
-
 
         // 设置服务治理连接地址
         configuration.getGlobal().getServerConnector()
@@ -268,20 +215,7 @@ public class PolarisOperator {
         serviceCallResult.setRetStatus(retStatus);
         serviceCallResult.setRetCode(code);
         serviceCallResult.setCallerIp(callerIp);
-        serviceCallResult.setCallerService(new ServiceKey(polarisConfig.getNamespace(), ""));
-
-        InstanceResource resource = new InstanceResource(new ServiceKey(polarisConfig.getNamespace(), service), host, port, null);
-        ResourceStat stat = new ResourceStat(resource, code, delay, retStatus);
-
-        try {
-            consumerAPI.updateServiceCallResult(serviceCallResult);
-            circuitBreakAPI.report(stat);
-        } catch (PolarisException e) {
-            DUBBO_LOGGER.error(formatCode(e.getCode()),
-                    e.getMessage(),
-                    "",
-                    "report invoke result fail");
-        }
+        consumerAPI.updateServiceCallResult(serviceCallResult);
     }
 
     public List<Instance> route(String service, String method, Set<RouteArgument> arguments, List<Instance> instances) {
@@ -325,9 +259,6 @@ public class PolarisOperator {
     }
 
     public ServiceRule getServiceRule(String service, EventType eventType) {
-        if (StringUtils.isBlank(service)) {
-            return new ServiceRuleByProto();
-        }
         GetServiceRuleRequest getServiceRuleRequest = new GetServiceRuleRequest();
         getServiceRuleRequest.setNamespace(polarisConfig.getNamespace());
         getServiceRuleRequest.setService(service);
@@ -373,9 +304,5 @@ public class PolarisOperator {
 
     public CircuitBreakAPI getCircuitBreakAPI() {
         return circuitBreakAPI;
-    }
-
-    protected static String formatCode(Object val) {
-        return "POLARIS:" + val;
     }
 }

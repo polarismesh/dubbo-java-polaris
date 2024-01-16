@@ -21,10 +21,10 @@ import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.common.registry.PolarisOperator;
-import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.common.utils.ConvertUtils;
+import com.tencent.polaris.common.registry.PolarisOperator;
+import com.tencent.polaris.common.registry.PolarisOperators;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.URLBuilder;
 import org.apache.dubbo.common.constants.CommonConstants;
@@ -61,12 +61,11 @@ public class PolarisRegistry extends FailbackRegistry {
     private final Map<URL, Set<NotifyListener>> dubboListeners = new ConcurrentHashMap<>();
 
     private final Map<URL, ServiceListener> serviceListeners = new ConcurrentHashMap<>();
-
     private final PolarisOperator polarisOperator;
 
     public PolarisRegistry(URL url) {
         super(url);
-        polarisOperator = PolarisOperators.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
+        polarisOperator = PolarisOperators.INSTANCE.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
     }
 
     @Override
@@ -90,7 +89,7 @@ public class PolarisRegistry extends FailbackRegistry {
     }
 
     private boolean shouldRegister(URL url) {
-        return StringUtils.equals(url.getSide(), CommonConstants.PROVIDER);
+        return StringUtils.equals(url.getProtocol(), CommonConstants.PROVIDER);
     }
 
     @Override
@@ -201,7 +200,6 @@ public class PolarisRegistry extends FailbackRegistry {
     public boolean isAvailable() {
         return true;
     }
-
 
     private static class DubboServiceListener implements ServiceListener {
 
