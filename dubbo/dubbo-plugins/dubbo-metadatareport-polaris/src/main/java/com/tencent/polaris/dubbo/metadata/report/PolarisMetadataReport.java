@@ -85,7 +85,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     PolarisMetadataReport(URL url) {
         super(url);
-        this.operator = PolarisOperators.loadOrStoreForMetadataReport(url.getHost(), url.getPort(), url.getParameters());
+        this.operator = PolarisOperators.INSTANCE.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
         this.config = operator.getPolarisConfig();
         this.providerAPI = operator.getProviderAPI();
         this.consumerAPI = operator.getConsumerAPI();
