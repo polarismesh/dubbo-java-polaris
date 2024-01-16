@@ -65,7 +65,7 @@ public class PolarisRegistry extends FailbackRegistry {
 
     public PolarisRegistry(URL url) {
         super(url);
-        polarisOperator = PolarisOperators.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
+        polarisOperator = PolarisOperators.INSTANCE.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
     }
 
     @Override
@@ -89,7 +89,7 @@ public class PolarisRegistry extends FailbackRegistry {
     }
 
     private boolean shouldRegister(URL url) {
-        return StringUtils.equals(url.getSide(), CommonConstants.PROVIDER);
+        return StringUtils.equals(url.getProtocol(), CommonConstants.PROVIDER);
     }
 
     @Override

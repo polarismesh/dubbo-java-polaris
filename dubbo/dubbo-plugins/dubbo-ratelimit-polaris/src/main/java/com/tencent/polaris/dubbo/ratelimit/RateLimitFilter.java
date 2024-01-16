@@ -80,7 +80,7 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
         if (null == polarisOperator) {
             return invoker.invoke(invocation);
         }
-        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeLocalDubboServiceInfo(applicationModel, invoker, invocation);
+        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, invoker, invocation);
         for (DubboServiceInfo serviceInfo : serviceInfos) {
             checkRateLimit(invoker, invocation, serviceInfo);
         }
@@ -117,7 +117,7 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
         }
         QuotaResponse quotaResponse = null;
         try {
-            quotaResponse = operator.getQuota(serviceInfo.getService(), serviceInfo.getDubboInterface(), arguments);
+            quotaResponse = operator.getQuota(serviceInfo.getService(), serviceInfo.getReportMethodName(), arguments);
         } catch (PolarisException e) {
             Map<String, Object> externalParam = new HashMap<>();
             externalParam.put("serviceInfo", serviceInfo);

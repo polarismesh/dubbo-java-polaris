@@ -15,6 +15,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
+<<<<<<<< HEAD:dubbo/dubbo-examples/dubbo-governance-example/dubbo-governance-provider/src/main/java/com/tencent/polaris/dubbo/governance/example/provider/AnnotatePrintService.java
+package com.tencent.polaris.dubbo.governance.example.provider;
+
+import com.tencent.polaris.dubbo.example.api.PrintService;
+import org.apache.dubbo.config.annotation.DubboService;
+
+@DubboService(version = "1.0.0")
+public class AnnotatePrintService implements PrintService {
+
+    @Override
+    public String echo(String name) {
+        return "echo, " + name + ", source from " + System.getenv("POD_IP");    }
+}
+========
 package com.tencent.polaris.dubbo.discovery.example.provider;
 
 import com.tencent.polaris.dubbo.example.api.GreetingService;
@@ -23,14 +37,14 @@ import org.apache.dubbo.config.annotation.DubboService;
 @DubboService(version = "1.0.0")
 public class AnnotatedGreetingService implements GreetingService {
 
-    @Override
     public String sayHello(String name) {
-        return "hello, " + name + ", source from " + System.getenv("POD_IP");
+        return "hello, " + name;
     }
 
     @Override
     public String sayHi(String name) {
-        return "[provider by polaris] hi, " + name + ", source from " + System.getenv("POD_IP");
+        return "[provider by polaris] hi, " + name;
     }
 
 }
+>>>>>>>> 84880ef (feat:support dubbo3.2.x (#37)):dubbo/dubbo-examples/dubbo-discovery-example/dubbo-quick-provider/src/main/java/com/tencent/polaris/dubbo/discovery/example/provider/AnnotatedGreetingService.java
