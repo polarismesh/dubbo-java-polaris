@@ -13,7 +13,7 @@
         <module>dubbo</module>
     </modules>
     <name>Polaris Parent</name>
-    <description>Dubbox Java Polaris POM</description>
+    <description>Dubbo Java Polaris POM</description>
     <url>https://github.com/polarismesh/dubbox-java-polaris</url>
 
     <licenses>
