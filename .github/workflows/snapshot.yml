@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-      - release*
+      - dubbo-3.2.x
 
 jobs:
   check-snapshot:
