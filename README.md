@@ -4,10 +4,7 @@
 
 dubbo-java-polaris 是dubbo框架的扩展，便于使用dubbo框架开发的应用可以接入并使用北极星的各部分功能，
 
-支持以下2个dubbo版本的适配：
-
-- [Apache Dubbo](https://github.com/apache/dubbo)，当前支持版本到2.7.18
-- [DubboX](https://github.com/dangdangdotcom/dubbox)，当前支持版本到2.8.4
+- [Apache Dubbo](https://github.com/apache/dubbo)，当前支持版本到 3.2.x
 
 ## 插件功能说明
 
@@ -16,21 +13,18 @@ dubbo-java-polaris 是dubbo框架的扩展，便于使用dubbo框架开发的应
 实现dubbo服务往北极星上进行注册，以及服务调用时从北极星拉取服务实例的功能。相关插件：
 
 - Apache Dubbo：dubbo-registry-polaris
-- DubboX：dubbox-registry-polaris
 
 ### 动态路由
 
 实现按照请求头、方法等参数，对请求进行按版本、标签的调度。相关插件：
 
 - Apache Dubbo：dubbo-router-polaris
-- DubboX：dubbox-router-polaris
 
 ### 访问限流
 
 实现按照请求头、方法等参数，对流量进行限频。相关插件：
 
 - Apache Dubbo：dubbo-ratelimit-polaris
-- DubboX：dubbox-ratelimit-polaris
 
 ### 节点熔断
 
@@ -39,7 +33,6 @@ dubbo-java-polaris 是dubbo框架的扩展，便于使用dubbo框架开发的应
 节点级熔断所需要的指标是复用服务调用的回包，接入北极星就会默认开启。相关插件：
 
 - Apache Dubbo：dubbo-circuitbreaker-polaris
-- DubboX：dubbox-circuitbreaker-polaris
 
 ## 使用指南
 
