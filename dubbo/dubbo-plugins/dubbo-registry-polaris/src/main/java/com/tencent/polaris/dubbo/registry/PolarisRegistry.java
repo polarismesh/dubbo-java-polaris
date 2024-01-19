@@ -19,6 +19,7 @@ package com.tencent.polaris.dubbo.registry;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.registry.BaseBootConfigHandler;
 import com.tencent.polaris.common.registry.BootConfigHandler;
@@ -59,8 +60,9 @@ public class PolarisRegistry extends FailbackRegistry {
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
-    private final Map<NotifyListener, ServiceListener> serviceListeners = new ConcurrentHashMap<>();
+    private final Map<URL, Set<NotifyListener>> dubboListeners = new ConcurrentHashMap<>();
 
+    private final Map<URL, ServiceListener> serviceListeners = new ConcurrentHashMap<>();
     private final PolarisOperator polarisOperator;
 
     public PolarisRegistry(URL url) {
@@ -128,15 +130,12 @@ public class PolarisRegistry extends FailbackRegistry {
         Instance[] instances = polarisOperator.getAvailableInstances(service, true);
         onInstances(url, listener, instances);
         LOGGER.info("[POLARIS] submit watch task for service {}", service);
-        serviceListeners.computeIfAbsent(listener, notifyListener -> {
-            ServiceListener serviceListener = event -> {
-                try {
-                    Instance[] curInstances = polarisOperator.getAvailableInstances(service, true);
-                    onInstances(url, listener, curInstances);
-                } catch (PolarisException e) {
-                    LOGGER.error("[POLARIS] fail to fetch instances for service {}: {}", service, e.toString());
-                }
-            };
+
+        dubboListeners.computeIfAbsent(url, s -> new ConcurrentHashSet<>());
+        dubboListeners.get(url).add(listener);
+
+        serviceListeners.computeIfAbsent(url, dubboUrl -> {
+            ServiceListener serviceListener = new DubboServiceListener(url, this);
             polarisOperator.watchService(service, serviceListener);
             return serviceListener;
         });
@@ -207,5 +206,33 @@ public class PolarisRegistry extends FailbackRegistry {
     @Override
     public boolean isAvailable() {
         return true;
+    }
+
+    private static class DubboServiceListener implements ServiceListener {
+
+        private final URL url;
+
+        private final String service;
+
+        private final PolarisRegistry registry;
+
+        private DubboServiceListener(URL url, PolarisRegistry registry) {
+            this.url = url;
+            this.service = url.getServiceInterface();
+            this.registry = registry;
+        }
+
+        @Override
+        public void onEvent(ServiceChangeEvent serviceChangeEvent) {
+            try {
+                Set<NotifyListener> listeners = registry.dubboListeners.getOrDefault(url, Collections.emptySet());
+                Instance[] curInstances = registry.polarisOperator.getAvailableInstances(service, true);
+                for (NotifyListener listener : listeners) {
+                    registry.onInstances(url, listener, curInstances);
+                }
+            } catch (PolarisException e) {
+                LOGGER.error("[POLARIS] fail to fetch instances for service {}: {}", service, e.toString());
+            }
+        }
     }
 }
