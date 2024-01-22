@@ -26,12 +26,21 @@ spec:
         - image: polarismesh/dubbo-quick-provider:0.1.0-3.2.7-SNAPSHOT
           imagePullPolicy: Always
           name: polaris-prometheus
+          command:
+            - "/bin/bash"
+            - "-c"
+            - "cd /app && java -jar dubbo-quick-consumer.jar"
           env:
             - name: POLARIS_DISCOVERY_ADDR
-              value: ""
-          args:
-            - '--config.file=/etc/prometheus/prometheus.yaml'
-            - '--web.enable-lifecycle'
+              value: "127.0.0.1:8091?namespace=dubbo&token="
+            - name: APPLICATION_NAME
+              value: "polaris-discovery-demo-consumer"
+            - name: REGISTER_MODE
+              value: "instance"
+            - name: METADATA_REPORT_ADDR
+              value: "127.0.0.1:8093"
+            - name: CONFIG_CENTER_ADDR
+              value: "127.0.0.1:8091?namespace=dubbo&token="
           resources:
             limits:
               cpu: "500m"

@@ -67,7 +67,7 @@ public class PolarisRouter extends AbstractRouter implements ScopeModelAware {
         logger.info(String.format("[POLARIS] init service router, url is %s, parameters are %s", url,
                 url.getParameters()));
         this.routeRuleHandler = new RuleHandler();
-        this.operator = PolarisOperators.INSTANCE.getGovernancePolarisOperator();
+        this.operator = PolarisOperators.getGovernancePolarisOperator();
         this.parser = QueryParser.load();
     }
 

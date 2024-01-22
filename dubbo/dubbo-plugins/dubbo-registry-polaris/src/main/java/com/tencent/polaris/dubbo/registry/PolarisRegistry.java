@@ -66,7 +66,7 @@ public class PolarisRegistry extends FailbackRegistry {
 
     public PolarisRegistry(URL url) {
         super(url);
-        polarisOperator = PolarisOperators.INSTANCE.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
+        polarisOperator = PolarisOperators.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
     }
 
     @Override
