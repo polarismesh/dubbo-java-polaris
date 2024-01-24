@@ -76,7 +76,7 @@ public class PolarisRouter extends AbstractRouter implements ScopeModelAware {
         if (CollectionUtils.isEmpty(invokers) || Objects.isNull(operator)) {
             return new RouterResult<>(invokers);
         }
-        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, url, invocation);
+        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeRemoteDubboServiceInfo(url, invocation);
         for (DubboServiceInfo serviceInfo : serviceInfos) {
            RouterResult<Invoker<T>> result = realRoute(invokers, url, invocation, serviceInfo);
            if (!result.getResult().isEmpty()) {

@@ -37,9 +37,9 @@ spec:
               value: "polaris-discovery-demo-consumer"
             - name: REGISTER_MODE
               value: "instance"
-            - name: METADATA_REPORT_ADDR
-              value: "127.0.0.1:8093"
             - name: CONFIG_CENTER_ADDR
+              value: "127.0.0.1:8093"
+            - name: METADATA_REPORT_ADDR
               value: "127.0.0.1:8091?namespace=dubbo&token="
           args:
             - '--config.file=/etc/prometheus/prometheus.yaml'

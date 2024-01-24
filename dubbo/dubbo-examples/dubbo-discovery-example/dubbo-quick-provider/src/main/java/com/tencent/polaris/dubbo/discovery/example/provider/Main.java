@@ -27,18 +27,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URLDecoder;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class Main {
 
@@ -47,7 +37,8 @@ public class Main {
     private static final String PATH = "/reload";
 
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
+        int defaultListenPort = Integer.getInteger("LISTEN_PORT", LISTEN_PORT);
+        HttpServer server = HttpServer.create(new InetSocketAddress(defaultListenPort), 0);
         server.createContext(PATH, new EchoClientHandler());
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             server.stop(1);
@@ -65,38 +56,19 @@ public class Main {
 
     private static class EchoClientHandler implements HttpHandler {
 
-        private final Object mutex = new Object();
-
         private AnnotationConfigApplicationContext context;
 
-        public EchoClientHandler() {
-            int delay = 0;
-            if (!Objects.equals(System.getenv("DELAY_REGISTER"), "")) {
-                delay = Integer.parseInt(System.getenv("DELAY_REGISTER"));
+        public EchoClientHandler() throws InterruptedException {
+            if ("true".equals(System.getenv("DELAY_REGISTER"))) {
+                TimeUnit.MINUTES.sleep(5);
             }
-            synchronized (mutex) {
-                try {
-                    TimeUnit.MINUTES.sleep(delay);
-                    context = new AnnotationConfigApplicationContext(ConsumerConfiguration.class);
-                    context.start();
-                } catch (InterruptedException ignore) {
-                    Thread.currentThread().interrupt();
-                }
-            }
+            context = new AnnotationConfigApplicationContext(ConsumerConfiguration.class);
+            context.start();
         }
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            synchronized (mutex) {
-               try {
-                   context.destroy();
-                   TimeUnit.MINUTES.sleep(1);
-                   context = new AnnotationConfigApplicationContext(ConsumerConfiguration.class);
-                   context.start();
-               } catch (Exception e) {
-                   e.printStackTrace();
-               }
-            }
+            System.exit(0);
         }
 
     }

@@ -31,6 +31,7 @@ public class PolarisOperators {
     enum OperatorType {
         GOVERNANCE,
         CONFIG,
+        METADATA_REPORT,
     }
 
     private final Map<OperatorType, Map<String, PolarisOperator>> polarisOperatorMap;
@@ -39,6 +40,7 @@ public class PolarisOperators {
         polarisOperatorMap = new ConcurrentHashMap<>();
         polarisOperatorMap.put(OperatorType.GOVERNANCE, new ConcurrentHashMap<>());
         polarisOperatorMap.put(OperatorType.CONFIG, new ConcurrentHashMap<>());
+        polarisOperatorMap.put(OperatorType.METADATA_REPORT, new ConcurrentHashMap<>());
     }
 
     private static final PolarisOperators INSTANCE = new PolarisOperators();
@@ -48,6 +50,13 @@ public class PolarisOperators {
         Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
         String key = host + ":" + port + "|hash_code:" + params.hashCode();
         return operatorMap.computeIfAbsent(key, s -> new PolarisOperator(OperatorType.GOVERNANCE, host, port, parameters, new BaseBootConfigHandler()));
+    }
+
+    public static PolarisOperator loadOrStoreForMetaReport(String host, int port, Map<String, String> parameters) {
+        Map<String, PolarisOperator> operatorMap = INSTANCE.polarisOperatorMap.get(OperatorType.METADATA_REPORT);
+        Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
+        String key = host + ":" + port + "|hash_code:" + params.hashCode();
+        return operatorMap.computeIfAbsent(key, s -> new PolarisOperator(OperatorType.METADATA_REPORT, host, port, parameters, new BaseBootConfigHandler()));
     }
 
     public static PolarisOperator loadOrStoreForConfig(String host, int port, Map<String, String> parameters) {
