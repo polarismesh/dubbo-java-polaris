@@ -25,7 +25,7 @@ spec:
       containers:
         - image: polarismesh/dubbo-quick-provider:0.1.0-3.2.7-SNAPSHOT
           imagePullPolicy: Always
-          name: polaris-prometheus
+          name: dubbo-provider
           command:
             - "/bin/bash"
             - "-c"
