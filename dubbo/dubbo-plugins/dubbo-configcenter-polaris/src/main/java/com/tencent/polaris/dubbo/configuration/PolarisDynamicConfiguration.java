@@ -136,4 +136,9 @@ public class PolarisDynamicConfiguration implements DynamicConfiguration {
     private String formatCode(Object val) {
         return "POLARIS:" + val;
     }
+
+    @Override
+    public void close() throws Exception {
+        operator.destroy();
+    }
 }

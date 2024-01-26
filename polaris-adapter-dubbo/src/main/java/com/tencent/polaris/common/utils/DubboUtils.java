@@ -82,6 +82,8 @@ public class DubboUtils {
         List<DubboServiceInfo> serviceInfos = new ArrayList<>(2);
         String remoteApplication = url.getApplication();
 
+        // 这里需要判断下用户是希望应用优先，还是接口优先，还是 both
+
         // 判断下对方是否存在应用级名称
         if (StringUtils.isNotBlank(remoteApplication)) {
             serviceInfos.add(DubboServiceInfo.builder()
