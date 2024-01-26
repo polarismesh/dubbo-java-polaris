@@ -61,7 +61,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
 
     public PolarisServiceDiscovery(ApplicationModel applicationModel, URL url) {
         super(applicationModel, url);
-        this.operator = PolarisOperators.INSTANCE.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
+        this.operator = PolarisOperators.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
         this.consumerAPI = operator.getConsumerAPI();
     }
 
@@ -134,7 +134,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
         Set<String> services = listener.getServiceNames();
         for (String service : services) {
             serviceListeners.computeIfAbsent(service, name -> {
-                ServiceListener serviceListener = new InnerServiceListener(service);
+                ServiceListener serviceListener = new InnerServiceListener(service, operator);
                 listenerMap.put(service, serviceListener);
 
                 WatchServiceRequest request = new WatchServiceRequest();
@@ -181,27 +181,32 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
 
         private final String service;
 
-        private InnerServiceListener(String service) {
+        private final PolarisOperator operator;
+
+        private InnerServiceListener(String service, PolarisOperator operator) {
             this.service = service;
+            this.operator = operator;
         }
 
         @Override
         public void onEvent(ServiceChangeEvent event) {
             String serviceName = event.getServiceKey().getService();
-            List<ServiceInstance> serviceInstances = event.getAllInstances()
-                    .stream()
-                    .map((Function<Instance, ServiceInstance>) instance -> {
-                        DefaultServiceInstance serviceInstance =
-                                new DefaultServiceInstance(
-                                        instance.getService(),
-                                        instance.getHost(), instance.getPort(),
-                                        ScopeModelUtil.getApplicationModel(registryURL.getScopeModel()));
-                        serviceInstance.setMetadata(instance.getMetadata());
-                        serviceInstance.setEnabled(!instance.isIsolated());
-                        serviceInstance.setHealthy(instance.isHealthy());
-                        return serviceInstance;
-                    })
-                    .collect(Collectors.toList());
+            Instance[] instances = operator.getAvailableInstances(serviceName, true);
+            if (instances == null || instances.length == 0) {
+                return;
+            }
+            List<ServiceInstance> serviceInstances = new ArrayList<>(instances.length);
+            for (Instance instance : instances) {
+                DefaultServiceInstance serviceInstance =
+                        new DefaultServiceInstance(
+                                instance.getService(),
+                                instance.getHost(), instance.getPort(),
+                                ScopeModelUtil.getApplicationModel(registryURL.getScopeModel()));
+                serviceInstance.setMetadata(instance.getMetadata());
+                serviceInstance.setEnabled(!instance.isIsolated());
+                serviceInstance.setHealthy(instance.isHealthy());
+                serviceInstances.add(serviceInstance);
+            }
 
             Set<ServiceInstancesChangedListener> listeners = serviceListeners.getOrDefault(service, Collections.emptySet());
 

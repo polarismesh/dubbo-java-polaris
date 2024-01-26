@@ -23,13 +23,14 @@ import org.apache.dubbo.config.annotation.DubboService;
 @DubboService(version = "1.0.0")
 public class AnnotatedGreetingService implements GreetingService {
 
+    @Override
     public String sayHello(String name) {
-        return "hello, " + name;
+        return "hello, " + name + ", source from " + System.getenv("POD_IP");
     }
 
     @Override
     public String sayHi(String name) {
-        return "[provider by polaris] hi, " + name;
+        return "[provider by polaris] hi, " + name + ", source from " + System.getenv("POD_IP");
     }
 
 }

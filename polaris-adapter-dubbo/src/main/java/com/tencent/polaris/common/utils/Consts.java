@@ -32,6 +32,14 @@ public interface Consts {
 
     String KEY_TTL = "ttl";
 
+    String KEY_METRIC_TYPE = "stat_type";
+
+    String KEY_METRIC_PULL_PORT = "stat_pull_port";
+
+    String KEY_METRIC_PUSH_ADDR = "stat_push_addr";
+
+    String KEY_METRIC_PUSH_INTERVAL = "stat_push_interval";
+
     String INSTANCE_KEY_HEALTHY = "_internal_healthy";
 
     String INSTANCE_KEY_ISOLATED = "_internal_isolated";
