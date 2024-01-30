@@ -29,16 +29,16 @@ spec:
           command:
             - "/bin/bash"
             - "-c"
-            - "cd /app && java -jar dubbo-quick-consumer.jar"
+            - "cd /app && java -jar dubbo-quick-provider.jar"
           env:
             - name: POLARIS_DISCOVERY_ADDR
               value: "127.0.0.1:8091?namespace=dubbo&token="
             - name: APPLICATION_NAME
-              value: "polaris-discovery-demo-consumer"
+              value: "dubbo-provider"
             - name: REGISTER_MODE
               value: "instance"
             - name: CONFIG_CENTER_ADDR
-              value: "127.0.0.1:8093"
+              value: "127.0.0.1:8093?namespace=dubbo"
             - name: METADATA_REPORT_ADDR
               value: "127.0.0.1:8091?namespace=dubbo&token="
             - name: DELAY_REGISTER
