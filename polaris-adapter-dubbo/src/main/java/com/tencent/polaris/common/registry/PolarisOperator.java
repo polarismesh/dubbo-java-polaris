@@ -48,6 +48,7 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
@@ -324,6 +325,9 @@ public class PolarisOperator {
     }
 
     public ServiceRule getServiceRule(String service, EventType eventType) {
+        if (StringUtils.isBlank(service)) {
+            return new ServiceRuleByProto();
+        }
         GetServiceRuleRequest getServiceRuleRequest = new GetServiceRuleRequest();
         getServiceRuleRequest.setNamespace(polarisConfig.getNamespace());
         getServiceRuleRequest.setService(service);
