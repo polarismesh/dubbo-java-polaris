@@ -34,11 +34,11 @@ spec:
             - name: POLARIS_DISCOVERY_ADDR
               value: "127.0.0.1:8091?namespace=dubbo&token="
             - name: APPLICATION_NAME
-              value: "polaris-discovery-demo-consumer"
+              value: "dubbo-consumer"
             - name: REGISTER_MODE
               value: "instance"
             - name: CONFIG_CENTER_ADDR
-              value: "127.0.0.1:8093"
+              value: "127.0.0.1:8093?namespace=dubbo"
             - name: METADATA_REPORT_ADDR
               value: "127.0.0.1:8091?namespace=dubbo&token="
           args:
