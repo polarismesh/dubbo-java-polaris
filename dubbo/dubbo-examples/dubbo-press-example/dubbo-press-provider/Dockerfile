@@ -2,7 +2,7 @@ FROM alpine:3.13.6
 
 ARG version
 
-COPY ./target/dubbo-quick-provider-${version}.jar /app/dubbo-quick-provider.jar
+COPY ./target/dubbo-press-provider-${version}.jar /app/dubbo-press-provider.jar
 
 WORKDIR /app
 
@@ -25,4 +25,4 @@ RUN chmod 777 /app/
 
 RUN ls -la /app/
 
-ENTRYPOINT ["java", "-jar", "/app/dubbo-quick-provider.jar"]
+ENTRYPOINT ["java", "-jar", "/app/dubbo-press-provider.jar"]
