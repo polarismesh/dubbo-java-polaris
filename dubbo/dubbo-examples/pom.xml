@@ -21,7 +21,7 @@
         <module>dubbo-api-example</module>
         <module>dubbo-discovery-example</module>
         <module>dubbo-press-example</module>
-        <module>dubbo-press-example/dubbo-press-provider</module>
+        <module>dubbo-governance-example</module>
     </modules>
 
     <profiles>
