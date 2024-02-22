@@ -72,8 +72,11 @@ public class PolarisConfig {
                 break;
             case GOVERNANCE:
                 discoverPort = port;
-                String configPortStr = parameters.getOrDefault(Consts.CONFIG_PORT, configPort + "");
-                configPort = Integer.parseInt(configPortStr);
+                configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
+                break;
+            case METADATA_REPORT:
+                discoverPort = port;
+                configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
                 break;
         }
         discoverAddress = String.format("%s:%d", host, discoverPort);
