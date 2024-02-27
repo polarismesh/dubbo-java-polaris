@@ -14,8 +14,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>dubbo-ratelimit-provider</module>
-        <module>dubbo-ratelimit-consumer</module>
+        <module>dubbo-governance-provider</module>
+        <module>dubbo-governance-consumer</module>
     </modules>
 
 </project>

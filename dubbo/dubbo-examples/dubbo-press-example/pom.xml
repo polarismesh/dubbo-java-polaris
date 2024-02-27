@@ -13,4 +13,8 @@
 
     <packaging>pom</packaging>
 
+    <modules>
+        <module>dubbo-press-provider</module>
+    </modules>
+
 </project>

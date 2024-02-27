@@ -20,6 +20,7 @@ package com.tencent.polaris.dubbo.discovery.example.consumer;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.apache.dubbo.config.annotation.DubboService;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
@@ -44,7 +45,6 @@ public class Main {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ConsumerConfiguration.class);
         context.start();
         GreetingServiceConsumer greetingServiceConsumer = context.getBean(GreetingServiceConsumer.class);
-        System.out.println("please input name");
 
         HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
         server.createContext(PATH, new EchoClientHandler(greetingServiceConsumer));
@@ -104,4 +104,5 @@ public class Main {
     static class ConsumerConfiguration {
 
     }
+
 }
