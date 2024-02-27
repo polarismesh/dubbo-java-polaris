@@ -50,7 +50,7 @@ public class InstanceInvoker<T> implements Instance, Invoker<T> {
         defaultInstance = new DefaultInstance();
         defaultInstance.setNamespace(namespace);
         URL url = invoker.getUrl();
-        defaultInstance.setService(url.getServiceInterface());
+        defaultInstance.setService(serviceInfo.getService());
         defaultInstance.setHost(url.getHost());
         defaultInstance.setPort(url.getPort());
         defaultInstance.setId(url.getParameter(Consts.INSTANCE_KEY_ID));
@@ -59,7 +59,7 @@ public class InstanceInvoker<T> implements Instance, Invoker<T> {
         defaultInstance.setVersion(url.getParameter(CommonConstants.VERSION_KEY));
         defaultInstance.setWeight(url.getParameter(Constants.WEIGHT_KEY, 100));
         defaultInstance.setMetadata(url.getParameters());
-        LOGGER.info("[POLARIS] construct instance from invoker, url {}, instance {}", url, defaultInstance);
+        LOGGER.debug("[POLARIS] construct instance from invoker, url {}, instance {}", url, defaultInstance);
     }
 
     @Override

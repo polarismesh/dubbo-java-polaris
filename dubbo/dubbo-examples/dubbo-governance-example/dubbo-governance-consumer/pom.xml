@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>dubbo-governance-example</artifactId>
+        <groupId>com.tencent.polaris</groupId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>dubbo-governance-consumer</artifactId>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <dubbo.version>3.2.6</dubbo.version>
+        <spring.version>4.3.30.RELEASE</spring.version>
+        <log4j2.version>2.20.0</log4j2.version>
+        <junit.version>4.13.1</junit.version>
+        <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-framework-bom</artifactId>
+                <version>${spring.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-bom</artifactId>
+                <version>${dubbo.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo</artifactId>
+            <version>${dubbo.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-api-example</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!--    引入 polaris 注册能力    -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-registry-polaris</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!--    引入 polaris 元数据中心能力    -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-metadatareport-polaris</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!--    引入 polaris 配置中心能力    -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-configcenter-polaris</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!--    引入 polaris 自定义路由能力    -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-router-polaris</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!--    引入 polaris 熔断降级能力    -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-circuitbreaker-polaris</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/dubbo/internal/org.apache.dubbo.rpc.Filter</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/dubbo/internal/org.apache.dubbo.rpc.cluster.RouterFactory</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/dubbo/internal/org.apache.dubbo.registry.client.ServiceDiscoveryFactory</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/dubbo/internal/org.apache.dubbo.registry.RegistryFactory</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/dubbo/internal/org.apache.dubbo.metadata.report.MetadataReportFactory</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/dubbo/internal/org.apache.dubbo.common.config.configcenter.DynamicConfigurationFactory</resource>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.tencent.polaris.dubbo.ratelimit.example.consumer.Main
+                                    </mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -117,7 +117,7 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
         }
         QuotaResponse quotaResponse = null;
         try {
-            quotaResponse = operator.getQuota(serviceInfo.getService(), serviceInfo.getReportMethodName(), arguments);
+            quotaResponse = operator.getQuota(serviceInfo.getService(), serviceInfo.getDubboInterface(), arguments);
         } catch (PolarisException e) {
             Map<String, Object> externalParam = new HashMap<>();
             externalParam.put("serviceInfo", serviceInfo);

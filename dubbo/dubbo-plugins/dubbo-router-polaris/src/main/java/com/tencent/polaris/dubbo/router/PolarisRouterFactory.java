@@ -18,11 +18,12 @@
 package com.tencent.polaris.dubbo.router;
 
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.extension.Activate;
 import org.apache.dubbo.rpc.cluster.Router;
 import org.apache.dubbo.rpc.cluster.RouterFactory;
 
-@Activate
+@Activate(group = CommonConstants.CONSUMER)
 public class PolarisRouterFactory implements RouterFactory {
 
     @Override
