@@ -51,7 +51,7 @@
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
-        <polaris.version>1.15.0-SNAPSHOT</polaris.version>
+        <polaris.version>1.15.1-SNAPSHOT</polaris.version>
         <apache.dubbo.version>3.2.7</apache.dubbo.version>
         <slf4j.version>1.7.25</slf4j.version>
         <json_path_version>2.8.0</json_path_version>
