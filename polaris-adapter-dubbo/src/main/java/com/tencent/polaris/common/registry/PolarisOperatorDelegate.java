@@ -41,7 +41,7 @@ public class PolarisOperatorDelegate implements ScopeModelAware {
             if (null != polarisOperator) {
                 return polarisOperator;
             }
-            polarisOperator = PolarisOperators.INSTANCE.getGovernancePolarisOperator();
+            polarisOperator = PolarisOperators.getGovernancePolarisOperator();
             return polarisOperator;
         }
     }

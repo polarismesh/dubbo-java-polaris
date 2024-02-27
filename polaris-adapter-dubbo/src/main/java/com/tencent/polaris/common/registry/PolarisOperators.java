@@ -39,7 +39,7 @@ public class PolarisOperators {
         polarisOperatorMap.put(OperatorType.METADATA_REPORT, new ConcurrentHashMap<>());
     }
 
-    public static final PolarisOperators INSTANCE = new PolarisOperators();
+    private static final PolarisOperators INSTANCE = new PolarisOperators();
 
     public static PolarisOperator loadOrStoreForGovernance(String host, int port, Map<String, String> parameters) {
         Map<String, PolarisOperator> operatorMap = INSTANCE.polarisOperatorMap.get(OperatorType.GOVERNANCE);
