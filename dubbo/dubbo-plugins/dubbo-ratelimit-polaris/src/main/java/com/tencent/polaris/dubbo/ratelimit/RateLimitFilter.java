@@ -80,7 +80,7 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
         if (null == polarisOperator) {
             return invoker.invoke(invocation);
         }
-        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, invoker, invocation);
+        List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeLocalDubboServiceInfo(applicationModel, invoker, invocation);
         for (DubboServiceInfo serviceInfo : serviceInfos) {
             checkRateLimit(invoker, invocation, serviceInfo);
         }

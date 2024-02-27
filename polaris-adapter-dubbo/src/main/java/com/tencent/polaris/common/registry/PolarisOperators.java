@@ -17,20 +17,17 @@
 
 package com.tencent.polaris.common.registry;
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 public class PolarisOperators {
 
     enum OperatorType {
         GOVERNANCE,
         CONFIG,
+        METADATA_REPORT
     }
 
     private final Map<OperatorType, Map<String, PolarisOperator>> polarisOperatorMap;
@@ -39,27 +36,34 @@ public class PolarisOperators {
         polarisOperatorMap = new ConcurrentHashMap<>();
         polarisOperatorMap.put(OperatorType.GOVERNANCE, new ConcurrentHashMap<>());
         polarisOperatorMap.put(OperatorType.CONFIG, new ConcurrentHashMap<>());
+        polarisOperatorMap.put(OperatorType.METADATA_REPORT, new ConcurrentHashMap<>());
     }
 
     public static final PolarisOperators INSTANCE = new PolarisOperators();
 
-    public PolarisOperator loadOrStoreForGovernance(String host, int port, Map<String, String> parameters) {
-        Map<String, PolarisOperator> operatorMap = polarisOperatorMap.get(OperatorType.GOVERNANCE);
+    public static PolarisOperator loadOrStoreForGovernance(String host, int port, Map<String, String> parameters) {
+        Map<String, PolarisOperator> operatorMap = INSTANCE.polarisOperatorMap.get(OperatorType.GOVERNANCE);
         Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
         String key = host + ":" + port + "|hash_code:" + params.hashCode();
         return operatorMap.computeIfAbsent(key, s -> new PolarisOperator(OperatorType.GOVERNANCE, host, port, parameters, new BaseBootConfigHandler()));
     }
 
-    public PolarisOperator loadOrStoreForConfig(String host, int port, Map<String, String> parameters) {
-        Map<String, PolarisOperator> operatorMap = polarisOperatorMap.get(OperatorType.CONFIG);
+    public static PolarisOperator loadOrStoreForConfig(String host, int port, Map<String, String> parameters) {
+        Map<String, PolarisOperator> operatorMap = INSTANCE.polarisOperatorMap.get(OperatorType.CONFIG);
         Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
         String key = host + ":" + port + "|hash_code:" + params.hashCode();
         return operatorMap.computeIfAbsent(key, s -> new PolarisOperator(OperatorType.CONFIG, host, port, parameters, new BaseBootConfigHandler()));
     }
 
+    public static PolarisOperator loadOrStoreForMetadataReport(String host, int port, Map<String, String> parameters) {
+        Map<String, PolarisOperator> operatorMap = INSTANCE.polarisOperatorMap.get(OperatorType.METADATA_REPORT);
+        Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
+        String key = host + ":" + port + "|hash_code:" + params.hashCode();
+        return operatorMap.computeIfAbsent(key, s -> new PolarisOperator(OperatorType.METADATA_REPORT, host, port, parameters, new BaseBootConfigHandler()));
+    }
 
-    public PolarisOperator getGovernancePolarisOperator() {
-        Map<String, PolarisOperator> operatorMap = polarisOperatorMap.get(OperatorType.GOVERNANCE);
+    public static PolarisOperator getGovernancePolarisOperator() {
+        Map<String, PolarisOperator> operatorMap = INSTANCE.polarisOperatorMap.get(OperatorType.GOVERNANCE);
         if (operatorMap.isEmpty()) {
             return null;
         }
