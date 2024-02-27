@@ -49,6 +49,8 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReportFilter.class);
 
+	private ApplicationModel applicationModel;
+
 	public ReportFilter() {
 		LOGGER.info("[POLARIS] init polaris reporter");
 	}

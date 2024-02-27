@@ -20,6 +20,7 @@ package com.tencent.polaris.dubbo.circuitbreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -38,15 +39,17 @@ import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.extension.Activate;
 import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.apache.dubbo.common.logger.LoggerFactory;
+import org.apache.dubbo.rpc.AppResponse;
+import org.apache.dubbo.rpc.AsyncRpcResult;
 import org.apache.dubbo.rpc.Filter;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.Result;
-import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
 @Activate(group = CommonConstants.CONSUMER)
@@ -58,10 +61,16 @@ public class CircuitBreakerFilter extends PolarisOperatorDelegate implements Fil
 
     private final CircuitBreakAPI circuitBreakAPI;
 
+    private CircuitBreakerCallback circuitBreakerCallback;
+
     public CircuitBreakerFilter() {
         logger.info("[POLARIS] init polaris circuitbreaker");
         this.operator = getGovernancePolarisOperator();
         this.circuitBreakAPI = operator.getCircuitBreakAPI();
+        ServiceLoader<CircuitBreakerCallback> loader = ServiceLoader.load(CircuitBreakerCallback.class);
+        if (loader.iterator().hasNext()) {
+            circuitBreakerCallback = loader.iterator().next();
+        }
     }
 
     @Override
@@ -74,6 +83,7 @@ public class CircuitBreakerFilter extends PolarisOperatorDelegate implements Fil
         DubboServiceInfo firstService = serviceInfos.get(0);
 
         InvokeContext.RequestContext context = new InvokeContext.RequestContext(createCalleeService(firstService), firstService.getDubboInterface());
+        context.setSourceService(new ServiceKey());
         context.setResultToErrorCode(this);
         InvokeHandler handler = circuitBreakAPI.makeInvokeHandler(context);
         try {
@@ -106,6 +116,16 @@ public class CircuitBreakerFilter extends PolarisOperatorDelegate implements Fil
             }
             throw exception;
         } catch (CallAbortedException abortedException) {
+            CircuitBreakerStatus.FallbackInfo fallbackInfo = abortedException.getFallbackInfo();
+            if (Objects.nonNull(fallbackInfo)) {
+                AppResponse response = new AppResponse();
+                response.setAttachments(fallbackInfo.getHeaders());
+                response.setValue(fallbackInfo.getBody());
+                return AsyncRpcResult.newDefaultAsyncResult(response, invocation);
+            }
+            if (Objects.nonNull(circuitBreakerCallback)) {
+                return circuitBreakerCallback.onCircuitBreaker(invoker, invocation, abortedException);
+            }
             throw new RpcException(abortedException);
         }
     }

@@ -22,6 +22,8 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
@@ -46,6 +48,8 @@ import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
+import com.tencent.polaris.circuitbreak.api.flow.CircuitBreakerFlow;
+import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
@@ -180,6 +184,10 @@ public class PolarisOperator {
         sdkContext.close();
     }
 
+    public SDKContext getSdkContext() {
+        return sdkContext;
+    }
+
     /**
      * 服务注册
      */
@@ -307,6 +315,22 @@ public class PolarisOperator {
         processLoadBalanceRequest.setCriteria(criteria);
         ProcessLoadBalanceResponse processLoadBalanceResponse = routerAPI.processLoadBalance(processLoadBalanceRequest);
         return processLoadBalanceResponse.getTargetInstance();
+    }
+
+    public boolean checkCircuitBreakerPassing(Instance instance) {
+        CircuitBreakerStatus circuitBreakerStatus = instance.getCircuitBreakerStatus();
+        if (null != circuitBreakerStatus) {
+            return circuitBreakerStatus.getStatus() != CircuitBreakerStatus.Status.OPEN;
+        }
+        Resource resource = new InstanceResource(new ServiceKey(instance.getNamespace(), instance.getService()),
+                instance.getHost(), instance.getPort(), new ServiceKey());
+        CircuitBreakerFlow circuitBreakerFlow = getSdkContext().getValueContext().getValue(
+                CircuitBreakerFlow.class.getCanonicalName());
+        if (null != circuitBreakerFlow) {
+            CheckResult check = circuitBreakerFlow.check(resource);
+            return check.isPass();
+        }
+        return true;
     }
 
     /**

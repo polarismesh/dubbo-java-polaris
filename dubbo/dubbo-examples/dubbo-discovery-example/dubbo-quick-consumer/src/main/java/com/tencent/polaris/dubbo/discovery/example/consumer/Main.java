@@ -105,16 +105,4 @@ public class Main {
 
     }
 
-//    @DubboService(version = "1.0.0")
-//    public static class MockConsumerImpl implements MockConsumer {
-//
-//        @Override
-//        public String hi() {
-//            return "";
-//        }
-//    }
-//
-//    public static interface MockConsumer {
-//        String hi();
-//    }
 }

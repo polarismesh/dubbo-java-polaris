@@ -52,7 +52,7 @@ public class DubboServiceInfo {
     }
 
     public String getDubboInterface() {
-        if (StringUtils.isEmpty(interfaceName)) {
+        if (StringUtils.isNotBlank(interfaceName)) {
             return interfaceName;
         }
         return methodName;

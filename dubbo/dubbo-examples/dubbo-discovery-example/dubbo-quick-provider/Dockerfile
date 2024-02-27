@@ -6,7 +6,7 @@ COPY ./target/dubbo-quick-provider-${version}.jar /app/dubbo-quick-provider.jar
 
 WORKDIR /app
 
-RUN sed -i 's!http://dl-cdn.alpinelinux.org/!https://mirrors.tencent.com/!g' /etc/apk/repositories
+RUN sed -ie "s/https/http/g" /etc/apk/repositories
 
 RUN set -eux && \
     apk add openjdk11 && \

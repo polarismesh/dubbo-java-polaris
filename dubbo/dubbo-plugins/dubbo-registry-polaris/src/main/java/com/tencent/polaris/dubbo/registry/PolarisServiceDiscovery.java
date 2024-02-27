@@ -134,7 +134,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
         Set<String> services = listener.getServiceNames();
         for (String service : services) {
             serviceListeners.computeIfAbsent(service, name -> {
-                ServiceListener serviceListener = new InnerServiceListener(service, operator);
+                ServiceListener serviceListener = new InnerServiceListener(service);
                 listenerMap.put(service, serviceListener);
 
                 WatchServiceRequest request = new WatchServiceRequest();
@@ -181,32 +181,27 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
 
         private final String service;
 
-        private final PolarisOperator operator;
-
-        private InnerServiceListener(String service, PolarisOperator operator) {
+        private InnerServiceListener(String service) {
             this.service = service;
-            this.operator = operator;
         }
 
         @Override
         public void onEvent(ServiceChangeEvent event) {
             String serviceName = event.getServiceKey().getService();
-            Instance[] instances = operator.getAvailableInstances(serviceName, true);
-            if (instances == null || instances.length == 0) {
-                return;
-            }
-            List<ServiceInstance> serviceInstances = new ArrayList<>(instances.length);
-            for (Instance instance : instances) {
-                DefaultServiceInstance serviceInstance =
-                        new DefaultServiceInstance(
-                                instance.getService(),
-                                instance.getHost(), instance.getPort(),
-                                ScopeModelUtil.getApplicationModel(registryURL.getScopeModel()));
-                serviceInstance.setMetadata(instance.getMetadata());
-                serviceInstance.setEnabled(!instance.isIsolated());
-                serviceInstance.setHealthy(instance.isHealthy());
-                serviceInstances.add(serviceInstance);
-            }
+            List<ServiceInstance> serviceInstances = event.getAllInstances()
+                    .stream()
+                    .map((Function<Instance, ServiceInstance>) instance -> {
+                        DefaultServiceInstance serviceInstance =
+                                new DefaultServiceInstance(
+                                        instance.getService(),
+                                        instance.getHost(), instance.getPort(),
+                                        ScopeModelUtil.getApplicationModel(registryURL.getScopeModel()));
+                        serviceInstance.setMetadata(instance.getMetadata());
+                        serviceInstance.setEnabled(!instance.isIsolated());
+                        serviceInstance.setHealthy(instance.isHealthy());
+                        return serviceInstance;
+                    })
+                    .collect(Collectors.toList());
 
             Set<ServiceInstancesChangedListener> listeners = serviceListeners.getOrDefault(service, Collections.emptySet());
 

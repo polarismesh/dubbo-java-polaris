@@ -46,7 +46,6 @@ import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.extension.Activate;
 import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.apache.dubbo.common.logger.LoggerFactory;
-import org.apache.dubbo.rpc.AsyncRpcResult;
 import org.apache.dubbo.rpc.Filter;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
@@ -55,7 +54,6 @@ import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.model.ApplicationModel;
 import org.apache.dubbo.rpc.model.ScopeModelAware;
-import org.apache.dubbo.rpc.support.RpcUtils;
 import org.slf4j.Logger;
 
 @Activate(group = CommonConstants.PROVIDER)
@@ -67,33 +65,33 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
 
     private final QueryParser parser;
 
+    private final PolarisOperator operator;
+
     public RateLimitFilter() {
         logger.info("[POLARIS] init polaris ratelimit");
         this.ruleHandler = new RuleHandler();
         this.parser = QueryParser.load();
+        this.operator = getGovernancePolarisOperator();
     }
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        PolarisOperator operator = getGovernancePolarisOperator();
-        if (null == operator) {
+        PolarisOperator polarisOperator = getGovernancePolarisOperator();
+        if (null == polarisOperator) {
             return invoker.invoke(invocation);
         }
         List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeLocalDubboServiceInfo(applicationModel, invoker, invocation);
         for (DubboServiceInfo serviceInfo : serviceInfos) {
-            AsyncRpcResult result = checkRateLimit(operator, invoker, invocation, serviceInfo);
-            if (Objects.nonNull(result)) {
-                return result;
-            }
+            checkRateLimit(invoker, invocation, serviceInfo);
         }
         return invoker.invoke(invocation);
     }
 
-    private AsyncRpcResult checkRateLimit(PolarisOperator operator, Invoker<?> invoker, Invocation invocation, DubboServiceInfo serviceInfo) {
+    private void checkRateLimit(Invoker<?> invoker, Invocation invocation, DubboServiceInfo serviceInfo) {
         ServiceRule serviceRule = operator.getServiceRule(serviceInfo.getService(), EventType.RATE_LIMITING);
         Object ruleObject = serviceRule.getRule();
         if (Objects.isNull(ruleObject)) {
-            return null;
+            return;
         }
         RateLimitProto.RateLimit rateLimit = (RateLimitProto.RateLimit) ruleObject;
         Set<RateLimitProto.MatchArgument> trafficLabels = ruleHandler.getRatelimitLabels(rateLimit);
@@ -119,7 +117,7 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
         }
         QuotaResponse quotaResponse = null;
         try {
-            quotaResponse = operator.getQuota(serviceInfo.getService(), serviceInfo.getReportMethodName(), arguments);
+            quotaResponse = operator.getQuota(serviceInfo.getService(), serviceInfo.getDubboInterface(), arguments);
         } catch (PolarisException e) {
             Map<String, Object> externalParam = new HashMap<>();
             externalParam.put("serviceInfo", serviceInfo);
@@ -131,11 +129,9 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
         }
         if (null != quotaResponse && quotaResponse.getCode() == QuotaResultCode.QuotaResultLimited) {
             // 请求被限流，则抛出异常
-            RpcException exception = new RpcException(RpcException.LIMIT_EXCEEDED_EXCEPTION, "Failed to invoke service " +
-                    invoker.getInterface().getName() + "." + RpcUtils.getMethodName(invocation) + " because exceed max service tps.");
-            return AsyncRpcResult.newDefaultAsyncResult(exception, invocation);
+            throw new RpcException(RpcException.LIMIT_EXCEEDED_EXCEPTION, new PolarisBlockException(
+                    String.format("url=%s, info=%s", invoker.getUrl(), quotaResponse.getInfo())));
         }
-        return null;
     }
 
 }
