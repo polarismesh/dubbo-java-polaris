@@ -89,7 +89,7 @@ public class PolarisRegistry extends FailbackRegistry {
     }
 
     private boolean shouldRegister(URL url) {
-        return StringUtils.equals(url.getProtocol(), CommonConstants.PROVIDER);
+        return StringUtils.equals(url.getSide(), CommonConstants.PROVIDER);
     }
 
     @Override
