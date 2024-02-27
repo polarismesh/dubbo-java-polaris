@@ -148,7 +148,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     @Override
     public String getServiceDefinition(MetadataIdentifier metadataIdentifier) {
         GetServiceContractRequest request = new GetServiceContractRequest();
-        request.setName(metadataIdentifier.getApplication());
+        request.setName(metadataIdentifier.getSide() + ":" + metadataIdentifier.getApplication());
         request.setService(metadataIdentifier.getApplication());
         request.setVersion(metadataIdentifier.getVersion());
         Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
@@ -188,13 +188,13 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     private ReportServiceContractRequest toDescriptor(ServiceMetadataIdentifier identifier, URL url) {
         ReportServiceContractRequest request = new ReportServiceContractRequest();
-        request.setName(url.getApplication());
+        request.setName(url.getSide() + ":" + url.getApplication());
         request.setService(url.getApplication());
         request.setVersion(url.getVersion());
 
         InterfaceDescriptor descriptor = new InterfaceDescriptor();
         descriptor.setId(identifier.getIdentifierKey());
-        descriptor.setName(String.format("%s_%s", url.getSide(), url.getGroup()));
+        descriptor.setName(String.format("%s:%s", url.getSide(), url.getGroup()));
         descriptor.setPath(url.getServiceInterface());
         descriptor.setMethod("");
         descriptor.setContent(URL.encode(url.toFullString()));
@@ -208,13 +208,13 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     private ReportServiceContractRequest toDescriptor(MetadataIdentifier identifier, String serviceDefinitions) {
         ReportServiceContractRequest request = new ReportServiceContractRequest();
-        request.setName(identifier.getApplication());
+        request.setName(identifier.getSide() + ":" + identifier.getApplication());
         request.setService(identifier.getApplication());
         request.setVersion(identifier.getVersion());
 
         InterfaceDescriptor descriptor = new InterfaceDescriptor();
         descriptor.setId(identifier.getIdentifierKey());
-        descriptor.setName(String.format("%s_%s", identifier.getSide(), identifier.getGroup()));
+        descriptor.setName(String.format("%s:%s", identifier.getSide(), identifier.getGroup()));
         descriptor.setPath(identifier.getServiceInterface());
         descriptor.setMethod("");
         descriptor.setContent(serviceDefinitions);
