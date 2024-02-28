@@ -9,13 +9,14 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>dubbo-governance-example</artifactId>
+    <artifactId>dubbo-router-example</artifactId>
 
     <packaging>pom</packaging>
 
     <modules>
-        <module>dubbo-governance-provider</module>
-        <module>dubbo-governance-consumer</module>
+        <module>dubbo-front-example</module>
+        <module>dubbo-middle-example</module>
+        <module>dubbo-backend-example</module>
     </modules>
 
 </project>
