@@ -61,7 +61,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
 
     public PolarisServiceDiscovery(ApplicationModel applicationModel, URL url) {
         super(applicationModel, url);
-        this.operator = PolarisOperators.INSTANCE.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
+        this.operator = PolarisOperators.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
         this.consumerAPI = operator.getConsumerAPI();
     }
 
