@@ -19,6 +19,9 @@ package com.tencent.polaris.common.registry;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
@@ -42,6 +45,8 @@ import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
+import com.tencent.polaris.circuitbreak.api.flow.CircuitBreakerFlow;
+import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
@@ -304,5 +309,21 @@ public class PolarisOperator {
 
     public CircuitBreakAPI getCircuitBreakAPI() {
         return circuitBreakAPI;
+    }
+
+    public boolean checkCircuitBreakerPassing(Instance instance) {
+        CircuitBreakerStatus circuitBreakerStatus = instance.getCircuitBreakerStatus();
+        if (null != circuitBreakerStatus) {
+            return circuitBreakerStatus.getStatus() != CircuitBreakerStatus.Status.OPEN;
+        }
+        Resource resource = new InstanceResource(new ServiceKey(instance.getNamespace(), instance.getService()),
+                instance.getHost(), instance.getPort(), new ServiceKey());
+        CircuitBreakerFlow circuitBreakerFlow = sdkContext.getValueContext().getValue(
+                CircuitBreakerFlow.class.getCanonicalName());
+        if (null != circuitBreakerFlow) {
+            CheckResult check = circuitBreakerFlow.check(resource);
+            return check.isPass();
+        }
+        return true;
     }
 }

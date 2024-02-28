@@ -58,7 +58,7 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 	@Override
 	public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
 		invocation.put(LABEL_START_TIME, System.currentTimeMillis());
-        return invoker.invoke(invocation);
+		return invoker.invoke(invocation);
 	}
 
 	@Override
@@ -76,7 +76,7 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 		}
 		URL url = invoker.getUrl();
 		long delay = System.currentTimeMillis() - startTimeMilli;
-		List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, invoker, invocation);
+		List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeRemoteDubboServiceInfo(invoker, invocation);
 		for (DubboServiceInfo serviceInfo : serviceInfos) {
 			polarisOperator.reportInvokeResult(serviceInfo.getService(), serviceInfo.getReportMethodName(), url.getHost(),
 					url.getPort(), RpcContext.getServiceContext().getLocalHost(), delay, retStatus, code);
@@ -107,18 +107,18 @@ public class ReportFilter extends PolarisOperatorDelegate implements Filter, Fil
 		}
 		URL url = invoker.getUrl();
 		long delay = System.currentTimeMillis() - startTimeMilli;
-		List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeDubboServiceInfo(applicationModel, invoker, invocation);
+		List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeRemoteDubboServiceInfo(invoker, invocation);
 		for (DubboServiceInfo serviceInfo : serviceInfos) {
 			polarisOperator.reportInvokeResult(serviceInfo.getService(), serviceInfo.getReportMethodName(), url.getHost(),
 					url.getPort(), RpcContext.getServiceContext().getLocalHost(), delay, retStatus, code);
 		}
 	}
 
-    private boolean isFlowControl(RpcException rpcException) {
-        boolean a = StringUtils.isNotBlank(rpcException.getMessage()) && rpcException.getMessage()
-                .contains(PolarisBlockException.PREFIX);
-        boolean b = rpcException.isLimitExceed();
-        return a || b;
-    }
+	private boolean isFlowControl(RpcException rpcException) {
+		boolean a = StringUtils.isNotBlank(rpcException.getMessage()) && rpcException.getMessage()
+				.contains(PolarisBlockException.PREFIX);
+		boolean b = rpcException.isLimitExceed();
+		return a || b;
+	}
 
 }
