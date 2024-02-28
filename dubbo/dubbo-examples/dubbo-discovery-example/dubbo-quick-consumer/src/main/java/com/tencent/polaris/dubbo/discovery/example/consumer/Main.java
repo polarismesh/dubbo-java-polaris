@@ -44,7 +44,6 @@ public class Main {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ConsumerConfiguration.class);
         context.start();
         GreetingServiceConsumer greetingServiceConsumer = context.getBean(GreetingServiceConsumer.class);
-        System.out.println("please input name");
 
         HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
         server.createContext(PATH, new EchoClientHandler(greetingServiceConsumer));
