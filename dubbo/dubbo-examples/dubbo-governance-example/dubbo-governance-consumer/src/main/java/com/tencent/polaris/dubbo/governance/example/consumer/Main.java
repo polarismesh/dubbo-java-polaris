@@ -76,9 +76,6 @@ public class Main {
                     case "sayHi":
                         response = consumer.doSayHi(echoValue);
                         break;
-                    case "echo":
-                        response = consumer.doEcho(echoValue);
-                        break;
                 }
             } catch (RpcException e) {
                 response = e.toString();
