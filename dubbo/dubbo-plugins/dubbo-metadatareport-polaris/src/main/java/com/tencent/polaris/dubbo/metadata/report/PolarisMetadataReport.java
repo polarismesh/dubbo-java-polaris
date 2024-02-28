@@ -42,6 +42,8 @@ import org.apache.dubbo.common.config.configcenter.ConfigItem;
 import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.ConcurrentHashSet;
+import org.apache.dubbo.common.utils.JsonUtils;
+import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.metadata.MappingChangedEvent;
 import org.apache.dubbo.metadata.MappingListener;
 import org.apache.dubbo.metadata.MetadataInfo;
@@ -53,6 +55,7 @@ import org.apache.dubbo.metadata.report.support.AbstractMetadataReport;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -107,31 +110,14 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     @Override
     protected void doSaveMetadata(ServiceMetadataIdentifier metadataIdentifier, URL url) {
-        reportServiceContract(toDescriptor(metadataIdentifier, url));
     }
 
     @Override
     protected void doRemoveMetadata(ServiceMetadataIdentifier metadataIdentifier) {
-        //
     }
 
     @Override
     protected List<String> doGetExportedURLs(ServiceMetadataIdentifier metadataIdentifier) {
-        GetServiceContractRequest request = new GetServiceContractRequest();
-        ServiceRuleResponse response = consumerAPI.getServiceContract(request);
-        ServiceRule rule = response.getServiceRule();
-        if (Objects.isNull(rule)) {
-            return Collections.emptyList();
-        }
-        ServiceContractProto.ServiceContract contract = (ServiceContractProto.ServiceContract) rule.getRule();
-        List<ServiceContractProto.InterfaceDescriptor> descriptors = contract.getInterfacesList();
-        for (ServiceContractProto.InterfaceDescriptor descriptor : descriptors) {
-            if (!Objects.equals(descriptor.getId(), metadataIdentifier.getIdentifierKey())) {
-                continue;
-            }
-            String content = descriptor.getContent();
-            return new ArrayList<>(Collections.singletonList(URL.decode(content)));
-        }
         return Collections.emptyList();
     }
 
@@ -140,15 +126,14 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     }
 
     @Override
-    protected String doGetSubscribedURLs(SubscriberMetadataIdentifier subscriberMetadataIdentifier) {
+    protected String doGetSubscribedURLs(SubscriberMetadataIdentifier identifier) {
         return null;
     }
-
 
     @Override
     public String getServiceDefinition(MetadataIdentifier metadataIdentifier) {
         GetServiceContractRequest request = new GetServiceContractRequest();
-        request.setName(metadataIdentifier.getApplication());
+        request.setName(formatMetadataIdentifier(metadataIdentifier));
         request.setService(metadataIdentifier.getApplication());
         request.setVersion(metadataIdentifier.getVersion());
         Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
@@ -169,11 +154,21 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     @Override
     public void publishAppMetadata(SubscriberMetadataIdentifier identifier, MetadataInfo metadataInfo) {
         ReportServiceContractRequest request = new ReportServiceContractRequest();
-        request.setName(identifier.getApplication());
+        request.setName(formatAppMetaName(identifier));
         request.setService(identifier.getApplication());
         request.setVersion(identifier.getRevision());
         request.setContent(metadataInfo.getContent());
-
+        List<InterfaceDescriptor> descriptors = new ArrayList<>(metadataInfo.getServices().size());
+        metadataInfo.getServices().forEach((s, serviceInfo) -> {
+            InterfaceDescriptor descriptor = new InterfaceDescriptor();
+            descriptor.setId(s);
+            descriptor.setPath(serviceInfo.getPath());
+            descriptor.setMethod("");
+            descriptor.setName(serviceInfo.getName());
+            descriptor.setContent(JsonUtils.toJson(serviceInfo));
+            descriptors.add(descriptor);
+        });
+        request.setInterfaceDescriptors(descriptors);
         reportServiceContract(request);
     }
 
@@ -183,38 +178,33 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     @Override
     public MetadataInfo getAppMetadata(SubscriberMetadataIdentifier identifier, Map<String, String> instanceMetadata) {
-        return null;
-    }
+        GetServiceContractRequest request = new GetServiceContractRequest();
+        request.setName(formatAppMetaName(identifier));
+        request.setService(identifier.getApplication());
+        request.setVersion(identifier.getRevision());
 
-    private ReportServiceContractRequest toDescriptor(ServiceMetadataIdentifier identifier, URL url) {
-        ReportServiceContractRequest request = new ReportServiceContractRequest();
-        request.setName(url.getApplication());
-        request.setService(url.getApplication());
-        request.setVersion(url.getVersion());
+        Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
+        if (!result.isPresent()) {
+            return new MetadataInfo();
+        }
 
-        InterfaceDescriptor descriptor = new InterfaceDescriptor();
-        descriptor.setId(identifier.getIdentifierKey());
-        descriptor.setName(String.format("%s_%s", url.getSide(), url.getGroup()));
-        descriptor.setPath(url.getServiceInterface());
-        descriptor.setMethod("");
-        descriptor.setContent(URL.encode(url.toFullString()));
-
-        List<InterfaceDescriptor> descriptors = new ArrayList<>(1);
-        descriptors.add(descriptor);
-        request.setInterfaceDescriptors(descriptors);
-
-        return request;
+        Map<String, MetadataInfo.ServiceInfo> serviceInfos = new HashMap<>();
+        for (ServiceContractProto.InterfaceDescriptor descriptor : result.get().getInterfacesList()) {
+            MetadataInfo.ServiceInfo serviceInfo = JsonUtils.toJavaObject(descriptor.getContent(), MetadataInfo.ServiceInfo.class);
+            serviceInfos.put(serviceInfo.getMatchKey(), serviceInfo);
+        }
+        return new MetadataInfo(identifier.getApplication(), identifier.getRevision(), serviceInfos);
     }
 
     private ReportServiceContractRequest toDescriptor(MetadataIdentifier identifier, String serviceDefinitions) {
         ReportServiceContractRequest request = new ReportServiceContractRequest();
-        request.setName(identifier.getApplication());
+        request.setName(formatMetadataIdentifier(identifier));
         request.setService(identifier.getApplication());
         request.setVersion(identifier.getVersion());
+        request.setContent("");
 
         InterfaceDescriptor descriptor = new InterfaceDescriptor();
-        descriptor.setId(identifier.getIdentifierKey());
-        descriptor.setName(String.format("%s_%s", identifier.getSide(), identifier.getGroup()));
+        descriptor.setName(identifier.getIdentifierKey());
         descriptor.setPath(identifier.getServiceInterface());
         descriptor.setMethod("");
         descriptor.setContent(serviceDefinitions);
@@ -366,4 +356,21 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         }
     }
 
+    private static String formatAppMetaName(SubscriberMetadataIdentifier identifier) {
+        String tmpl = "dubbo::metadata::%s::%s";
+        return String.format(tmpl, identifier.getApplication(), identifier.getRevision());
+    }
+
+    private static String formatMetadataIdentifier(MetadataIdentifier identifier) {
+        String tmpl = "dubbo::metadata::";
+        if (StringUtils.isNotEmpty(identifier.getVersion())) {
+            tmpl += identifier.getVersion() + "::";
+        }
+        if (StringUtils.isNotEmpty(identifier.getGroup())) {
+            tmpl += identifier.getGroup() + "::";
+        }
+        tmpl += identifier.getSide() + "::";
+        tmpl += identifier.getApplication();
+        return tmpl;
+    }
 }

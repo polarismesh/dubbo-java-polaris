@@ -31,6 +31,7 @@ public class PolarisOperators {
     enum OperatorType {
         GOVERNANCE,
         CONFIG,
+        METADATA_REPORT
     }
 
     private final Map<OperatorType, Map<String, PolarisOperator>> polarisOperatorMap;
