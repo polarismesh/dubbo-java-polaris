@@ -113,7 +113,7 @@ public class PolarisOperator {
     private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters, BootConfigHandler... handlers) {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
-        if (null != handlers && handlers.length > 0) {
+        if (null != handlers) {
             for (BootConfigHandler bootConfigHandler : handlers) {
                 bootConfigHandler.handle(parameters, configuration);
             }
