@@ -29,7 +29,7 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BackendConfiguration.class);
         context.start();
-        for(;;) {
+        for (; ; ) {
             TimeUnit.SECONDS.sleep(1);
         }
     }

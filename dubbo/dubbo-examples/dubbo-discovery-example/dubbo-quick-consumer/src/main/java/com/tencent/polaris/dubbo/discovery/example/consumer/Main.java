@@ -20,7 +20,6 @@ package com.tencent.polaris.dubbo.discovery.example.consumer;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.apache.dubbo.config.annotation.DubboService;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
@@ -104,5 +103,4 @@ public class Main {
     static class ConsumerConfiguration {
 
     }
-
 }

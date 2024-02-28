@@ -18,7 +18,6 @@
 package com.tencent.polaris.dubbo.governance.example.consumer;
 
 import com.tencent.polaris.dubbo.example.api.GreetingService;
-import com.tencent.polaris.dubbo.example.api.PrintService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.rpc.RpcContext;
 import org.springframework.stereotype.Component;
@@ -29,9 +28,6 @@ public class GreetingServiceConsumer {
     @DubboReference(version = "1.0.0")
     private GreetingService greetingService;
 
-    @DubboReference(version = "1.0.0")
-    private PrintService printService;
-
     public String doSayHello(String name) {
         RpcContext.getClientAttachment().setAttachment("user", name);
         return greetingService.sayHello(name);
@@ -40,11 +36,6 @@ public class GreetingServiceConsumer {
     public String doSayHi(String name) {
         RpcContext.getClientAttachment().setAttachment("user", name);
         return greetingService.sayHi(name);
-    }
-
-    public String doEcho(String name) {
-        RpcContext.getClientAttachment().setAttachment("user", name);
-        return printService.echo(name);
     }
 
 }

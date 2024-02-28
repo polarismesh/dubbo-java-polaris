@@ -17,10 +17,14 @@
 
 package com.tencent.polaris.common.registry;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 public class PolarisOperators {
 
@@ -36,7 +40,6 @@ public class PolarisOperators {
         polarisOperatorMap = new ConcurrentHashMap<>();
         polarisOperatorMap.put(OperatorType.GOVERNANCE, new ConcurrentHashMap<>());
         polarisOperatorMap.put(OperatorType.CONFIG, new ConcurrentHashMap<>());
-        polarisOperatorMap.put(OperatorType.METADATA_REPORT, new ConcurrentHashMap<>());
     }
 
     private static final PolarisOperators INSTANCE = new PolarisOperators();
@@ -55,7 +58,7 @@ public class PolarisOperators {
         return operatorMap.computeIfAbsent(key, s -> new PolarisOperator(OperatorType.CONFIG, host, port, parameters, new BaseBootConfigHandler()));
     }
 
-    public static PolarisOperator loadOrStoreForMetadataReport(String host, int port, Map<String, String> parameters) {
+    public static PolarisOperator loadOrStoreForMetaReport(String host, int port, Map<String, String> parameters) {
         Map<String, PolarisOperator> operatorMap = INSTANCE.polarisOperatorMap.get(OperatorType.METADATA_REPORT);
         Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
         String key = host + ":" + port + "|hash_code:" + params.hashCode();
