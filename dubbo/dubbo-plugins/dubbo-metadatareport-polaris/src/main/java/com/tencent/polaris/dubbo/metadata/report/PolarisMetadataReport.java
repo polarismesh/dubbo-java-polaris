@@ -43,6 +43,7 @@ import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.ConcurrentHashSet;
 import org.apache.dubbo.common.utils.JsonUtils;
+import org.apache.dubbo.common.utils.NamedThreadFactory;
 import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.metadata.MappingChangedEvent;
 import org.apache.dubbo.metadata.MappingListener;
@@ -62,6 +63,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.apache.dubbo.metadata.MetadataConstants.REPORT_CONSUMER_URL_KEY;
 import static org.apache.dubbo.metadata.ServiceNameMapping.DEFAULT_MAPPING_GROUP;
@@ -82,13 +85,17 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     private final ConfigFilePublishService filePubilsher;
 
+    private final Map<String, String> mappingSubscribes = new ConcurrentHashMap<>();
+
     private final Map<String, Set<MappingListener>> mappingListeners = new ConcurrentHashMap<>();
 
     private final Map<String, ConfigFileChangeListener> sourceMappingListeners = new ConcurrentHashMap<>();
 
+    private final ScheduledExecutorService fetchMappingExecutor = Executors.newScheduledThreadPool(4, new NamedThreadFactory("polaris-metadata-report"));
+
     PolarisMetadataReport(URL url) {
         super(url);
-        this.operator = PolarisOperators.INSTANCE.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
+        this.operator = PolarisOperators.loadOrStoreForMetaReport(url.getHost(), url.getPort(), url.getParameters());
         this.config = operator.getPolarisConfig();
         this.providerAPI = operator.getProviderAPI();
         this.consumerAPI = operator.getConsumerAPI();
