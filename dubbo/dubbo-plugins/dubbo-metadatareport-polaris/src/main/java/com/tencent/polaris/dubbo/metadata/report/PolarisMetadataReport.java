@@ -36,6 +36,7 @@ import org.apache.dubbo.common.utils.ConcurrentHashSet;
 import org.apache.dubbo.common.utils.JsonUtils;
 import org.apache.dubbo.common.utils.NamedThreadFactory;
 import org.apache.dubbo.common.utils.StringUtils;
+import org.apache.dubbo.metadata.MappingChangedEvent;
 import org.apache.dubbo.metadata.MappingListener;
 import org.apache.dubbo.metadata.MetadataInfo;
 import org.apache.dubbo.metadata.report.identifier.MetadataIdentifier;
@@ -95,28 +96,6 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         if (getUrl().getParameter(REPORT_CONSUMER_URL_KEY, false)) {
             reportServiceContract(toDescriptor(consumerMetadataIdentifier, serviceParameterString));
         }
-    }
-
-    @Override
-    protected void doSaveMetadata(ServiceMetadataIdentifier metadataIdentifier, URL url) {
-    }
-
-    @Override
-    protected void doRemoveMetadata(ServiceMetadataIdentifier metadataIdentifier) {
-    }
-
-    @Override
-    protected List<String> doGetExportedURLs(ServiceMetadataIdentifier metadataIdentifier) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    protected void doSaveSubscriberData(SubscriberMetadataIdentifier identifier, String urlListStr) {
-    }
-
-    @Override
-    protected String doGetSubscribedURLs(SubscriberMetadataIdentifier identifier) {
-        return null;
     }
 
     @Override
@@ -242,17 +221,19 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     // ------- 和 Dubbo3 应用级注册发现有关的操作 --------
     // ------- 这里必须实现，否则就需要用户指定 providerBy ------
 
-
     @Override
     public boolean registerServiceAppMapping(String serviceKey, String application, URL url) {
         ReportServiceContractRequest request = new ReportServiceContractRequest();
-        request.setName("dubbo::mapping::" + serviceKey);
+        request.setName(formatMappingName(serviceKey));
+        request.setService("");
+        request.setVersion("");
 
         List<InterfaceDescriptor> descriptors = new ArrayList<>();
         InterfaceDescriptor descriptor = new InterfaceDescriptor();
         descriptor.setName(application);
-        descriptor.setPath(url.getPath());
-        descriptor.setContent(url.toFullString());
+        descriptor.setPath(application);
+        descriptor.setContent(application);
+        descriptor.setMethod("");
         descriptors.add(descriptor);
 
         request.setInterfaceDescriptors(descriptors);
@@ -292,7 +273,9 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     public Set<String> getServiceAppMapping(String serviceKey, URL url) {
         if (!mappingSubscribes.containsKey(serviceKey)) {
             GetServiceContractRequest request = new GetServiceContractRequest();
-            request.setName("dubbo::mapping::" + serviceKey);
+            request.setName(formatMappingName(serviceKey));
+            request.setService("");
+            request.setVersion("");
 
             Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
             if (!result.isPresent()) {
@@ -305,12 +288,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
             });
         }
         ServiceContractProto.ServiceContract contract = mappingSubscribes.get(serviceKey);
-
-        Set<String> applications = new HashSet<>();
-        for (ServiceContractProto.InterfaceDescriptor descriptor : contract.getInterfacesList()) {
-            applications.add(descriptor.getName());
-        }
-        return applications;
+        return  getAppNames(contract);
     }
 
     @Override
@@ -338,10 +316,28 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         public void run() {
             try {
                 GetServiceContractRequest request = new GetServiceContractRequest();
-                request.setName("dubbo::mapping::" + serviceKey);
+                request.setName(formatMappingName(serviceKey));
 
                 Optional<ServiceContractProto.ServiceContract> result = report.getServiceContract(request);
-                result.ifPresent(serviceContract -> report.mappingSubscribes.put(serviceKey, serviceContract));
+                result.ifPresent(serviceContract -> {
+                    ServiceContractProto.ServiceContract saveData = report.mappingSubscribes.get(serviceKey);
+                    boolean needNotify = false;
+                    if (Objects.isNull(saveData)) {
+                        report.mappingSubscribes.put(serviceKey, serviceContract);
+                        needNotify = true;
+                    }
+                    if (Objects.nonNull(saveData)) {
+                        if (!Objects.equals(saveData.getRevision(), serviceContract.getRevision())) {
+                            report.mappingSubscribes.put(serviceKey, serviceContract);
+                            needNotify = true;
+                        }
+                    }
+                    if (needNotify) {
+                        Set<MappingListener> listeners = report.mappingListeners.getOrDefault(serviceKey, Collections.emptySet());
+                        MappingChangedEvent event = new MappingChangedEvent(serviceKey, getAppNames(serviceContract));
+                        listeners.forEach(mappingListener -> mappingListener.onEvent(event));
+                    }
+                });
             } catch (Throwable e) {
                 report.logger.error(
                         "-1",
@@ -352,6 +348,42 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
                 );
             }
         }
+    }
+
+    // -------- dubbo metadata-report 定义了接口，但是实际以及没有任何调用 ---------
+    @Override
+    protected void doSaveMetadata(ServiceMetadataIdentifier metadataIdentifier, URL url) {
+    }
+
+    @Override
+    protected void doRemoveMetadata(ServiceMetadataIdentifier metadataIdentifier) {
+    }
+
+    @Override
+    protected List<String> doGetExportedURLs(ServiceMetadataIdentifier metadataIdentifier) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    protected void doSaveSubscriberData(SubscriberMetadataIdentifier identifier, String urlListStr) {
+    }
+
+    @Override
+    protected String doGetSubscribedURLs(SubscriberMetadataIdentifier identifier) {
+        return null;
+    }
+
+    private static Set<String> getAppNames(ServiceContractProto.ServiceContract contract) {
+        Set<String> applications = new HashSet<>();
+        for (ServiceContractProto.InterfaceDescriptor descriptor : contract.getInterfacesList()) {
+            applications.add(descriptor.getName());
+        }
+        return applications;
+    }
+
+    private static String formatMappingName(String key) {
+        String tmpl = "dubbo::mapping::%s";
+        return String.format(tmpl, key);
     }
 
     private static String formatAppMetaName(SubscriberMetadataIdentifier identifier) {
