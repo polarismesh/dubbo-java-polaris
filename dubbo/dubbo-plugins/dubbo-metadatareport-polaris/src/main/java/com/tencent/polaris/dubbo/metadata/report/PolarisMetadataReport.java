@@ -19,8 +19,6 @@ package com.tencent.polaris.dubbo.metadata.report;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.server.InterfaceDescriptor;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.pojo.ServiceRule;
@@ -30,15 +28,8 @@ import com.tencent.polaris.common.registry.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.utils.Consts;
-import com.tencent.polaris.configuration.api.core.ConfigFile;
-import com.tencent.polaris.configuration.api.core.ConfigFileChangeEvent;
-import com.tencent.polaris.configuration.api.core.ConfigFileChangeListener;
-import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
-import com.tencent.polaris.configuration.api.core.ConfigFileService;
-import com.tencent.polaris.configuration.api.rpc.ConfigPublishRequest;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceContractProto;
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.config.configcenter.ConfigItem;
 import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.ConcurrentHashSet;
@@ -48,7 +39,6 @@ import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.metadata.MappingChangedEvent;
 import org.apache.dubbo.metadata.MappingListener;
 import org.apache.dubbo.metadata.MetadataInfo;
-import org.apache.dubbo.metadata.ServiceNameMapping;
 import org.apache.dubbo.metadata.report.identifier.MetadataIdentifier;
 import org.apache.dubbo.metadata.report.identifier.ServiceMetadataIdentifier;
 import org.apache.dubbo.metadata.report.identifier.SubscriberMetadataIdentifier;
@@ -57,6 +47,7 @@ import org.apache.dubbo.metadata.report.support.AbstractMetadataReport;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -65,9 +56,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.dubbo.metadata.MetadataConstants.REPORT_CONSUMER_URL_KEY;
-import static org.apache.dubbo.metadata.ServiceNameMapping.DEFAULT_MAPPING_GROUP;
 
 public class PolarisMetadataReport extends AbstractMetadataReport {
 
@@ -81,15 +72,9 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     private final ConsumerAPI consumerAPI;
 
-    private final ConfigFileService fileQuerier;
-
-    private final ConfigFilePublishService filePubilsher;
-
-    private final Map<String, String> mappingSubscribes = new ConcurrentHashMap<>();
+    private final Map<String, ServiceContractProto.ServiceContract> mappingSubscribes = new ConcurrentHashMap<>();
 
     private final Map<String, Set<MappingListener>> mappingListeners = new ConcurrentHashMap<>();
-
-    private final Map<String, ConfigFileChangeListener> sourceMappingListeners = new ConcurrentHashMap<>();
 
     private final ScheduledExecutorService fetchMappingExecutor = Executors.newScheduledThreadPool(4, new NamedThreadFactory("polaris-metadata-report"));
 
@@ -99,8 +84,6 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         this.config = operator.getPolarisConfig();
         this.providerAPI = operator.getProviderAPI();
         this.consumerAPI = operator.getConsumerAPI();
-        this.fileQuerier = operator.getConfigFileAPI();
-        this.filePubilsher = operator.getConfigFilePublishAPI();
     }
 
     @Override
@@ -113,28 +96,6 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         if (getUrl().getParameter(REPORT_CONSUMER_URL_KEY, false)) {
             reportServiceContract(toDescriptor(consumerMetadataIdentifier, serviceParameterString));
         }
-    }
-
-    @Override
-    protected void doSaveMetadata(ServiceMetadataIdentifier metadataIdentifier, URL url) {
-    }
-
-    @Override
-    protected void doRemoveMetadata(ServiceMetadataIdentifier metadataIdentifier) {
-    }
-
-    @Override
-    protected List<String> doGetExportedURLs(ServiceMetadataIdentifier metadataIdentifier) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    protected void doSaveSubscriberData(SubscriberMetadataIdentifier identifier, String urlListStr) {
-    }
-
-    @Override
-    protected String doGetSubscribedURLs(SubscriberMetadataIdentifier identifier) {
-        return null;
     }
 
     @Override
@@ -177,10 +138,6 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         });
         request.setInterfaceDescriptors(descriptors);
         reportServiceContract(request);
-    }
-
-    @Override
-    public void unPublishAppMetadata(SubscriberMetadataIdentifier identifier, MetadataInfo metadataInfo) {
     }
 
     @Override
@@ -265,31 +222,23 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     // ------- 这里必须实现，否则就需要用户指定 providerBy ------
 
     @Override
-    public ConfigItem getConfigItem(String key, String group) {
-        ConfigFile file = fileQuerier.getConfigFile(config.getNamespace(), group, key);
-        String content = file.getContent();
-        return new ConfigItem(content, file.getMd5());
-    }
+    public boolean registerServiceAppMapping(String serviceKey, String application, URL url) {
+        ReportServiceContractRequest request = new ReportServiceContractRequest();
+        request.setName(formatMappingName(serviceKey));
+        request.setService("");
+        request.setVersion("");
 
-    @Override
-    public boolean registerServiceAppMapping(String serviceInterface, String defaultMappingGroup, String newConfigContent, Object ticket) {
-        ConfigPublishRequest request = new ConfigPublishRequest();
-        request.setNamespace(config.getNamespace());
-        request.setGroup(defaultMappingGroup);
-        request.setFilename(serviceInterface);
-        request.setContent(newConfigContent);
-        request.setCasMd5((String) ticket);
-        ConfigFileResponse response = filePubilsher.upsertAndPublish(request);
-        if (response.getCode() == ServerCodes.EXECUTE_SUCCESS) {
-            return true;
-        }
-        logger.error(
-                formatCode(response.getCode()),
-                response.getMessage(),
-                String.format("key(%s) group(%s) md5(%s)", serviceInterface, defaultMappingGroup, ticket),
-                "registerServiceAppMapping fail"
-        );
-        return false;
+        List<InterfaceDescriptor> descriptors = new ArrayList<>();
+        InterfaceDescriptor descriptor = new InterfaceDescriptor();
+        descriptor.setName(application);
+        descriptor.setPath(application);
+        descriptor.setContent(application);
+        descriptor.setMethod("");
+        descriptors.add(descriptor);
+
+        request.setInterfaceDescriptors(descriptors);
+        reportServiceContract(request);
+        return true;
     }
 
     @Override
@@ -308,21 +257,9 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
      */
     @Override
     public Set<String> getServiceAppMapping(String serviceKey, MappingListener listener, URL url) {
-        String group = DEFAULT_MAPPING_GROUP;
-        ConfigFile file = fileQuerier.getConfigFile(config.getNamespace(), group, serviceKey);
-
-        mappingListeners.compute(serviceKey, (s, mappingListeners) -> {
-            sourceMappingListeners.compute(serviceKey, (s1, configFileChangeListener) -> {
-                ConfigFileChangeListener changeListener = new MappingConfigFileChangeListener(serviceKey, this);
-                file.addChangeListener(changeListener);
-                return changeListener;
-            });
-            return new ConcurrentHashSet<>();
-        });
-
+        mappingListeners.computeIfAbsent(serviceKey, s -> new ConcurrentHashSet<>());
         mappingListeners.get(serviceKey).add(listener);
-
-        return ServiceNameMapping.getAppNames(file.getContent());
+        return getServiceAppMapping(serviceKey, url);
     }
 
     /**
@@ -334,33 +271,119 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
      */
     @Override
     public Set<String> getServiceAppMapping(String serviceKey, URL url) {
-        String group = DEFAULT_MAPPING_GROUP;
-        ConfigFile file = fileQuerier.getConfigFile(config.getNamespace(), group, serviceKey);
-        return ServiceNameMapping.getAppNames(file.getContent());
+        if (!mappingSubscribes.containsKey(serviceKey)) {
+            GetServiceContractRequest request = new GetServiceContractRequest();
+            request.setName(formatMappingName(serviceKey));
+            request.setService("");
+            request.setVersion("");
+
+            Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
+            if (!result.isPresent()) {
+                return Collections.emptySet();
+            }
+            // 添加一个定时任务获取最新的 mapping 数据信息
+            mappingSubscribes.computeIfAbsent(serviceKey, s -> {
+                fetchMappingExecutor.scheduleAtFixedRate(new FetchMapping(serviceKey, this), 5, 5, TimeUnit.SECONDS);
+                return result.get();
+            });
+        }
+        ServiceContractProto.ServiceContract contract = mappingSubscribes.get(serviceKey);
+        return  getAppNames(contract);
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        fetchMappingExecutor.shutdown();
     }
 
     private String formatCode(Object val) {
         return "POLARIS:" + val;
     }
 
-    private static class MappingConfigFileChangeListener implements ConfigFileChangeListener {
+    private static class FetchMapping implements Runnable {
 
         private final String serviceKey;
 
         private final PolarisMetadataReport report;
 
-        public MappingConfigFileChangeListener(String serviceKey, PolarisMetadataReport report) {
+        private FetchMapping(String serviceKey, PolarisMetadataReport report) {
             this.serviceKey = serviceKey;
             this.report = report;
         }
 
         @Override
-        public void onChange(ConfigFileChangeEvent event) {
-            MappingChangedEvent mappingChangedEvent = new MappingChangedEvent(serviceKey, ServiceNameMapping.getAppNames(event.getNewValue()));
+        public void run() {
+            try {
+                GetServiceContractRequest request = new GetServiceContractRequest();
+                request.setName(formatMappingName(serviceKey));
 
-            Set<MappingListener> mappingListeners = report.mappingListeners.getOrDefault(serviceKey, Collections.emptySet());
-            mappingListeners.forEach(mappingListener -> mappingListener.onEvent(mappingChangedEvent));
+                Optional<ServiceContractProto.ServiceContract> result = report.getServiceContract(request);
+                result.ifPresent(serviceContract -> {
+                    ServiceContractProto.ServiceContract saveData = report.mappingSubscribes.get(serviceKey);
+                    boolean needNotify = false;
+                    if (Objects.isNull(saveData)) {
+                        report.mappingSubscribes.put(serviceKey, serviceContract);
+                        needNotify = true;
+                    }
+                    if (Objects.nonNull(saveData)) {
+                        if (!Objects.equals(saveData.getRevision(), serviceContract.getRevision())) {
+                            report.mappingSubscribes.put(serviceKey, serviceContract);
+                            needNotify = true;
+                        }
+                    }
+                    if (needNotify) {
+                        Set<MappingListener> listeners = report.mappingListeners.getOrDefault(serviceKey, Collections.emptySet());
+                        MappingChangedEvent event = new MappingChangedEvent(serviceKey, getAppNames(serviceContract));
+                        listeners.forEach(mappingListener -> mappingListener.onEvent(event));
+                    }
+                });
+            } catch (Throwable e) {
+                report.logger.error(
+                        "-1",
+                        e.getMessage(),
+                        serviceKey,
+                        "fetch dubbo mapping fail",
+                        e
+                );
+            }
         }
+    }
+
+    // -------- dubbo metadata-report 定义了接口，但是实际以及没有任何调用 ---------
+    @Override
+    protected void doSaveMetadata(ServiceMetadataIdentifier metadataIdentifier, URL url) {
+    }
+
+    @Override
+    protected void doRemoveMetadata(ServiceMetadataIdentifier metadataIdentifier) {
+    }
+
+    @Override
+    protected List<String> doGetExportedURLs(ServiceMetadataIdentifier metadataIdentifier) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    protected void doSaveSubscriberData(SubscriberMetadataIdentifier identifier, String urlListStr) {
+    }
+
+    @Override
+    protected String doGetSubscribedURLs(SubscriberMetadataIdentifier identifier) {
+        return null;
+    }
+
+    private static Set<String> getAppNames(ServiceContractProto.ServiceContract contract) {
+        Set<String> applications = new HashSet<>();
+        for (ServiceContractProto.InterfaceDescriptor descriptor : contract.getInterfacesList()) {
+            applications.add(descriptor.getName());
+        }
+        return applications;
+    }
+
+    private static String formatMappingName(String key) {
+        String tmpl = "dubbo::mapping::%s";
+        return String.format(tmpl, key);
     }
 
     private static String formatAppMetaName(SubscriberMetadataIdentifier identifier) {
