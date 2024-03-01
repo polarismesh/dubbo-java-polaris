@@ -148,7 +148,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         GetServiceContractRequest request = new GetServiceContractRequest();
         request.setName(formatAppMetaName(identifier));
         request.setService(identifier.getApplication());
-        request.setVersion(identifier.getRevision());
+        request.setVersion("");
 
         Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
         if (!result.isPresent()) {
