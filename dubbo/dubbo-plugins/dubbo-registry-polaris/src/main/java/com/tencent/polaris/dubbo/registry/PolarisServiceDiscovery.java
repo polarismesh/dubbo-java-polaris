@@ -188,20 +188,22 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
         @Override
         public void onEvent(ServiceChangeEvent event) {
             String serviceName = event.getServiceKey().getService();
-            List<ServiceInstance> serviceInstances = event.getAllInstances()
-                    .stream()
-                    .map((Function<Instance, ServiceInstance>) instance -> {
-                        DefaultServiceInstance serviceInstance =
-                                new DefaultServiceInstance(
-                                        instance.getService(),
-                                        instance.getHost(), instance.getPort(),
-                                        ScopeModelUtil.getApplicationModel(registryURL.getScopeModel()));
-                        serviceInstance.setMetadata(instance.getMetadata());
-                        serviceInstance.setEnabled(!instance.isIsolated());
-                        serviceInstance.setHealthy(instance.isHealthy());
-                        return serviceInstance;
-                    })
-                    .collect(Collectors.toList());
+            Instance[] instances = operator.getAvailableInstances(serviceName, true);
+            if (Objects.isNull(instances) || instances.length == 0) {
+                return;
+            }
+            List<ServiceInstance> serviceInstances = new ArrayList<>(instances.length);
+            for (Instance instance : instances) {
+                DefaultServiceInstance serviceInstance =
+                        new DefaultServiceInstance(
+                                instance.getService(),
+                                instance.getHost(), instance.getPort(),
+                                ScopeModelUtil.getApplicationModel(registryURL.getScopeModel()));
+                serviceInstance.setMetadata(instance.getMetadata());
+                serviceInstance.setEnabled(!instance.isIsolated());
+                serviceInstance.setHealthy(instance.isHealthy());
+                serviceInstances.add(serviceInstance);
+            }
 
             Set<ServiceInstancesChangedListener> listeners = serviceListeners.getOrDefault(service, Collections.emptySet());
 
