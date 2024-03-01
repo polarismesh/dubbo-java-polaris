@@ -90,9 +90,8 @@ public class DubboUtils {
                     .build());
         }
 
-        URL url = invoker.getUrl();
         serviceInfos.add(DubboServiceInfo.builder()
-                .service(url.getServiceInterface())
+                .service(providerUrl.getServiceInterface())
                 .methodName(invocation.getMethodName())
                 .build());
         return serviceInfos;
