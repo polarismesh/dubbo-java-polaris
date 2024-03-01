@@ -127,7 +127,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         ReportServiceContractRequest request = new ReportServiceContractRequest();
         request.setName(formatAppMetaName(identifier));
         request.setService(identifier.getApplication());
-        request.setVersion(identifier.getRevision());
+        request.setRevision(identifier.getRevision());
         request.setContent(metadataInfo.getContent());
         List<InterfaceDescriptor> descriptors = new ArrayList<>(metadataInfo.getServices().size());
         metadataInfo.getServices().forEach((s, serviceInfo) -> {
