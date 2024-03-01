@@ -78,8 +78,11 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     private final ScheduledExecutorService fetchMappingExecutor = Executors.newScheduledThreadPool(4, new NamedThreadFactory("polaris-metadata-report"));
 
+    private final String polarisToken;
+
     PolarisMetadataReport(URL url) {
         super(url);
+        this.polarisToken = url.getParameter(Consts.KEY_TOKEN);
         this.operator = PolarisOperators.loadOrStoreForMetaReport(url.getHost(), url.getPort(), url.getParameters());
         this.config = operator.getPolarisConfig();
         this.providerAPI = operator.getProviderAPI();
@@ -192,6 +195,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     private Optional<ServiceContractProto.ServiceContract> getServiceContract(GetServiceContractRequest req) {
         req.setNamespace(config.getNamespace());
         req.setProtocol(Consts.DUBBO_PROTOCOL);
+        req.setToken(polarisToken);
         try {
             ServiceRuleResponse response = consumerAPI.getServiceContract(req);
             ServiceRule rule = response.getServiceRule();
@@ -219,6 +223,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     private void reportServiceContract(ReportServiceContractRequest req) {
         req.setNamespace(config.getNamespace());
         req.setProtocol(Consts.DUBBO_PROTOCOL);
+        req.setToken(polarisToken);
         try {
             providerAPI.reportServiceContract(req);
         } catch (PolarisException e) {
