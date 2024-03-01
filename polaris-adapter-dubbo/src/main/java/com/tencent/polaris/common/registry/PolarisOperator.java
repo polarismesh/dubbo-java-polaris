@@ -20,7 +20,6 @@ import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
-import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
@@ -277,13 +276,8 @@ public class PolarisOperator {
         serviceCallResult.setRetCode(code);
         serviceCallResult.setCallerIp(callerIp);
         serviceCallResult.setCallerService(new ServiceKey(polarisConfig.getNamespace(), ""));
-
-        InstanceResource resource = new InstanceResource(new ServiceKey(polarisConfig.getNamespace(), service), host, port, null);
-        ResourceStat stat = new ResourceStat(resource, code, delay, retStatus);
-
         try {
             consumerAPI.updateServiceCallResult(serviceCallResult);
-            circuitBreakAPI.report(stat);
         } catch (PolarisException e) {
             DUBBO_LOGGER.error(formatCode(e.getCode()),
                     e.getMessage(),

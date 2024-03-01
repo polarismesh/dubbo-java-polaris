@@ -79,7 +79,7 @@ public class CircuitBreakerFilter extends PolarisOperatorDelegate implements Fil
         if (serviceInfos.isEmpty() || Objects.isNull(operator)) {
             return invoker.invoke(invocation);
         }
-        // 如果是熔断，只处理第一个的请求
+        // 如果是熔断，只选择第一个 DubboServiceInfo 进行作为熔断信息
         DubboServiceInfo firstService = serviceInfos.get(0);
 
         InvokeContext.RequestContext context = new InvokeContext.RequestContext(createCalleeService(firstService), firstService.getDubboInterface());

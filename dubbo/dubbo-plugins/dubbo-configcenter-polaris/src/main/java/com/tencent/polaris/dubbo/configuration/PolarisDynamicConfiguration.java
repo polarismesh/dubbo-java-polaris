@@ -26,6 +26,7 @@ import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
+import com.tencent.polaris.configuration.api.rpc.ConfigPublishRequest;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.configcenter.ConfigChangedEvent;
 import org.apache.dubbo.common.config.configcenter.ConfigurationListener;
@@ -99,27 +100,49 @@ public class PolarisDynamicConfiguration implements DynamicConfiguration {
     @Override
     public boolean publishConfig(String key, String group, String content) throws UnsupportedOperationException {
         try {
-            ConfigFileResponse response = filePublisher.createConfigFile(polarisConfig.getNamespace(), group, key, content);
-            if (response.getCode() == ServerCodes.EXISTED_RESOURCE) {
-                response = filePublisher.updateConfigFile(polarisConfig.getNamespace(), group, key, content);
-            }
+            ConfigPublishRequest request = new ConfigPublishRequest();
+            request.setNamespace(polarisConfig.getNamespace());
+            request.setGroup(group);
+            request.setFilename(key);
+            request.setContent(content);
+            ConfigFileResponse response = filePublisher.upsertAndPublish(request);
             if (response.getCode() != ServerCodes.EXECUTE_SUCCESS) {
                 logger.error(
                         formatCode(response.getCode()),
                         response.getMessage(),
                         String.format("key(%s) group(%s)", key, group),
-                        "upsert config fail"
+                        "release config fail"
                 );
                 return false;
             }
-            response = filePublisher.releaseConfigFile(polarisConfig.getNamespace(), group, key);
+            return true;
+        } catch (PolarisException e) {
+            logger.error(
+                    formatCode(e.getCode()),
+                    e.getMessage(),
+                    String.format("key(%s) group(%s)", key, group),
+                    "publish config fail");
+            return false;
+        }
+    }
+
+    @Override
+    public boolean publishConfigCas(String key, String group, String content, Object ticket) throws UnsupportedOperationException {
+        try {
+            ConfigPublishRequest request = new ConfigPublishRequest();
+            request.setNamespace(polarisConfig.getNamespace());
+            request.setGroup(group);
+            request.setFilename(key);
+            request.setContent(content);
+            request.setCasMd5(String.valueOf(ticket));
+            ConfigFileResponse response = filePublisher.upsertAndPublish(request);
             if (response.getCode() != ServerCodes.EXECUTE_SUCCESS) {
                 logger.error(
                         formatCode(response.getCode()),
-                         response.getMessage(),
+                        response.getMessage(),
                         String.format("key(%s) group(%s)", key, group),
                         "release config fail"
-                        );
+                );
                 return false;
             }
             return true;
