@@ -133,19 +133,20 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
         }
         Set<String> services = listener.getServiceNames();
         for (String service : services) {
-            serviceListeners.computeIfAbsent(service, name -> {
-                ServiceListener serviceListener = new InnerServiceListener(service);
-                listenerMap.put(service, serviceListener);
+            serviceListeners.computeIfAbsent(service, name -> new ConcurrentHashSet<>());
+            serviceListeners.get(service).add(listener);
 
+            // 按照一个 service 一个 ServiceListener 的纬度
+            listenerMap.computeIfAbsent(service, s -> {
+                ServiceListener serviceListener = new InnerServiceListener(service);
                 WatchServiceRequest request = new WatchServiceRequest();
                 request.setNamespace(operator.getPolarisConfig().getNamespace());
                 request.setService(service);
                 request.setListeners(Collections.singletonList(serviceListener));
                 consumerAPI.watchService(request);
-                return new ConcurrentHashSet<>();
+                return serviceListener;
             });
 
-            serviceListeners.get(service).add(listener);
         }
     }
 
@@ -158,6 +159,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
         Set<String> services = listener.getServiceNames();
         for (String service : services) {
             Set<ServiceInstancesChangedListener> listeners = serviceListeners.get(service);
+            listeners.remove(listener);
             if (CollectionUtils.isEmpty(listeners)) {
                 serviceListeners.remove(service);
 
@@ -171,9 +173,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
                             .build();
                     consumerAPI.unWatchService(request);
                 }
-                continue;
             }
-            listeners.remove(listener);
         }
     }
 
@@ -188,6 +188,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
         @Override
         public void onEvent(ServiceChangeEvent event) {
             String serviceName = event.getServiceKey().getService();
+            // 注意，这里不能走 Event 里面的服务数据列表，必须要走 ConsumerAPI 重新走正常的 Router 能力过滤掉隔离、权重为0的实例
             Instance[] instances = operator.getAvailableInstances(serviceName, true);
             if (Objects.isNull(instances) || instances.length == 0) {
                 return;
