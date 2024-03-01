@@ -145,6 +145,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     @Override
     public MetadataInfo getAppMetadata(SubscriberMetadataIdentifier identifier, Map<String, String> instanceMetadata) {
+        // 这里由于查询的应用的接口定义数据，这里不能设置 version，必须显示设置 version 为空
         GetServiceContractRequest request = new GetServiceContractRequest();
         request.setName(formatAppMetaName(identifier));
         request.setService(identifier.getApplication());
@@ -152,7 +153,8 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
         Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
         if (!result.isPresent()) {
-            return new MetadataInfo();
+            // 这里返回一个空的 MetadataInfo
+            return MetadataInfo.EMPTY;
         }
 
         Map<String, MetadataInfo.ServiceInfo> serviceInfos = new HashMap<>();
@@ -163,6 +165,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         return new MetadataInfo(identifier.getApplication(), identifier.getRevision(), serviceInfos);
     }
 
+    // toDescriptor 该方法是将 dubbo 接口运维元数据转为北极星的服务契约定义进行存储
     private ReportServiceContractRequest toDescriptor(MetadataIdentifier identifier, String serviceDefinitions) {
         ReportServiceContractRequest request = new ReportServiceContractRequest();
         request.setName(formatMetadataIdentifier(identifier));
@@ -183,6 +186,12 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         return request;
     }
 
+    /**
+     * 获取服务契约的通用调用接口
+     *
+     * @param req {@link GetServiceContractRequest}
+     * @return {@link Optional<ServiceContractProto.ServiceContract>}
+     */
     private Optional<ServiceContractProto.ServiceContract> getServiceContract(GetServiceContractRequest req) {
         req.setNamespace(config.getNamespace());
         req.setProtocol(Consts.DUBBO_PROTOCOL);
@@ -206,7 +215,11 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         return Optional.empty();
     }
 
-
+    /**
+     * 上报服务契约定义通用接口
+     *
+     * @param req {@link ReportServiceContractRequest}
+     */
     private void reportServiceContract(ReportServiceContractRequest req) {
         req.setNamespace(config.getNamespace());
         req.setProtocol(Consts.DUBBO_PROTOCOL);
@@ -226,6 +239,15 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     // ------- 和 Dubbo3 应用级注册发现有关的操作 --------
     // ------- 这里必须实现，否则就需要用户指定 providerBy ------
 
+    /**
+     * 存储 dubbo 的接口-应用的 mapping 数据时，这里对接的北极星的服务契约时，服务、版本信息为空，必须显示设置
+     * InterfaceDescriptor -> 作为记录 dubbo 应用数据
+     *
+     * @param serviceKey dubbo 接口名称
+     * @param application dubbo 应用名称
+     * @param url {@link URL}
+     * @return 返回接口-应用 mapping 数据是否发布成功
+     */
     @Override
     public boolean registerServiceAppMapping(String serviceKey, String application, URL url) {
         ReportServiceContractRequest request = new ReportServiceContractRequest();
@@ -322,24 +344,30 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
             try {
                 GetServiceContractRequest request = new GetServiceContractRequest();
                 request.setName(formatMappingName(serviceKey));
+                request.setService("");
+                request.setVersion("");
 
                 Optional<ServiceContractProto.ServiceContract> result = report.getServiceContract(request);
                 result.ifPresent(serviceContract -> {
                     ServiceContractProto.ServiceContract saveData = report.mappingSubscribes.get(serviceKey);
                     boolean needNotify = false;
+                    // 如果之前就不存在这个 mapping 数据，需要触发通知
                     if (Objects.isNull(saveData)) {
                         report.mappingSubscribes.put(serviceKey, serviceContract);
                         needNotify = true;
                     }
                     if (Objects.nonNull(saveData)) {
+                        // 如果 revision 信息比较不一致，则表明出现更细，需要触发通知
                         if (!Objects.equals(saveData.getRevision(), serviceContract.getRevision())) {
                             report.mappingSubscribes.put(serviceKey, serviceContract);
                             needNotify = true;
                         }
                     }
                     if (needNotify) {
+                        Set<String> newApplications = getAppNames(serviceContract);
+                        report.logger.info(String.format("receive mapping change event, interface=%s applications=%s", serviceKey, newApplications));
                         Set<MappingListener> listeners = report.mappingListeners.getOrDefault(serviceKey, Collections.emptySet());
-                        MappingChangedEvent event = new MappingChangedEvent(serviceKey, getAppNames(serviceContract));
+                        MappingChangedEvent event = new MappingChangedEvent(serviceKey, newApplications);
                         listeners.forEach(mappingListener -> mappingListener.onEvent(event));
                     }
                 });
