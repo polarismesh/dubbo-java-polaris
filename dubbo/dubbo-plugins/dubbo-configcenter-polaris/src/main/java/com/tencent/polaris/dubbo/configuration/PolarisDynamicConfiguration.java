@@ -73,6 +73,7 @@ public class PolarisDynamicConfiguration implements DynamicConfiguration {
                     configurationListener.process(dubboEvent);
                 });
             });
+            logger.info(String.format("add polaris config listener, key=%s, group=%s", key, group));
             return new CopyOnWriteArraySet<>();
         });
 
@@ -87,14 +88,34 @@ public class PolarisDynamicConfiguration implements DynamicConfiguration {
 
     @Override
     public String getConfig(String key, String group, long timeout) throws IllegalStateException {
-        ConfigFile configFile = fileQuerier.getConfigFile(polarisConfig.getNamespace(), group, key);
-        return configFile.getContent();
+        try {
+            ConfigFile configFile = fileQuerier.getConfigFile(polarisConfig.getNamespace(), group, key);
+            return configFile.getContent();
+        } catch (PolarisException e) {
+            logger.error(formatCode(
+                    e.getCode()),
+                    e.getMessage(),
+                    String.format("key=%s, group=%s", key, group),
+                    "get config from polaris fail",
+                    e);
+        }
+        return null;
     }
 
     @Override
     public Object getInternalProperty(String key) {
-        ConfigFile configFile = fileQuerier.getConfigFile(polarisConfig.getNamespace(), DEFAULT_GROUP, key);
-        return configFile.getContent();
+        try {
+            ConfigFile configFile = fileQuerier.getConfigFile(polarisConfig.getNamespace(), DEFAULT_GROUP, key);
+            return configFile.getContent();
+        } catch (PolarisException e) {
+            logger.error(formatCode(
+                            e.getCode()),
+                    e.getMessage(),
+                    String.format("key=%s, group=%s", key, DEFAULT_GROUP),
+                    "get config from polaris fail",
+                    e);
+        }
+        return null;
     }
 
     @Override

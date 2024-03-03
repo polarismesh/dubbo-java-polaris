@@ -24,6 +24,7 @@ import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.rpc.GetServiceContractRequest;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.common.context.Context;
 import com.tencent.polaris.common.registry.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
@@ -78,11 +79,8 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     private final ScheduledExecutorService fetchMappingExecutor = Executors.newScheduledThreadPool(4, new NamedThreadFactory("polaris-metadata-report"));
 
-    private final String polarisToken;
-
     PolarisMetadataReport(URL url) {
         super(url);
-        this.polarisToken = url.getParameter(Consts.KEY_TOKEN);
         this.operator = PolarisOperators.loadOrStoreForMetaReport(url.getHost(), url.getPort(), url.getParameters());
         this.config = operator.getPolarisConfig();
         this.providerAPI = operator.getProviderAPI();
@@ -114,7 +112,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
         List<ServiceContractProto.InterfaceDescriptor> descriptors = result.get().getInterfacesList();
         for (ServiceContractProto.InterfaceDescriptor descriptor : descriptors) {
-            if (!Objects.equals(descriptor.getId(), metadataIdentifier.getIdentifierKey())) {
+            if (!Objects.equals(descriptor.getName(), metadataIdentifier.getIdentifierKey())) {
                 continue;
             }
             return descriptor.getContent();
@@ -127,15 +125,15 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         ReportServiceContractRequest request = new ReportServiceContractRequest();
         request.setName(formatAppMetaName(identifier));
         request.setService(identifier.getApplication());
-        request.setRevision(identifier.getRevision());
         request.setContent(metadataInfo.getContent());
+        // TODO 需要设置 version
+        request.setVersion(Context.getFromGlobal(Consts.INSTANCE_VERSION, Consts.DEFAULT_VERSION));
         List<InterfaceDescriptor> descriptors = new ArrayList<>(metadataInfo.getServices().size());
         metadataInfo.getServices().forEach((s, serviceInfo) -> {
             InterfaceDescriptor descriptor = new InterfaceDescriptor();
-            descriptor.setId(s);
-            descriptor.setPath(serviceInfo.getPath());
+            descriptor.setPath(serviceInfo.getName());
             descriptor.setMethod("");
-            descriptor.setName(serviceInfo.getName());
+            descriptor.setName(serviceInfo.getMatchKey());
             descriptor.setContent(JsonUtils.toJson(serviceInfo));
             descriptors.add(descriptor);
         });
@@ -149,7 +147,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         GetServiceContractRequest request = new GetServiceContractRequest();
         request.setName(formatAppMetaName(identifier));
         request.setService(identifier.getApplication());
-        request.setVersion("");
+        request.setVersion(Context.getFromGlobal(Consts.INSTANCE_VERSION, Consts.DEFAULT_VERSION));
 
         Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
         if (!result.isPresent()) {
@@ -195,7 +193,6 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     private Optional<ServiceContractProto.ServiceContract> getServiceContract(GetServiceContractRequest req) {
         req.setNamespace(config.getNamespace());
         req.setProtocol(Consts.DUBBO_PROTOCOL);
-        req.setToken(polarisToken);
         try {
             ServiceRuleResponse response = consumerAPI.getServiceContract(req);
             ServiceRule rule = response.getServiceRule();
@@ -208,8 +205,8 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
             logger.error(
                     formatCode(e.getCode()),
                     e.getMessage(),
-                    "",
-                    "report service_contract fail"
+                    req.toString(),
+                    "get service_contract fail"
             );
         }
         return Optional.empty();
@@ -220,12 +217,12 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
      *
      * @param req {@link ReportServiceContractRequest}
      */
-    private void reportServiceContract(ReportServiceContractRequest req) {
+    private boolean reportServiceContract(ReportServiceContractRequest req) {
         req.setNamespace(config.getNamespace());
         req.setProtocol(Consts.DUBBO_PROTOCOL);
-        req.setToken(polarisToken);
         try {
             providerAPI.reportServiceContract(req);
+            return true;
         } catch (PolarisException e) {
             logger.error(
                     formatCode(e.getCode()),
@@ -233,6 +230,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
                     "",
                     "report service_contract fail"
             );
+            return false;
         }
     }
 
@@ -264,8 +262,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         descriptors.add(descriptor);
 
         request.setInterfaceDescriptors(descriptors);
-        reportServiceContract(request);
-        return true;
+        return reportServiceContract(request);
     }
 
     @Override
@@ -426,10 +423,10 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
 
     private static String formatMetadataIdentifier(MetadataIdentifier identifier) {
         String tmpl = "dubbo::metadata::";
-        if (StringUtils.isNotEmpty(identifier.getVersion())) {
+        if (StringUtils.isNotBlank(identifier.getVersion())) {
             tmpl += identifier.getVersion() + "::";
         }
-        if (StringUtils.isNotEmpty(identifier.getGroup())) {
+        if (StringUtils.isNotBlank(identifier.getGroup())) {
             tmpl += identifier.getGroup() + "::";
         }
         tmpl += identifier.getSide() + "::";
