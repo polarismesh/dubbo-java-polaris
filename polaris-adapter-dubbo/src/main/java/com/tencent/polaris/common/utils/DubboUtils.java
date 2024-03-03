@@ -20,15 +20,13 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.registry.DubboServiceInfo;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.ConfigurationUtils;
-import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.constants.RegistryConstants;
+import org.apache.dubbo.common.url.component.ServiceConfigURL;
 import org.apache.dubbo.registry.client.InstanceAddressURL;
 import org.apache.dubbo.rpc.Constants;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.model.ScopeModel;
-import org.apache.dubbo.rpc.protocol.ReferenceCountInvokerWrapper;
-import org.apache.dubbo.rpc.protocol.dubbo.DubboInvoker;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,7 +80,7 @@ public class DubboUtils {
         List<DubboServiceInfo> serviceInfos = new ArrayList<>(2);
 
         URL providerUrl = invoker.getUrl();
-        if (providerUrl instanceof InstanceAddressURL) {
+        if (checkIsApplicationMode(invoker)) {
             serviceInfos.add(DubboServiceInfo.builder()
                     .service(providerUrl.getRemoteApplication())
                     .interfaceName(providerUrl.getServiceInterface())
@@ -95,6 +93,23 @@ public class DubboUtils {
                 .methodName(invocation.getMethodName())
                 .build());
         return serviceInfos;
+    }
+
+    private static <T> boolean checkIsApplicationMode(Invoker<T> invoker) {
+        URL providerUrl = invoker.getUrl();
+        if (providerUrl instanceof InstanceAddressURL) {
+            return true;
+        }
+        if (providerUrl instanceof ServiceConfigURL) {
+            ServiceConfigURL url = (ServiceConfigURL) providerUrl;
+            String registerMode = url.getParameter(RegistryConstants.REGISTER_MODE_KEY);
+            switch (registerMode) {
+                case RegistryConstants.DEFAULT_REGISTER_MODE_ALL:
+                case RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE:
+                    return true;
+            }
+        }
+        return false;
     }
 
 }

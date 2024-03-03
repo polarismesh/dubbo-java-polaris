@@ -31,14 +31,14 @@ public class MiddleServiceImpl implements MiddleService {
 
     @Override
     public String sayHello(String name) {
-        RpcContext.getClientAttachment().setAttachment("name", name);
+        RpcContext.getClientAttachment().setAttachment("user", name);
         String ret = backendService.sayHello(name);
         return "[MiddleService-" + System.getenv("ENV") + "] sayHello, " + name + " -> " + ret;
     }
 
     @Override
     public String sayHi(String name) {
-        RpcContext.getClientAttachment().setAttachment("name", name);
+        RpcContext.getClientAttachment().setAttachment("user", name);
         String ret = backendService.sayHello(name);
         return "[MiddleService-" + System.getenv("ENV") + "] sayHi, " + name + " -> " + ret;
     }
