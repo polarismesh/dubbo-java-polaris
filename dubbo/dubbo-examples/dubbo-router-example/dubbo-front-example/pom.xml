@@ -84,7 +84,7 @@
             <version>${revision}</version>
         </dependency>
 
-        <!--    引入 polaris 限流能力    -->
+        <!--    引入 polaris 路由能力    -->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>dubbo-router-polaris</artifactId>

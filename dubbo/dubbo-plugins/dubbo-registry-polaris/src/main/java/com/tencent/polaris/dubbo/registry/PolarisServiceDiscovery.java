@@ -24,6 +24,7 @@ import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.common.context.Context;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.utils.Consts;
@@ -46,12 +47,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
 
-    private final  PolarisOperator operator;
+    private final PolarisOperator operator;
 
     private final ConsumerAPI consumerAPI;
 
@@ -74,15 +74,17 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
             metadata = new HashMap<>();
         }
         metadata.replaceAll((s, s2) -> StringUtils.defaultString(s2));
+        String version = instance.getMetadata(Consts.INSTANCE_VERSION, Consts.DEFAULT_VERSION);
+        Context.saveToGlobal(Consts.INSTANCE_VERSION, version);
         operator.register(
                 serviceName,
                 instance.getHost(),
                 instance.getPort(),
                 "dubbo",
-                instance.getMetadata(Consts.INSTANCE_VERSION, "1.0.0"),
+                version,
                 Integer.parseInt(instance.getMetadata(Consts.INSTANCE_WEIGHT, "100")),
                 metadata
-                );
+        );
     }
 
     @Override
@@ -127,10 +129,11 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
 
     @Override
     public void addServiceInstancesChangedListener(ServiceInstancesChangedListener
-                                                               listener) throws NullPointerException, IllegalArgumentException {
+                                                           listener) throws NullPointerException, IllegalArgumentException {
         if (!instanceListeners.add(listener)) {
             return;
         }
+        //TODO 日志
         Set<String> services = listener.getServiceNames();
         for (String service : services) {
             serviceListeners.computeIfAbsent(service, name -> new ConcurrentHashSet<>());
@@ -152,10 +155,11 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
 
     @Override
     public void removeServiceInstancesChangedListener(ServiceInstancesChangedListener
-                                                                  listener) throws IllegalArgumentException {
+                                                              listener) throws IllegalArgumentException {
         if (!instanceListeners.remove(listener)) {
             return;
         }
+        //TODO 日志
         Set<String> services = listener.getServiceNames();
         for (String service : services) {
             Set<ServiceInstancesChangedListener> listeners = serviceListeners.get(service);
@@ -177,7 +181,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
         }
     }
 
-    private class InnerServiceListener implements ServiceListener{
+    private class InnerServiceListener implements ServiceListener {
 
         private final String service;
 

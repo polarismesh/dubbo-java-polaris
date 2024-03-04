@@ -22,6 +22,7 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
@@ -45,6 +46,7 @@ import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.flow.CircuitBreakerFlow;
@@ -61,6 +63,7 @@ import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
@@ -76,10 +79,13 @@ import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class PolarisOperator {
 
@@ -118,6 +124,7 @@ public class PolarisOperator {
                 bootConfigHandler.handle(parameters, configuration);
             }
         }
+        intServerConnectorConfig(configuration);
 
         PrometheusHandlerConfig prometheusHandlerConfig = configuration.getGlobal().getStatReporter()
                 .getPluginConfig("prometheus", PrometheusHandlerConfig.class);
@@ -177,6 +184,26 @@ public class PolarisOperator {
         //
         configFileAPI = ConfigFileServiceFactory.createConfigFileService(sdkContext);
         configFilePublishAPI = ConfigFileServicePublishFactory.createConfigFilePublishService(sdkContext);
+    }
+
+    private void intServerConnectorConfig(ConfigurationImpl configuration) {
+        if (StringUtils.isNotBlank(polarisConfig.getToken())) {
+            // 设置服务治理 ServerConnector 的配置
+            ServerConnectorConfigImpl connector = configuration.getGlobal().getServerConnector();
+            if (Objects.nonNull(connector)) {
+                connector.setToken(polarisConfig.getToken());
+            }
+            List<ServerConnectorConfigImpl> connectors = configuration.getGlobal().getServerConnectors();
+            if (CollectionUtils.isNotEmpty(connectors)) {
+                connectors.forEach(connectorConfig -> connectorConfig.setToken(polarisConfig.getToken()));
+            }
+
+            // 设置配置中心 ServerConnector 的配置
+            ServerConnectorConfigImpl configConnector = configuration.getConfigFile().getServerConnector();
+            if (Objects.nonNull(connector)) {
+                configConnector.setToken(polarisConfig.getToken());
+            }
+        }
     }
 
     public void destroy() {

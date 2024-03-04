@@ -29,13 +29,13 @@ public class MiddleConsumer {
     private MiddleService middleService;
 
     public String sayHello(String name) {
-        RpcContext.getClientAttachment().setAttachment("name", name);
+        RpcContext.getClientAttachment().setAttachment("user", name);
         String ret = middleService.sayHello(name);
         return "[FrontService] sayHello, " + name + " -> " + ret;
     }
 
     public String sayHi(String name) {
-        RpcContext.getClientAttachment().setAttachment("name", name);
+        RpcContext.getClientAttachment().setAttachment("user", name);
         String ret = middleService.sayHello(name);
         return "[FrontService] sayHi, " + name + " -> " + ret;
     }

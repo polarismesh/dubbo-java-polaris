@@ -134,7 +134,7 @@ public class PolarisRouter extends AbstractRouter implements ScopeModelAware {
         }
         logger.debug(String.format("[POLARIS] list service(%s), method(%s), labels(%s), url(%s)", serviceInfo.getService(),
                 invocation.getMethodName(), arguments, url));
-        List<Instance> resultInstances = operator.route(serviceInfo.getService(), invocation.getMethodName(), arguments, instances);
+        List<Instance> resultInstances = operator.route(serviceInfo.getService(), serviceInfo.getDubboInterface(), arguments, instances);
         return new RouterResult<>((List<Invoker<T>>) ((List<?>) resultInstances));
     }
 

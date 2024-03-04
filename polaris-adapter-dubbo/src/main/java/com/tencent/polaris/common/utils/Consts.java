@@ -57,4 +57,6 @@ public interface Consts {
     String CONFIG_PORT = "config_port";
 
     String DISCOVER_PORT = "discover_port";
+
+    String DEFAULT_VERSION = "1.0.0";
 }

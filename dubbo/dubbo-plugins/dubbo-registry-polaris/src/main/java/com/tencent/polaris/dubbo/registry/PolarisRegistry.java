@@ -16,6 +16,7 @@
 
 package com.tencent.polaris.dubbo.registry;
 
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
@@ -85,6 +86,7 @@ public class PolarisRegistry extends FailbackRegistry {
             registeredInstances.add(url);
         } else {
             LOGGER.warn("[POLARIS] skip register url {} for zero port value", url);
+            throw new PolarisException(ErrorCode.INVALID_REQUEST, "zero port url: " + url);
         }
     }
 
