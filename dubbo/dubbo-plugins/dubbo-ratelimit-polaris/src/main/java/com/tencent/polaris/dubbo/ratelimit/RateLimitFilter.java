@@ -65,13 +65,10 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
 
     private final QueryParser parser;
 
-    private final PolarisOperator operator;
-
     public RateLimitFilter() {
         logger.info("[POLARIS] init polaris ratelimit");
         this.ruleHandler = new RuleHandler();
         this.parser = QueryParser.load();
-        this.operator = getGovernancePolarisOperator();
     }
 
     @Override
@@ -82,12 +79,12 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
         }
         List<DubboServiceInfo> serviceInfos = DubboUtils.analyzeLocalDubboServiceInfo(applicationModel, invoker, invocation);
         for (DubboServiceInfo serviceInfo : serviceInfos) {
-            checkRateLimit(invoker, invocation, serviceInfo);
+            checkRateLimit(polarisOperator, invoker, invocation, serviceInfo);
         }
         return invoker.invoke(invocation);
     }
 
-    private void checkRateLimit(Invoker<?> invoker, Invocation invocation, DubboServiceInfo serviceInfo) {
+    private void checkRateLimit(PolarisOperator operator, Invoker<?> invoker, Invocation invocation, DubboServiceInfo serviceInfo) {
         ServiceRule serviceRule = operator.getServiceRule(serviceInfo.getService(), EventType.RATE_LIMITING);
         Object ruleObject = serviceRule.getRule();
         if (Objects.isNull(ruleObject)) {
