@@ -12,51 +12,7 @@
 
     <artifactId>dubbo-backend-example</artifactId>
 
-    <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <dubbo.version>3.2.6</dubbo.version>
-        <spring.version>4.3.30.RELEASE</spring.version>
-        <log4j2.version>2.20.0</log4j2.version>
-        <junit.version>4.13.1</junit.version>
-        <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-    </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-framework-bom</artifactId>
-                <version>${spring.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo-bom</artifactId>
-                <version>${dubbo.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
-        <dependency>
-            <groupId>org.apache.dubbo</groupId>
-            <artifactId>dubbo</artifactId>
-            <version>${dubbo.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>dubbo-api-example</artifactId>
@@ -89,24 +45,6 @@
             <groupId>com.tencent.polaris</groupId>
             <artifactId>dubbo-router-polaris</artifactId>
             <version>${revision}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j2.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>dubbo-api-example</artifactId>
-            <version>0.2.0-3.2.7</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 

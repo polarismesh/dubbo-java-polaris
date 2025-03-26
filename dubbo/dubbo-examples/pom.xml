@@ -10,10 +10,6 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-    </properties>
-
     <artifactId>dubbo-examples</artifactId>
     <packaging>pom</packaging>
 
@@ -24,6 +20,54 @@
         <module>dubbo-governance-example</module>
         <module>dubbo-router-example</module>
     </modules>
+
+    <properties>
+        <spring.version>4.3.30.RELEASE</spring.version>
+        <log4j2.version>2.20.0</log4j2.version>
+        <junit.version>4.13.1</junit.version>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-framework-bom</artifactId>
+                <version>${spring.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-bom</artifactId>
+                <version>${apache.dubbo.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <profiles>
         <!-- For jdk 11 above JavaEE annotation -->
