@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making dubbo-polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,6 @@ import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.StatusDimension;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
-
 import com.tencent.polaris.common.registry.DubboServiceInfo;
 import com.tencent.polaris.common.utils.Consts;
 import org.apache.dubbo.common.URL;
@@ -36,6 +32,10 @@ import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.cluster.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
 
 public class InstanceInvoker<T> implements Instance, Invoker<T> {
 

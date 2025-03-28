@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making dubbo-polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.dubbo.discovery.example.consumer;
 
+import com.tencent.polaris.dubbo.example.api.EchoService;
 import com.tencent.polaris.dubbo.example.api.GreetingService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,9 @@ public class GreetingServiceConsumer {
     @DubboReference(version = "1.0.0")
     private GreetingService greetingService;
 
+    @DubboReference(version = "1.0.0", providedBy = "dubbo-quickstart-provider")
+    private EchoService echoService;
+
     public String doSayHello(String name) {
         return greetingService.sayHello(name);
     }
@@ -35,4 +39,7 @@ public class GreetingServiceConsumer {
         return greetingService.sayHi(name);
     }
 
+    public String doEcho(String value) {
+        return echoService.echo(value);
+    }
 }

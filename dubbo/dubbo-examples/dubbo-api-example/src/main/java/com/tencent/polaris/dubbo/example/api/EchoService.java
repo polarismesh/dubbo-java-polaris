@@ -15,20 +15,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.press.example.provider.impl;
 
-import com.tencent.polaris.press.example.provider.api.PressAPI002;
-import org.apache.dubbo.config.annotation.DubboService;
+package com.tencent.polaris.dubbo.example.api;
 
-@DubboService(version = "1.0.0")
-public class PressAPI002Impl implements PressAPI002 {
-    @Override
-    public String sayHello(String name) {
-        return "PressAPI001Impl " + name;
-    }
+/**
+ * @author Haotian Zhang
+ */
+public interface EchoService {
 
-    @Override
-    public String sayHi(String name) {
-        return "PressAPI001Impl " + name;
-    }
+    String echo(String value);
 }
