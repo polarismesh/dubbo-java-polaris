@@ -14,8 +14,8 @@
         <module>dubbo-examples</module>
     </modules>
     <name>Polaris Parent</name>
-    <description>Dubbox Java Polaris POM</description>
-    <url>https://github.com/polarismesh/dubbox-java-polaris</url>
+    <description>Dubbo Java Polaris POM</description>
+    <url>https://github.com/polarismesh/dubbo-java-polaris</url>
 
     <licenses>
         <license>
@@ -26,12 +26,12 @@
     </licenses>
 
     <scm>
-        <url>https://github.com/polarismesh/dubbox-java-polaris</url>
+        <url>https://github.com/polarismesh/dubbo-java-polaris.git</url>
         <connection>
-            scm:git:git://github.com/polarismesh/dubbox-java-polaris.git
+            scm:git:git://github.com/polarismesh/dubbo-java-polaris.git
         </connection>
         <developerConnection>
-            scm:git:ssh://git@github.com/polarismesh/dubbox-java-polaris.git
+            scm:git:ssh://git@github.com/polarismesh/dubbo-java-polaris.git
         </developerConnection>
         <tag>HEAD</tag>
     </scm>
