@@ -25,6 +25,8 @@ import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.rpc.GetServiceContractRequest;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.context.Context;
 import com.tencent.polaris.common.registry.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
@@ -33,9 +35,9 @@ import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceContractProto;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.configcenter.ConfigItem;
-import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
-import org.apache.dubbo.common.logger.LoggerFactory;
-import org.apache.dubbo.common.utils.*;
+import org.apache.dubbo.common.utils.ConcurrentHashSet;
+import org.apache.dubbo.common.utils.JsonUtils;
+import org.apache.dubbo.common.utils.NamedThreadFactory;
 import org.apache.dubbo.metadata.MappingChangedEvent;
 import org.apache.dubbo.metadata.MappingListener;
 import org.apache.dubbo.metadata.MetadataInfo;
@@ -54,8 +56,6 @@ import java.util.concurrent.TimeUnit;
 import static org.apache.dubbo.metadata.MetadataConstants.REPORT_CONSUMER_URL_KEY;
 
 public class PolarisMetadataReport extends AbstractMetadataReport {
-
-    protected final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(getClass());
 
     private final PolarisOperator operator;
 
@@ -160,6 +160,12 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         for (ServiceContractProto.InterfaceDescriptor descriptor : result.get().getInterfacesList()) {
             MetadataInfo.ServiceInfo serviceInfo = JsonUtils.toJavaObject(descriptor.getContent(), MetadataInfo.ServiceInfo.class);
             serviceInfos.put(serviceInfo.getMatchKey(), serviceInfo);
+        }
+        if (CollectionUtils.isEmpty(serviceInfos)) {
+            String warnMsg = String.format("Get app metadata empty, service name is %s, revision is %s, param is %s",
+                    identifier.getApplication(), identifier.getRevision(), instanceMetadata);
+            logger.warn(warnMsg);
+            return MetadataInfo.EMPTY;
         }
         return new MetadataInfo(identifier.getApplication(), identifier.getRevision(), serviceInfos);
     }
