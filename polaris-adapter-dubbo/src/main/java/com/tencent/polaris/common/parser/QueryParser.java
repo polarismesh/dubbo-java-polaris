@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making dubbo-polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,11 @@ public interface QueryParser {
 
     static QueryParser load() {
         ServiceLoader<QueryParser> loader = ServiceLoader.load(QueryParser.class);
-        QueryParser instance = loader.iterator().next();
-        if (Objects.nonNull(instance)) {
-            return instance;
+        if (loader.iterator().hasNext()) {
+            QueryParser instance = loader.iterator().next();
+            if (Objects.nonNull(instance)) {
+                return instance;
+            }
         }
         String parser = System.getProperty("dubbo.polaris.query_parser");
         if (parser.equals("JsonPath")) {

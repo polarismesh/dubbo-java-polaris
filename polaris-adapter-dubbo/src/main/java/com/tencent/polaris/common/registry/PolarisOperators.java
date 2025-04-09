@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making dubbo-polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ public class PolarisOperators {
 
     private final Map<String, PolarisOperator> polarisOperatorMap = new ConcurrentHashMap<>();
 
-    private final Map<String, PolarisClient> polarisClientMap = new ConcurrentHashMap<>();
-
     private PolarisOperators() {
     }
 
@@ -35,11 +33,9 @@ public class PolarisOperators {
 
     @SuppressWarnings("unchecked")
     public synchronized PolarisOperator loadOrStore(String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
-        PolarisConfig polarisConfig = new PolarisConfig(host, port, parameters);
         Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.EMPTY_MAP);
-        PolarisClient saveClient = polarisClientMap.computeIfAbsent(host+ port, s-> new PolarisClient(polarisConfig.getRegistryAddress(), polarisConfig.getConfigAddress()));
         String key = host + ":" + port + "|hash_code:" + params.hashCode();
-        return polarisOperatorMap.computeIfAbsent(key, s1 -> new PolarisOperator(saveClient, host, port, parameters, handlers));
+        return polarisOperatorMap.computeIfAbsent(key, s1 -> new PolarisOperator(host, port, parameters, handlers));
     }
 
     public PolarisOperator getPolarisOperator(String host, int port) {

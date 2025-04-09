@@ -1,64 +1,62 @@
 /*
- * Copyright 2019 NAVER Corp.
+ * Tencent is pleased to support the open source community by making dubbo-polaris-java available.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 
 package com.tencent.polaris.common.registry;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
-import com.tencent.polaris.api.pojo.DefaultServiceInstances;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.RetStatus;
-import com.tencent.polaris.api.pojo.RouteArgument;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.pojo.SourceService;
-import com.tencent.polaris.api.rpc.Criteria;
-import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
-import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
-import com.tencent.polaris.api.rpc.GetServicesRequest;
-import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
-import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
-import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
-import com.tencent.polaris.api.rpc.InstancesResponse;
-import com.tencent.polaris.api.rpc.ServiceCallResult;
-import com.tencent.polaris.api.rpc.ServiceRuleResponse;
-import com.tencent.polaris.api.rpc.ServicesResponse;
-import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
-import com.tencent.polaris.api.rpc.WatchServiceRequest;
+import com.tencent.polaris.api.rpc.*;
+import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
+import com.tencent.polaris.circuitbreak.api.flow.CircuitBreakerFlow;
+import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
+import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
+import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
+import com.tencent.polaris.configuration.api.core.ConfigFileService;
+import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
+import com.tencent.polaris.configuration.factory.ConfigFileServicePublishFactory;
 import com.tencent.polaris.factory.ConfigAPIFactory;
+import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
+import com.tencent.polaris.ratelimit.factory.LimitAPIFactory;
 import com.tencent.polaris.router.api.core.RouterAPI;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 public class PolarisOperator {
 
@@ -66,46 +64,85 @@ public class PolarisOperator {
 
     private final PolarisConfig polarisConfig;
 
-    private final PolarisClient polarisClient;
+    private SDKContext sdkContext;
 
-    /**
-     * 北极星操作的封装，由于北极星 SDK 本身是支持跨 namespace 操作的，因此只需要保证每一个北极星服务端接入地址中的 host+port 映射一个唯一的 PolarisClient 中，
-     * 可减少北极星 SDK 实例的数量
-     *
-     * @param polarisClient {@link PolarisClient}
-     * @param host 注册中心服务端IP
-     * @param port 注册中心服务端端口
-     * @param parameters URL 额外参数信息
-     * @param handlers 解析 URL 参数信息，并设置到 PolarisJava 的 SDKContext 中
-     */
-    public PolarisOperator(PolarisClient polarisClient, String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
-        this.polarisClient = polarisClient;
+    private ConsumerAPI consumerAPI;
+
+    private ProviderAPI providerAPI;
+
+    private LimitAPI limitAPI;
+
+    private RouterAPI routerAPI;
+
+    private CircuitBreakAPI circuitBreakAPI;
+
+    private ConfigFileService configFileAPI;
+
+    private ConfigFilePublishService configFilePublishAPI;
+
+    public PolarisOperator(String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
         this.polarisConfig = new PolarisConfig(host, port, parameters);
         init(parameters, handlers);
+    }
+
+    protected static String formatCode(Object val) {
+        return "POLARIS:" + val;
     }
 
     private void init(Map<String, String> parameters, BootConfigHandler... handlers) {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
-        configuration.getGlobal().getServerConnector()
-                .setAddresses(Collections.singletonList(polarisConfig.getRegistryAddress()));
-        configuration.getConfigFile().getServerConnector()
-                .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
         if (null != handlers) {
             for (BootConfigHandler bootConfigHandler : handlers) {
                 bootConfigHandler.handle(parameters, configuration);
             }
         }
+        intServerConnectorConfig(configuration);
+
+        configuration.getGlobal().getStatReporter().setEnable(false);
+
+        // 设置服务治理连接地址
+        configuration.getGlobal().getServerConnector()
+                .setAddresses(Collections.singletonList(polarisConfig.getDiscoverAddress()));
+        // 设置配置中心连接地址
+        configuration.getConfigFile().getServerConnector()
+                .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
+        sdkContext = SDKContext.initContextByConfig(configuration);
+        consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
+        providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
+        limitAPI = LimitAPIFactory.createLimitAPIByContext(sdkContext);
+        routerAPI = RouterAPIFactory.createRouterAPIByContext(sdkContext);
+        circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByContext(sdkContext);
+        //
+        configFileAPI = ConfigFileServiceFactory.createConfigFileService(sdkContext);
+        configFilePublishAPI = ConfigFileServicePublishFactory.createConfigFilePublishService(sdkContext);
     }
 
-    public void destroy() {
+    private void intServerConnectorConfig(ConfigurationImpl configuration) {
+        if (StringUtils.isNotBlank(polarisConfig.getToken())) {
+            // 设置服务治理 ServerConnector 的配置
+            ServerConnectorConfigImpl connector = configuration.getGlobal().getServerConnector();
+            if (Objects.nonNull(connector)) {
+                connector.setToken(polarisConfig.getToken());
+            }
+            List<ServerConnectorConfigImpl> connectors = configuration.getGlobal().getServerConnectors();
+            if (CollectionUtils.isNotEmpty(connectors)) {
+                connectors.forEach(connectorConfig -> connectorConfig.setToken(polarisConfig.getToken()));
+            }
+
+            // 设置配置中心 ServerConnector 的配置
+            ServerConnectorConfigImpl configConnector = configuration.getConfigFile().getServerConnector();
+            if (Objects.nonNull(connector)) {
+                configConnector.setToken(polarisConfig.getToken());
+            }
+        }
     }
 
     /**
      * 服务注册
      */
     public void register(String service, String host, int port, String protocol, String version, int weight,
-            Map<String, String> metadata) {
+                         Map<String, String> metadata) {
         LOGGER.info(
                 "[POLARIS] start to register: service {}, host {}, port {}， protocol {}, version {}, weight {}, metadata {}",
                 service, host, port, protocol, version, weight, metadata);
@@ -123,7 +160,7 @@ public class PolarisOperator {
         instanceRegisterRequest.setMetadata(metadata);
         instanceRegisterRequest.setProtocol(protocol);
         instanceRegisterRequest.setToken(token);
-        InstanceRegisterResponse response = getProviderAPI().registerInstance(instanceRegisterRequest);
+        InstanceRegisterResponse response = providerAPI.registerInstance(instanceRegisterRequest);
         LOGGER.info("register result is {} for service {}", response, service);
     }
 
@@ -135,7 +172,7 @@ public class PolarisOperator {
         instanceDeregisterRequest.setPort(port);
         instanceDeregisterRequest.setHost(host);
         instanceDeregisterRequest.setToken(polarisConfig.getToken());
-        getProviderAPI().deRegister(instanceDeregisterRequest);
+        providerAPI.deRegister(instanceDeregisterRequest);
         LOGGER.info("[POLARIS] deregister service {}", service);
     }
 
@@ -144,7 +181,7 @@ public class PolarisOperator {
         watchServiceRequest.setNamespace(polarisConfig.getNamespace());
         watchServiceRequest.setService(service);
         watchServiceRequest.setListeners(Collections.singletonList(listener));
-        return getConsumerAPI().watchService(watchServiceRequest).isSuccess();
+        return consumerAPI.watchService(watchServiceRequest).isSuccess();
     }
 
     public void unwatchService(String service, ServiceListener serviceListener) {
@@ -154,7 +191,7 @@ public class PolarisOperator {
                 .service(service)
                 .listeners(Collections.singletonList(serviceListener))
                 .build();
-        getConsumerAPI().unWatchService(watchServiceRequest);
+        consumerAPI.unWatchService(watchServiceRequest);
     }
 
     /**
@@ -168,7 +205,7 @@ public class PolarisOperator {
         request.setNamespace(polarisConfig.getNamespace());
         request.setService(service);
         request.setIncludeCircuitBreakInstances(includeCircuitBreakInstances);
-        InstancesResponse instances = getConsumerAPI().getHealthyInstances(request);
+        InstancesResponse instances = consumerAPI.getHealthyInstances(request);
         return instances.getInstances();
     }
 
@@ -178,7 +215,7 @@ public class PolarisOperator {
      * @param delay 本次服务调用延迟，单位ms
      */
     public void reportInvokeResult(String service, String method, String host, int port, String callerIp, long delay, RetStatus retStatus,
-            int code) {
+                                   int code) {
         ServiceCallResult serviceCallResult = new ServiceCallResult();
         serviceCallResult.setNamespace(polarisConfig.getNamespace());
         serviceCallResult.setService(service);
@@ -189,7 +226,15 @@ public class PolarisOperator {
         serviceCallResult.setRetStatus(retStatus);
         serviceCallResult.setRetCode(code);
         serviceCallResult.setCallerIp(callerIp);
-        getConsumerAPI().updateServiceCallResult(serviceCallResult);
+        serviceCallResult.setCallerService(new ServiceKey(polarisConfig.getNamespace(), ""));
+        try {
+            consumerAPI.updateServiceCallResult(serviceCallResult);
+        } catch (PolarisException e) {
+            LOGGER.error(formatCode(e.getCode()),
+                    e.getMessage(),
+                    "",
+                    "report invoke result fail");
+        }
     }
 
     public List<Instance> route(String service, String method, Set<RouteArgument> arguments, List<Instance> instances) {
@@ -201,7 +246,7 @@ public class PolarisOperator {
         request.setDstInstances(defaultServiceInstances);
         request.setMethod(method);
         request.setSourceService(serviceInfo);
-        ProcessRoutersResponse processRoutersResponse = getRouterAPI().processRouters(request);
+        ProcessRoutersResponse processRoutersResponse = routerAPI.processRouters(request);
         return processRoutersResponse.getServiceInstances().getInstances();
     }
 
@@ -213,8 +258,24 @@ public class PolarisOperator {
         Criteria criteria = new Criteria();
         criteria.setHashKey(hashKey);
         processLoadBalanceRequest.setCriteria(criteria);
-        ProcessLoadBalanceResponse processLoadBalanceResponse = getRouterAPI().processLoadBalance(processLoadBalanceRequest);
+        ProcessLoadBalanceResponse processLoadBalanceResponse = routerAPI.processLoadBalance(processLoadBalanceRequest);
         return processLoadBalanceResponse.getTargetInstance();
+    }
+
+    public boolean checkCircuitBreakerPassing(Instance instance) {
+        CircuitBreakerStatus circuitBreakerStatus = instance.getCircuitBreakerStatus();
+        if (null != circuitBreakerStatus) {
+            return circuitBreakerStatus.getStatus() != CircuitBreakerStatus.Status.OPEN;
+        }
+        Resource resource = new InstanceResource(new ServiceKey(instance.getNamespace(), instance.getService()),
+                instance.getHost(), instance.getPort(), new ServiceKey());
+        CircuitBreakerFlow circuitBreakerFlow = getSdkContext().getValueContext().getValue(
+                CircuitBreakerFlow.class.getCanonicalName());
+        if (null != circuitBreakerFlow) {
+            CheckResult check = circuitBreakerFlow.check(resource);
+            return check.isPass();
+        }
+        return true;
     }
 
     /**
@@ -229,15 +290,18 @@ public class PolarisOperator {
         quotaRequest.setMethod(method);
         quotaRequest.setArguments(arguments);
         quotaRequest.setCount(1);
-        return getLimitAPI().getQuota(quotaRequest);
+        return limitAPI.getQuota(quotaRequest);
     }
 
     public ServiceRule getServiceRule(String service, EventType eventType) {
+        if (StringUtils.isBlank(service)) {
+            return new ServiceRuleByProto();
+        }
         GetServiceRuleRequest getServiceRuleRequest = new GetServiceRuleRequest();
         getServiceRuleRequest.setNamespace(polarisConfig.getNamespace());
         getServiceRuleRequest.setService(service);
         getServiceRuleRequest.setRuleType(eventType);
-        ServiceRuleResponse serviceRule = getConsumerAPI().getServiceRule(getServiceRuleRequest);
+        ServiceRuleResponse serviceRule = consumerAPI.getServiceRule(getServiceRuleRequest);
         return serviceRule.getServiceRule();
     }
 
@@ -245,23 +309,39 @@ public class PolarisOperator {
         return polarisConfig;
     }
 
-    public  ConsumerAPI getConsumerAPI() {
-        return polarisClient.getConsumerAPI();
+    public void destroy() {
+        sdkContext.close();
     }
 
-    public  ProviderAPI getProviderAPI() {
-        return polarisClient.getProviderAPI();
+    public SDKContext getSdkContext() {
+        return sdkContext;
     }
 
-    public  LimitAPI getLimitAPI() {
-        return polarisClient.getLimitAPI();
+    public ConsumerAPI getConsumerAPI() {
+        return consumerAPI;
     }
 
-    public  RouterAPI getRouterAPI() {
-        return polarisClient.getRouterAPI();
+    public ProviderAPI getProviderAPI() {
+        return providerAPI;
     }
 
-    public  CircuitBreakAPI getCircuitBreakAPI() {
-        return polarisClient.getCircuitBreakAPI();
+    public LimitAPI getLimitAPI() {
+        return limitAPI;
+    }
+
+    public RouterAPI getRouterAPI() {
+        return routerAPI;
+    }
+
+    public ConfigFileService getConfigFileAPI() {
+        return configFileAPI;
+    }
+
+    public ConfigFilePublishService getConfigFilePublishAPI() {
+        return configFilePublishAPI;
+    }
+
+    public CircuitBreakAPI getCircuitBreakAPI() {
+        return circuitBreakAPI;
     }
 }

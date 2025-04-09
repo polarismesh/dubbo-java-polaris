@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making dubbo-polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@
 
 package com.tencent.polaris.common.registry;
 
-import java.util.Map;
+import com.tencent.polaris.common.utils.Consts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 public class PolarisConfig {
 
@@ -27,7 +29,7 @@ public class PolarisConfig {
 
     private final String namespace;
 
-    private final String registryAddress;
+    private final String discoverAddress;
 
     private final String configAddress;
 
@@ -36,7 +38,7 @@ public class PolarisConfig {
     private final int ttl;
 
     public PolarisConfig(String host, int port, Map<String, String> parameters) {
-        registryAddress = String.format("%s:%d", host, port);
+        discoverAddress = String.format("%s:%d", host, port);
         configAddress = String.format("%s:%d", host, Consts.CONFIG_PORT);
 
         String namespaceStr = parameters.get(Consts.KEY_NAMESPACE);
@@ -62,16 +64,16 @@ public class PolarisConfig {
         return namespace;
     }
 
-    public String getRegistryAddress() {
-        return registryAddress;
-    }
-
-    public String getToken() {
-        return token;
+    public String getDiscoverAddress() {
+        return discoverAddress;
     }
 
     public String getConfigAddress() {
         return configAddress;
+    }
+
+    public String getToken() {
+        return token;
     }
 
     public int getTtl() {
@@ -82,7 +84,7 @@ public class PolarisConfig {
     public String toString() {
         return "PolarisConfig{" +
                 "namespace='" + namespace + '\'' +
-                ", registryAddress='" + registryAddress + '\'' +
+                ", discoverAddress='" + discoverAddress + '\'' +
                 ", configAddress='" + configAddress + '\'' +
                 ", token='" + token + '\'' +
                 ", ttl=" + ttl +

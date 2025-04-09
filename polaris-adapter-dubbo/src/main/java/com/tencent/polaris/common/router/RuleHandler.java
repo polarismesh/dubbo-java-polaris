@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making dubbo-polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,12 @@
 package com.tencent.polaris.common.router;
 
 import com.tencent.polaris.api.utils.CollectionUtils;
-
 import com.tencent.polaris.common.registry.TimedCache;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RuleHandler {

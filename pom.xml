@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.tencent.polaris</groupId>
@@ -10,12 +10,12 @@
     <version>${revision}</version>
     <modules>
         <module>polaris-adapter-dubbo</module>
-        <module>dubbo</module>
-        <module>dubbox</module>
+        <module>dubbo-plugins</module>
+        <module>dubbo-examples</module>
     </modules>
     <name>Polaris Parent</name>
-    <description>Dubbox Java Polaris POM</description>
-    <url>https://github.com/polarismesh/dubbox-java-polaris</url>
+    <description>Dubbo Java Polaris POM</description>
+    <url>https://github.com/polarismesh/dubbo-java-polaris</url>
 
     <licenses>
         <license>
@@ -26,19 +26,26 @@
     </licenses>
 
     <scm>
-        <url>https://github.com/polarismesh/dubbox-java-polaris</url>
+        <url>https://github.com/polarismesh/dubbo-java-polaris.git</url>
         <connection>
-            scm:git:git://github.com/polarismesh/dubbox-java-polaris.git
+            scm:git:git://github.com/polarismesh/dubbo-java-polaris.git
         </connection>
         <developerConnection>
-            scm:git:ssh://git@github.com/polarismesh/dubbox-java-polaris.git
+            scm:git:ssh://git@github.com/polarismesh/dubbo-java-polaris.git
         </developerConnection>
         <tag>HEAD</tag>
     </scm>
 
     <properties>
         <!-- Project revision -->
-        <revision>0.2.4-SNAPSHOT</revision>
+        <revision>2.0.1.0-2.7.23-SNAPSHOT</revision>
+
+        <!-- Polaris SDK version -->
+        <polaris.version>2.0.1.0-SNAPSHOT</polaris.version>
+
+        <!-- Apache Dubbo version -->
+        <apache.dubbo.version>2.7.23</apache.dubbo.version>
+
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -52,7 +59,6 @@
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
-        <polaris.version>1.15.4</polaris.version>
         <slf4j.version>1.7.25</slf4j.version>
         <json_path_version>2.8.0</json_path_version>
     </properties>
