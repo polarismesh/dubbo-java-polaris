@@ -165,7 +165,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
             String warnMsg = String.format("Get app metadata empty, service name is %s, revision is %s, param is %s",
                     identifier.getApplication(), identifier.getRevision(), instanceMetadata);
             logger.warn(warnMsg);
-            return MetadataInfo.EMPTY;
+            return null;
         }
         return new MetadataInfo(identifier.getApplication(), identifier.getRevision(), serviceInfos);
     }
