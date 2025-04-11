@@ -153,7 +153,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
         if (!result.isPresent()) {
             // 降级，由兜底的 MetadataReport 进行处理
-            return another.map(proxyReport -> proxyReport.getMetadataReport().getAppMetadata(identifier, instanceMetadata)).orElse(MetadataInfo.EMPTY);
+            return another.map(proxyReport -> proxyReport.getMetadataReport().getAppMetadata(identifier, instanceMetadata)).orElse(null);
         }
 
         Map<String, MetadataInfo.ServiceInfo> serviceInfos = new HashMap<>();
@@ -397,7 +397,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     // -------- 仅用于 multi-metadata-report 情况下使用
     @Override
     public ConfigItem getConfigItem(String key, String group) {
-        return another.map(proxyReport -> proxyReport.getConfigItem(key, group)).orElse(null);
+        return another.map(proxyReport -> proxyReport.getConfigItem(key, group)).orElse(new ConfigItem());
     }
 
     @Override
