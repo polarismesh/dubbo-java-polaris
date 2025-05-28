@@ -1,30 +1,56 @@
-# This workflow will build a Java project with Maven
-# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
-
 name: Testing
 on:
   push:
-    branches: [ main ]
+    branches:
+      - dubbo-3.2.x
+      - dubbo-2.x
+      - release/*
   pull_request:
-    branches: [ main ]
+    branches:
+      - dubbo-3.2.x
+      - dubbo-2.x
+      - release/*
 
 jobs:
-  build:
+  set-jdks:
+    runs-on: ubuntu-latest
+    outputs:
+      jdks: ${{ steps.set-jdks.outputs.jdks }}
+    steps:
+      - name: Set JDK matrix based on branch
+        id: set-jdks
+        run: |
+          shopt -s nocasematch
+          branch_name=${{ github.ref_name }}
+          if [ -n "${{ github.base_ref }}" ]; then
+             branch_name=${{ github.base_ref }}
+          fi
+          echo $branch_name
+          if [[ "$branch_name" == "dubbo-3.2.x" ]]; then
+            echo "jdks=[8,17]" >> $GITHUB_OUTPUT
+          elif [[ "$branch_name" == "dubbo-2.x" ]]; then
+            echo "jdks=[8]" >> $GITHUB_OUTPUT
+          else
+            echo "jdks=[8]" >> $GITHUB_OUTPUT
+          fi
+          shopt -u nocasematch
+  junit:
     strategy:
       matrix:
-        java: [ 8 ]
+        java: ${{ fromJson(needs.set-jdks.outputs.jdks) }}
         os: [ 'windows-latest', 'ubuntu-latest' ]
     runs-on: ${{ matrix.os }}
+    needs: set-jdks
     steps:
       - name: Checkout codes
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
       - name: Cache local Maven repository
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}

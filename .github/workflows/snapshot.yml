@@ -1,10 +1,10 @@
-# 相当于脚本用途的一个声明
 name: Snapshot
-# 触发脚本的事件  这里为发布release之后触发
 on:
   push:
     branches:
-      - dubbo*
+      - dubbo-3.2.x
+      - dubbo-2.x
+      - release/*
 
 jobs:
   check-snapshot:
@@ -13,7 +13,7 @@ jobs:
       IS_SNAPSHOT: ${{ steps.set_output_1.outputs.IS_SNAPSHOT }}
     steps:
       - name: Checkout codes
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check deploy type
         id: set_output_1
         run: |
@@ -24,16 +24,33 @@ jobs:
           else
             echo "IS_SNAPSHOT=false" >> $GITHUB_OUTPUT
           fi
-  release:
+  set-jdk:
     runs-on: ubuntu-latest
-    needs: check-snapshot
+    outputs:
+      jdk: ${{ steps.set-jdk.outputs.jdk }}
+    steps:
+      - name: Set JDK based on branch
+        id: set-jdk
+        run: |
+          shopt -s nocasematch
+          if [[ "${{ github.ref_name }}" == "dubbo-3.2.x" ]]; then
+            echo "jdk=17" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == "dubbo-2.x" ]]; then
+            echo "jdk=8" >> $GITHUB_OUTPUT
+          else
+            echo "jdk=8" >> $GITHUB_OUTPUT
+          fi
+          shopt -u nocasematch
+  snapshot:
+    runs-on: ubuntu-latest
+    needs: [ check-snapshot, set-jdk ]
     if: ${{ needs.check-snapshot.outputs.IS_SNAPSHOT == 'true' }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Maven Central Repository
-        uses: actions/setup-java@v3
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ needs.set-jdk.outputs.jdk }}
+        uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          java-version: ${{ needs.set-jdk.outputs.jdk }}
           distribution: 'adopt'
           server-id: ossrh
           server-username: MAVEN_USERNAME
