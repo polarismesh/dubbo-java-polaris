@@ -1,12 +1,15 @@
-# This workflow will build a Java project with Maven
-# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
-
 name: Testing
 on:
   push:
-    branches: [ main ]
+    branches:
+      - dubbo-3.2.x
+      - dubbo-2.x
+      - release/*
   pull_request:
-    branches: [ main ]
+    branches:
+      - dubbo-3.2.x
+      - dubbo-2.x
+      - release/*
 
 jobs:
   build:

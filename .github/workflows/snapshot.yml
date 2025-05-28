@@ -1,10 +1,10 @@
-# 相当于脚本用途的一个声明
 name: Snapshot
-# 触发脚本的事件  这里为发布release之后触发
 on:
   push:
     branches:
-      - dubbo*
+      - dubbo-3.2.x
+      - dubbo-2.x
+      - release/*
 
 jobs:
   check-snapshot:
@@ -33,7 +33,7 @@ jobs:
       - name: Set up Maven Central Repository
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
+          java-version: '8'
           distribution: 'adopt'
           server-id: ossrh
           server-username: MAVEN_USERNAME
