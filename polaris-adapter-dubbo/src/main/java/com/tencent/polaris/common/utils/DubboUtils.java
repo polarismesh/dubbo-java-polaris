@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.common.utils;
 
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.registry.DubboServiceInfo;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.ConfigurationUtils;
@@ -80,9 +81,13 @@ public class DubboUtils {
         List<DubboServiceInfo> serviceInfos = new ArrayList<>(2);
 
         URL providerUrl = invoker.getUrl();
+        String service = providerUrl.getRemoteApplication();
+        if (StringUtils.isBlank(service)) {
+            service = providerUrl.getHost();
+        }
         if (checkIsApplicationMode(invoker)) {
             serviceInfos.add(DubboServiceInfo.builder()
-                    .service(providerUrl.getRemoteApplication())
+                    .service(service)
                     .interfaceName(providerUrl.getServiceInterface())
                     .methodName(invocation.getMethodName())
                     .build());
@@ -102,7 +107,7 @@ public class DubboUtils {
         }
         if (providerUrl instanceof ServiceConfigURL) {
             ServiceConfigURL url = (ServiceConfigURL) providerUrl;
-            String registerMode = url.getParameter(RegistryConstants.REGISTER_MODE_KEY);
+            String registerMode = url.getParameter(RegistryConstants.REGISTER_MODE_KEY, RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE);
             switch (registerMode) {
                 case RegistryConstants.DEFAULT_REGISTER_MODE_ALL:
                 case RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE:
