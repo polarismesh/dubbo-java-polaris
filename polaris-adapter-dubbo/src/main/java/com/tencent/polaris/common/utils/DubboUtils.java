@@ -100,7 +100,7 @@ public class DubboUtils {
         return serviceInfos;
     }
 
-    private static <T> boolean checkIsApplicationMode(Invoker<T> invoker) {
+    static <T> boolean checkIsApplicationMode(Invoker<T> invoker) {
         URL providerUrl = invoker.getUrl();
         if (providerUrl instanceof InstanceAddressURL) {
             return true;
