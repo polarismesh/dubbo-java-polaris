@@ -4,6 +4,7 @@ on:
     branches:
       - dubbo-3.2.x
       - dubbo-2.x
+      - release/*
 
 jobs:
   check-snapshot:
@@ -32,7 +33,7 @@ jobs:
       - name: Set up Maven Central Repository
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'adopt'
           server-id: ossrh
           server-username: MAVEN_USERNAME

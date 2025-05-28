@@ -4,16 +4,18 @@ on:
     branches:
       - dubbo-3.2.x
       - dubbo-2.x
+      - release/*
   pull_request:
     branches:
       - dubbo-3.2.x
       - dubbo-2.x
+      - release/*
 
 jobs:
   build:
     strategy:
       matrix:
-        java: [ 8 ]
+        java: [ 8, 17 ]
         os: [ 'windows-latest', 'ubuntu-latest' ]
     runs-on: ${{ matrix.os }}
     steps:
