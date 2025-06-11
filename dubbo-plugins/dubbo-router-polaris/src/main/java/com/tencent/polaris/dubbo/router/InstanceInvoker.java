@@ -17,10 +17,7 @@
 
 package com.tencent.polaris.dubbo.router;
 
-import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
-import com.tencent.polaris.api.pojo.DefaultInstance;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.StatusDimension;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.common.registry.DubboServiceInfo;
 import com.tencent.polaris.common.utils.Consts;
 import org.apache.dubbo.common.URL;
@@ -115,6 +112,11 @@ public class InstanceInvoker<T> implements Instance, Invoker<T> {
     @Override
     public CircuitBreakerStatus getCircuitBreakerStatus(StatusDimension statusDimension) {
         return defaultInstance.getCircuitBreakerStatus(statusDimension);
+    }
+
+    @Override
+    public RetStatus getDetectStatus() {
+        return defaultInstance.getDetectStatus();
     }
 
     @Override
