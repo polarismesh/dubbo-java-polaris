@@ -25,7 +25,7 @@
         <spring.version>4.3.30.RELEASE</spring.version>
         <log4j2.version>2.20.0</log4j2.version>
         <junit.version>4.13.1</junit.version>
-        <maven.deploy.skip>true</maven.deploy.skip>
+        <skip.maven.deploy>true</skip.maven.deploy>
     </properties>
 
     <dependencyManagement>
