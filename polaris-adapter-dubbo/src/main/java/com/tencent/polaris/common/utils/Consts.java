@@ -33,6 +33,8 @@ public interface Consts {
 
     String KEY_TTL = "ttl";
 
+    String KEY_DETECT_WHEN = "detect_when";
+
     String KEY_METRIC_TYPE = "stat_type";
 
     String KEY_METRIC_PULL_PORT = "stat_pull_port";

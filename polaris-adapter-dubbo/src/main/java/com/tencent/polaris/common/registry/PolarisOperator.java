@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -144,6 +145,16 @@ public class PolarisOperator {
         }
         configuration.getGlobal().getStatReporter().setPluginConfig("prometheus", prometheusHandlerConfig);
 
+        // 设置主动探测
+        if (parameters.containsKey(Consts.KEY_DETECT_WHEN)) {
+            String detectWhen = parameters.get(Consts.KEY_DETECT_WHEN);
+            try {
+                configuration.getConsumer().getOutlierDetection().setWhen(OutlierDetectionConfig.When.valueOf(detectWhen));
+            } catch (IllegalArgumentException e) {
+                LOGGER.warn("Invalid detectWhen value: {}, valid values are: {}",
+                        detectWhen, Arrays.toString(OutlierDetectionConfig.When.values()));
+            }
+        }
 
         // 设置服务治理连接地址
         configuration.getGlobal().getServerConnector()
