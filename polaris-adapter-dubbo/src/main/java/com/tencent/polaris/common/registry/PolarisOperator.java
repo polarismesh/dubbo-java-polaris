@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -34,6 +35,7 @@ import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
@@ -100,6 +102,17 @@ public class PolarisOperator {
         intServerConnectorConfig(configuration);
 
         configuration.getGlobal().getStatReporter().setEnable(false);
+
+        // 设置主动探测
+        if (parameters.containsKey(Consts.KEY_DETECT_WHEN)) {
+            String detectWhen = parameters.get(Consts.KEY_DETECT_WHEN);
+            try {
+                configuration.getConsumer().getOutlierDetection().setWhen(OutlierDetectionConfig.When.valueOf(detectWhen));
+            } catch (IllegalArgumentException e) {
+                LOGGER.warn("Invalid detectWhen value: {}, valid values are: {}",
+                        detectWhen, Arrays.toString(OutlierDetectionConfig.When.values()));
+            }
+        }
 
         // 设置服务治理连接地址
         configuration.getGlobal().getServerConnector()

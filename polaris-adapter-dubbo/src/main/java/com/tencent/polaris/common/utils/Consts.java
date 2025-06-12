@@ -35,6 +35,8 @@ public interface Consts {
 
     String KEY_TTL = "ttl";
 
+    String KEY_DETECT_WHEN = "detect_when";
+
     String INSTANCE_KEY_HEALTHY = "_internal_healthy";
 
     String INSTANCE_KEY_ISOLATED = "_internal_isolated";
