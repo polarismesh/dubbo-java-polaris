@@ -61,9 +61,9 @@
         <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
-        <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
         <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
+        <central.publishing.maven.plugin.version>0.8.0</central.publishing.maven.plugin.version>
 
         <timestamp>${maven.build.timestamp}</timestamp>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -237,11 +237,28 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>${maven.deploy.plugin.version}</version>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>${central.publishing.maven.plugin.version}</version>
+                <extensions>true</extensions>
                 <configuration>
-                    <skip>${skip.maven.deploy}</skip>
+                    <publishingServerId>central-portal</publishingServerId>
+                    <excludeArtifacts>
+                        <excludeArtifact>dubbo-examples</excludeArtifact>
+                        <excludeArtifact>dubbo-api-example</excludeArtifact>
+                        <excludeArtifact>dubbo-discovery-example</excludeArtifact>
+                        <excludeArtifact>dubbo-quick-consumer</excludeArtifact>
+                        <excludeArtifact>dubbo-quick-provider</excludeArtifact>
+                        <excludeArtifact>dubbo-governance-example</excludeArtifact>
+                        <excludeArtifact>dubbo-governance-consumer</excludeArtifact>
+                        <excludeArtifact>dubbo-governance-provider</excludeArtifact>
+                        <excludeArtifact>dubbo-press-example</excludeArtifact>
+                        <excludeArtifact>dubbo-press-provider</excludeArtifact>
+                        <excludeArtifact>dubbo-router-example</excludeArtifact>
+                        <excludeArtifact>dubbo-backend-example</excludeArtifact>
+                        <excludeArtifact>dubbo-front-example</excludeArtifact>
+                        <excludeArtifact>dubbo-middle-example</excludeArtifact>
+                    </excludeArtifacts>
                 </configuration>
             </plugin>
         </plugins>
@@ -279,17 +296,6 @@
             </build>
         </profile>
     </profiles>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>central-portal</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-        </snapshotRepository>
-        <repository>
-            <id>central-portal</id>
-            <url>https://ossrh-staging-api.central.sonatype.com/service/local/</url>
-        </repository>
-    </distributionManagement>
 
     <repositories>
         <repository>
