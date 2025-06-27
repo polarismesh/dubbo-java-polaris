@@ -36,6 +36,13 @@
         <tag>HEAD</tag>
     </scm>
 
+    <developers>
+        <developer>
+            <name>Haotian Zhang</name>
+            <email>928016560@qq.com</email>
+        </developer>
+    </developers>
+
     <properties>
         <!-- Project revision -->
         <revision>2.0.2.0-2.7.23-SNAPSHOT</revision>
