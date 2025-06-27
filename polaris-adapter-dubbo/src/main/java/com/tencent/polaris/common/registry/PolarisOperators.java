@@ -33,8 +33,10 @@ public class PolarisOperators {
 
     @SuppressWarnings("unchecked")
     public synchronized PolarisOperator loadOrStore(String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
-        Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.EMPTY_MAP);
-        String key = host + ":" + port + "|hash_code:" + params.hashCode();
+        Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
+        // 目前只支持一个operator，所以key暂时用host+port
+        // String key = host + ":" + port + "|hash_code:" + params.hashCode();
+        String key = host + ":" + port;
         return polarisOperatorMap.computeIfAbsent(key, s1 -> new PolarisOperator(host, port, parameters, handlers));
     }
 

@@ -41,7 +41,7 @@
         <revision>2.0.2.0-2.7.23-SNAPSHOT</revision>
 
         <!-- Polaris SDK version -->
-        <polaris.version>2.0.1.0</polaris.version>
+        <polaris.version>2.0.2.0-SNAPSHOT</polaris.version>
 
         <!-- Apache Dubbo version -->
         <apache.dubbo.version>2.7.23</apache.dubbo.version>
