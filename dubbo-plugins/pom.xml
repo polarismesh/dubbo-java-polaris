@@ -11,6 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>dubbo-plugins</artifactId>
+    <name>Polaris Dubbo Plugins</name>
     <packaging>pom</packaging>
 
     <modules>
