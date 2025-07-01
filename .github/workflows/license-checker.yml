@@ -1,0 +1,21 @@
+name: License checker
+
+on:
+  push:
+    branches:
+      - dubbo-3.2.x
+      - dubbo-2.x
+      - release/*
+  pull_request:
+    branches:
+      - dubbo-3.2.x
+      - dubbo-2.x
+      - release/*
+jobs:
+  check-license:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codes
+        uses: actions/checkout@v4
+      - name: Check License Header
+        uses: apache/skywalking-eyes@v0.4.0
