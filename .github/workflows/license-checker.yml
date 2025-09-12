@@ -6,11 +6,16 @@ on:
       - dubbo-3.2.x
       - dubbo-2.x
       - release/*
+    paths-ignore:
+      - '**.md'
   pull_request:
     branches:
       - dubbo-3.2.x
       - dubbo-2.x
       - release/*
+    paths-ignore:
+      - '**.md'
+
 jobs:
   check-license:
     runs-on: ubuntu-latest
