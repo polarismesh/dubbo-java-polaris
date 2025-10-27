@@ -18,13 +18,50 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
 
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-api-example</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo-spring-boot-starter</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!--    引入 polaris 注册能力    -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-registry-polaris</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!--    引入 polaris 元数据中心能力    -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-metadatareport-polaris</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!--    引入 polaris 配置中心能力    -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-configcenter-polaris</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <!--    引入 polaris 限流能力    -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-ratelimit-polaris</artifactId>
+            <version>${revision}</version>
         </dependency>
     </dependencies>
 
