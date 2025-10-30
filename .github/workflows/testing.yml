@@ -4,14 +4,14 @@ on:
   push:
     branches:
       - dubbo-3.2.x
-      - dubbo-2.x
+      - dubbo-2.7.x
       - release/*
     paths-ignore:
       - '**.md'
   pull_request:
     branches:
       - dubbo-3.2.x
-      - dubbo-2.x
+      - dubbo-2.7.x
       - release/*
     paths-ignore:
       - '**.md'
@@ -33,7 +33,7 @@ jobs:
           echo $branch_name
           if [[ "$branch_name" == "dubbo-3.2.x" ]]; then
             echo "jdks=[8,17]" >> $GITHUB_OUTPUT
-          elif [[ "$branch_name" == "dubbo-2.x" ]]; then
+          elif [[ "$branch_name" == "dubbo-2.7.x" ]]; then
             echo "jdks=[8]" >> $GITHUB_OUTPUT
           else
             echo "jdks=[8]" >> $GITHUB_OUTPUT

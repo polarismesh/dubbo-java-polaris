@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - dubbo-3.2.x
-      - dubbo-2.x
+      - dubbo-2.7.x
       - release/*
     paths-ignore:
       - '**.md'
@@ -38,7 +38,7 @@ jobs:
           shopt -s nocasematch
           if [[ "${{ github.ref_name }}" == "dubbo-3.2.x" ]]; then
             echo "jdk=17" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref_name }}" == "dubbo-2.x" ]]; then
+          elif [[ "${{ github.ref_name }}" == "dubbo-2.7.x" ]]; then
             echo "jdk=8" >> $GITHUB_OUTPUT
           else
             echo "jdk=8" >> $GITHUB_OUTPUT
