@@ -1,0 +1,8 @@
+consumer:
+  serviceRouter:
+    plugin:
+      recoverRouter:
+        # 是否剔除被熔断的实例
+        excludeCircuitBreakInstances: false
+        # 关闭全死全活
+        allRecoverEnable: false

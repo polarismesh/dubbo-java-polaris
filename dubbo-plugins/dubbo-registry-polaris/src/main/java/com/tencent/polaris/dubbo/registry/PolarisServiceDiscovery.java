@@ -73,8 +73,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
             metadata = new HashMap<>();
         }
         metadata.replaceAll((s, s2) -> StringUtils.defaultString(s2));
-        String version = instance.getMetadata(Consts.INSTANCE_VERSION, Consts.DEFAULT_VERSION);
-        Context.saveToGlobal(Consts.INSTANCE_VERSION, version);
+        String version = instance.getMetadata(Consts.INSTANCE_VERSION);
         operator.register(
                 serviceName,
                 instance.getHost(),
@@ -122,7 +121,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
                             instance.getHost(), instance.getPort(),
                             ScopeModelUtil.getApplicationModel(registryURL.getScopeModel()));
             serviceInstance.setMetadata(instance.getMetadata());
-            serviceInstance.setEnabled(!instance.isIsolated());
+            serviceInstance.setEnabled(!instance.isIsolated()&&instance.isHealthy());
             serviceInstance.setHealthy(instance.isHealthy());
             ret.add(serviceInstance);
         }
@@ -207,7 +206,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
                                 instance.getHost(), instance.getPort(),
                                 ScopeModelUtil.getApplicationModel(registryURL.getScopeModel()));
                 serviceInstance.setMetadata(instance.getMetadata());
-                serviceInstance.setEnabled(!instance.isIsolated());
+                serviceInstance.setEnabled(!instance.isIsolated()&&instance.isHealthy());
                 serviceInstance.setHealthy(instance.isHealthy());
                 serviceInstances.add(serviceInstance);
             }

@@ -20,16 +20,18 @@ package com.tencent.polaris.dubbo.discovery.example.provider;
 import com.tencent.polaris.dubbo.example.api.GreetingService;
 import org.apache.dubbo.config.annotation.DubboService;
 
-@DubboService(version = "1.0.0")
+@DubboService
 public class AnnotatedGreetingService implements GreetingService {
 
     public String sayHello(String name) {
-        return "hello, " + name;
+        String port = System.getProperty("dubbo.protocol.port");
+        return "hello, " + name + ", port: " + port;
     }
 
     @Override
     public String sayHi(String name) {
-        return "[provider by polaris] hi, " + name;
+        String port = System.getProperty("dubbo.protocol.port");
+        return "[provider by polaris] hi, " + name + ", port: " + port;
     }
 
 }
