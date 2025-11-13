@@ -121,7 +121,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
                             instance.getHost(), instance.getPort(),
                             ScopeModelUtil.getApplicationModel(registryURL.getScopeModel()));
             serviceInstance.setMetadata(instance.getMetadata());
-            serviceInstance.setEnabled(!instance.isIsolated()&&instance.isHealthy());
+            serviceInstance.setEnabled(!instance.isIsolated());
             serviceInstance.setHealthy(instance.isHealthy());
             ret.add(serviceInstance);
         }
@@ -206,7 +206,7 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
                                 instance.getHost(), instance.getPort(),
                                 ScopeModelUtil.getApplicationModel(registryURL.getScopeModel()));
                 serviceInstance.setMetadata(instance.getMetadata());
-                serviceInstance.setEnabled(!instance.isIsolated()&&instance.isHealthy());
+                serviceInstance.setEnabled(!instance.isIsolated());
                 serviceInstance.setHealthy(instance.isHealthy());
                 serviceInstances.add(serviceInstance);
             }
