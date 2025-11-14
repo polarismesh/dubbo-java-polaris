@@ -1,5 +1,8 @@
 # dubbo-java-polaris
 
+[![codecov](https://codecov.io/gh/polarismesh/dubbo-java-polaris/graph/badge.svg?token=I9fctxnRWi)](https://codecov.io/gh/polarismesh/dubbo-java-polaris)
+[![Testing](https://github.com/polarismesh/dubbo-java-polaris/actions/workflows/testing.yml/badge.svg)](https://github.com/polarismesh/dubbo-java-polaris/actions/workflows/testing.yml)
+
 ## 介绍
 
 dubbo-java-polaris 是 [Apache Dubbo](https://github.com/apache/dubbo) 框架的扩展，便于使用dubbo框架开发的应用可以接入并使用北极星的各部分功能。
