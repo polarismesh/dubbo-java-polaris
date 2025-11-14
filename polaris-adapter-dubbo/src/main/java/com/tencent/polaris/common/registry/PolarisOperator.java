@@ -106,7 +106,7 @@ public class PolarisOperator {
                 .getPluginConfig("prometheus", PrometheusHandlerConfig.class);
         AdminConfigImpl adminConfig = configuration.getGlobal().getAdmin();
 
-        // 如果设置了改开关
+        // 如果设置了该开关
         if (parameters.containsKey(Consts.KEY_METRIC_TYPE)) {
             String statType = parameters.get(Consts.KEY_METRIC_TYPE);
             switch (statType) {
