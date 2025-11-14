@@ -28,7 +28,7 @@ public class GreetingServiceConsumer {
     @DubboReference(loadbalance = "roundrobin")
     private GreetingService greetingService;
 
-    @DubboReference
+    @DubboReference(version = "1.0.0")
     private EchoService echoService;
 
     public String doSayHello(String name) {

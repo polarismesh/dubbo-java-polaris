@@ -20,7 +20,7 @@ package com.tencent.polaris.dubbo.discovery.example.provider;
 import com.tencent.polaris.dubbo.example.api.EchoService;
 import org.apache.dubbo.config.annotation.DubboService;
 
-@DubboService
+@DubboService(version = "1.0.0")
 public class AnnotatedEchoService implements EchoService {
 
     @Override
