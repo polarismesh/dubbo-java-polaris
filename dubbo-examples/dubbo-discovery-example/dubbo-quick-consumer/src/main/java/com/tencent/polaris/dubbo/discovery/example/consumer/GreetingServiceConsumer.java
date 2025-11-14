@@ -25,10 +25,10 @@ import org.springframework.stereotype.Component;
 @Component("annotatedConsumer")
 public class GreetingServiceConsumer {
 
-    @DubboReference(version = "1.0.0")
+    @DubboReference(loadbalance = "roundrobin")
     private GreetingService greetingService;
 
-    @DubboReference(version = "1.0.0", providedBy = "dubbo-quickstart-provider")
+    @DubboReference(version = "1.0.0")
     private EchoService echoService;
 
     public String doSayHello(String name) {

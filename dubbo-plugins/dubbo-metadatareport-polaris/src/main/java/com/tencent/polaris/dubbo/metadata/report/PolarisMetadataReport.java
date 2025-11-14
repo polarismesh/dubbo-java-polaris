@@ -33,6 +33,7 @@ import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceContractProto;
+import java.util.stream.Collectors;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.configcenter.ConfigItem;
 import org.apache.dubbo.common.utils.ConcurrentHashSet;
@@ -82,6 +83,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         this.another = MultiReportUtil.buildAnother(applicationModel, url);
     }
 
+    // 保存应用的元数据
     @Override
     protected void doStoreProviderMetadata(MetadataIdentifier providerMetadataIdentifier, String serviceDefinitions) {
         reportServiceContract(toDescriptor(providerMetadataIdentifier, serviceDefinitions));
@@ -255,22 +257,40 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
      */
     @Override
     public boolean registerServiceAppMapping(String serviceKey, String application, URL url) {
-        // TODO 顺序调整
+        // 直接上报mapping数据会导致提供相同接口的其他应用的mapping数据被覆写。
+        // 这里应该是追加写入应用-接口mapping数据。
+        // 1. 先获取初始mapping，过滤掉当前serviceKey对应的mapping
         another.ifPresent(proxyReport -> proxyReport.getMetadataReport().registerServiceAppMapping(serviceKey, application, url));
-
+        GetServiceContractRequest getServiceContractRequest = new GetServiceContractRequest();
+        getServiceContractRequest.setName(formatMappingName(serviceKey));
+        getServiceContractRequest.setService("");
+        getServiceContractRequest.setVersion("");
+        Optional<ServiceContractProto.ServiceContract> result = getServiceContract(getServiceContractRequest);
+        List<InterfaceDescriptor> descriptors = result
+                .map(ServiceContractProto.ServiceContract::getInterfacesList)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(descriptor -> !descriptor.getName().equals(application))
+                .map(descriptor -> {
+                    InterfaceDescriptor interfaceDescriptor = new InterfaceDescriptor();
+                    interfaceDescriptor.setName(descriptor.getName());
+                    interfaceDescriptor.setPath(descriptor.getPath());
+                    interfaceDescriptor.setMethod(descriptor.getMethod());
+                    interfaceDescriptor.setContent(descriptor.getContent());
+                    return interfaceDescriptor;
+                })
+                .collect(Collectors.toList());
+        // 2. 再添加当前serviceKey对应的mapping
         ReportServiceContractRequest request = new ReportServiceContractRequest();
         request.setName(formatMappingName(serviceKey));
         request.setService("");
         request.setVersion("");
-
-        List<InterfaceDescriptor> descriptors = new ArrayList<>();
         InterfaceDescriptor descriptor = new InterfaceDescriptor();
         descriptor.setName(application);
         descriptor.setPath(application);
         descriptor.setContent(application);
         descriptor.setMethod("");
         descriptors.add(descriptor);
-
         request.setInterfaceDescriptors(descriptors);
         return reportServiceContract(request);
     }
