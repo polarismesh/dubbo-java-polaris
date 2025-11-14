@@ -111,9 +111,9 @@ public class PolarisOperator {
             String statType = parameters.get(Consts.KEY_METRIC_TYPE);
             switch (statType) {
                 case "push":
-                    String pushAddr = parameters.get(Consts.KEY_METRIC_PUSH_ADDR);
-                    if (StringUtils.isBlank(pushAddr)) {
-                        pushAddr = polarisConfig.getDiscoverAddress().split(":")[0] + ":9091";
+                    List<String> pushAddr = Arrays.asList(parameters.get(Consts.KEY_METRIC_PUSH_ADDR).split(","));
+                    if (CollectionUtils.isEmpty(pushAddr)) {
+                        pushAddr = Collections.singletonList(polarisConfig.getDiscoverAddress().split(":")[0] + ":9091");
                     }
                     configuration.getGlobal().getStatReporter().setEnable(true);
                     prometheusHandlerConfig.setType("push");
