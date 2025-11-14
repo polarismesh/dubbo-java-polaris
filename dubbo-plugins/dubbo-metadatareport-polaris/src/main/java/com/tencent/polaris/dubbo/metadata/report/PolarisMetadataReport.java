@@ -257,13 +257,13 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
      */
     @Override
     public boolean registerServiceAppMapping(String serviceKey, String application, URL url) {
+        // 1. 先获取初始mapping，过滤掉当前serviceKey对应的mapping
         another.ifPresent(proxyReport -> proxyReport.getMetadataReport().registerServiceAppMapping(serviceKey, application, url));
         GetServiceContractRequest getServiceContractRequest = new GetServiceContractRequest();
         getServiceContractRequest.setName(formatMappingName(serviceKey));
         getServiceContractRequest.setService("");
         getServiceContractRequest.setVersion("");
         Optional<ServiceContractProto.ServiceContract> result = getServiceContract(getServiceContractRequest);
-        // 先获取初始mapping，过滤掉当前serviceKey对应的mapping
         List<InterfaceDescriptor> descriptors = result
                 .map(ServiceContractProto.ServiceContract::getInterfacesList)
                 .orElse(Collections.emptyList())
@@ -278,7 +278,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
                     return interfaceDescriptor;
                 })
                 .collect(Collectors.toList());
-        // 再添加当前serviceKey对应的mapping
+        // 2. 再添加当前serviceKey对应的mapping
         ReportServiceContractRequest request = new ReportServiceContractRequest();
         request.setName(formatMappingName(serviceKey));
         request.setService("");
