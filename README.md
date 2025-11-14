@@ -1,7 +1,7 @@
 # dubbo-java-polaris
 
-[![codecov](https://codecov.io/gh/polarismesh/dubbo-java-polaris/graph/badge.svg?token=I9fctxnRWi)](https://codecov.io/gh/polarismesh/dubbo-java-polaris)
-[![Testing](https://github.com/polarismesh/dubbo-java-polaris/actions/workflows/testing.yml/badge.svg)](https://github.com/polarismesh/dubbo-java-polaris/actions/workflows/testing.yml)
+[![codecov](https://codecov.io/gh/polarismesh/dubbo-java-polaris/branch/dubbo-3.2.x/graph/badge.svg?token=I9fctxnRWi)](https://app.codecov.io/gh/polarismesh/dubbo-java-polaris/tree/dubbo-3.2.x)
+[![Testing](https://github.com/polarismesh/dubbo-java-polaris/actions/workflows/testing.yml/badge.svg?branch=dubbo-3.2.x)](https://github.com/polarismesh/dubbo-java-polaris/actions/workflows/testing.yml)
 
 ## 介绍
 
