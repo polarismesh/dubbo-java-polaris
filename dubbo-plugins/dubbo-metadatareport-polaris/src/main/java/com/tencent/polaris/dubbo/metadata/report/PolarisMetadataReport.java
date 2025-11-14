@@ -257,6 +257,8 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
      */
     @Override
     public boolean registerServiceAppMapping(String serviceKey, String application, URL url) {
+        // 直接上报mapping数据会导致提供相同接口的其他应用的mapping数据被覆写。
+        // 这里应该是追加写入应用-接口mapping数据。
         // 1. 先获取初始mapping，过滤掉当前serviceKey对应的mapping
         another.ifPresent(proxyReport -> proxyReport.getMetadataReport().registerServiceAppMapping(serviceKey, application, url));
         GetServiceContractRequest getServiceContractRequest = new GetServiceContractRequest();
