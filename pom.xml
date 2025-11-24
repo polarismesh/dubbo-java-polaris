@@ -45,10 +45,10 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>2.0.2.0-3.2.7</revision>
+        <revision>2.0.2.1-3.2.7</revision>
 
         <!-- Polaris SDK version -->
-        <polaris.version>2.0.2.0</polaris.version>
+        <polaris.version>2.0.2.3</polaris.version>
 
         <apache.dubbo.version>3.2.7</apache.dubbo.version>
         <slf4j.version>1.7.25</slf4j.version>
