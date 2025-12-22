@@ -52,7 +52,7 @@
 
         <apache.dubbo.version>3.2.7</apache.dubbo.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <json_path_version>2.8.0</json_path_version>
+        <json_path_version>2.9.0</json_path_version>
         <junit.version>4.13.1</junit.version>
         <byte-buddy.version>1.14.19</byte-buddy.version>
         <mockito.version>4.9.0</mockito.version>
