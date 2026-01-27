@@ -115,9 +115,10 @@ public class PolarisOperator {
                     if (StringUtils.isBlank(pushAddr)) {
                         pushAddr = polarisConfig.getDiscoverAddress().split(":")[0] + ":9091";
                     }
+                    List<String> pushAddrList = Arrays.asList(pushAddr.split(","));
                     configuration.getGlobal().getStatReporter().setEnable(true);
                     prometheusHandlerConfig.setType("push");
-                    prometheusHandlerConfig.setAddress(Collections.singletonList(pushAddr));
+                    prometheusHandlerConfig.setAddress(pushAddrList);
 
                     // 默认为 10s
                     long interval = 10 * 1000L;

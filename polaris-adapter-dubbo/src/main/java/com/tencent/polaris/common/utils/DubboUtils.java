@@ -24,7 +24,6 @@ import org.apache.dubbo.common.config.ConfigurationUtils;
 import org.apache.dubbo.common.constants.RegistryConstants;
 import org.apache.dubbo.common.url.component.ServiceConfigURL;
 import org.apache.dubbo.registry.client.InstanceAddressURL;
-import org.apache.dubbo.rpc.Constants;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.model.ScopeModel;
@@ -42,25 +41,27 @@ public class DubboUtils {
                 RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE);
     }
 
-    public static List<DubboServiceInfo> analyzeLocalDubboServiceInfo(ScopeModel model, Invoker<?> invoker, Invocation invocation) {
+    public static List<DubboServiceInfo> analyzeLocalDubboServiceInfo(ScopeModel model, Invoker<?> invoker,
+            Invocation invocation) {
         URL url = invoker.getUrl();
         String registerMode = getRegisterMode(model);
 
         switch (registerMode) {
             case RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE:
-                return Collections.singletonList(DubboServiceInfo.builder()
-                        .service(url.getApplication())
-                        .interfaceName(invocation.getAttachment(Constants.INTERFACE))
-                        .methodName(invocation.getMethodName())
-                        .build());
+                DubboServiceInfo dubboServiceInfo = new DubboServiceInfo();
+                dubboServiceInfo.setService(url.getApplication());
+                dubboServiceInfo.setInterfaceName(url.getServiceInterface());
+                dubboServiceInfo.setMethodName(invocation.getMethodName());
+                dubboServiceInfo.setParametersType(invocation.getParameterTypes());
+                return Collections.singletonList(dubboServiceInfo);
             case RegistryConstants.DEFAULT_REGISTER_MODE_ALL:
                 DubboServiceInfo instanceInfo = new DubboServiceInfo();
                 instanceInfo.setService(url.getApplication());
-                instanceInfo.setInterfaceName(invocation.getAttachment(Constants.INTERFACE));
+                instanceInfo.setInterfaceName(url.getServiceInterface());
                 instanceInfo.setMethodName(invocation.getMethodName());
-
+                instanceInfo.setParametersType(invocation.getParameterTypes());
                 DubboServiceInfo interfaceInfo = new DubboServiceInfo();
-                interfaceInfo.setService(invocation.getServiceName());
+                interfaceInfo.setService(url.getServiceInterface());
                 interfaceInfo.setMethodName(invocation.getMethodName());
 
                 List<DubboServiceInfo> serviceInfos = new ArrayList<>(2);
@@ -69,8 +70,9 @@ public class DubboUtils {
                 return serviceInfos;
             case RegistryConstants.DEFAULT_REGISTER_MODE_INTERFACE:
                 return Collections.singletonList(DubboServiceInfo.builder()
-                        .service(invocation.getServiceName())
+                        .service(url.getServiceInterface())
                         .methodName(invocation.getMethodName())
+                        .parametersType(invocation.getParameterTypes())
                         .build());
             default:
                 throw new IllegalStateException("invalid dubbo register mode: " + registerMode);
@@ -90,12 +92,14 @@ public class DubboUtils {
                     .service(service)
                     .interfaceName(providerUrl.getServiceInterface())
                     .methodName(invocation.getMethodName())
+                    .parametersType(invocation.getParameterTypes())
                     .build());
         }
 
         serviceInfos.add(DubboServiceInfo.builder()
                 .service(providerUrl.getServiceInterface())
                 .methodName(invocation.getMethodName())
+                .parametersType(invocation.getParameterTypes())
                 .build());
         return serviceInfos;
     }
@@ -107,7 +111,8 @@ public class DubboUtils {
         }
         if (providerUrl instanceof ServiceConfigURL) {
             ServiceConfigURL url = (ServiceConfigURL) providerUrl;
-            String registerMode = url.getParameter(RegistryConstants.REGISTER_MODE_KEY, RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE);
+            String registerMode = url.getParameter(RegistryConstants.REGISTER_MODE_KEY,
+                    RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE);
             switch (registerMode) {
                 case RegistryConstants.DEFAULT_REGISTER_MODE_ALL:
                 case RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE:

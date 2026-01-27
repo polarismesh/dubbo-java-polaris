@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.common.registry;
 
+import java.util.stream.Stream;
 import org.apache.dubbo.common.utils.StringUtils;
 
 public class DubboServiceInfo {
@@ -26,6 +27,8 @@ public class DubboServiceInfo {
     private String interfaceName;
 
     private String methodName;
+
+    private String[] parametersType;
 
     public String getService() {
         return service;
@@ -39,6 +42,20 @@ public class DubboServiceInfo {
         return interfaceName;
     }
 
+    public String[] getParametersType() {
+        return parametersType;
+    }
+
+    public String getParametersTypeString() {
+        return String.join(",", this.parametersType);
+    }
+
+    public void setParametersType(Class<?>[] parametersType) {
+        this.parametersType = Stream.of(parametersType)
+                .map(Class::getName)
+                .toArray(String[]::new);
+    }
+
     public void setInterfaceName(String interfaceName) {
         this.interfaceName = interfaceName;
     }
@@ -47,9 +64,14 @@ public class DubboServiceInfo {
         return methodName;
     }
 
+    public String getMethodNameWithParameters() {
+        return this.methodName + "(" + String.join(",", this.parametersType) + ")";
+    }
+
     public void setMethodName(String methodName) {
         this.methodName = methodName;
     }
+
 
     public String getDubboInterface() {
         if (StringUtils.isNotBlank(interfaceName)) {
@@ -70,6 +92,7 @@ public class DubboServiceInfo {
         private String service;
         private String interfaceName;
         private String methodName;
+            private Class<?>[] parametersType;
 
         private Builder() {
         }
@@ -89,11 +112,17 @@ public class DubboServiceInfo {
             return this;
         }
 
+        public Builder parametersType(Class<?>[] parametersType) {
+            this.parametersType = parametersType;
+            return this;
+        }
+
         public DubboServiceInfo build() {
             DubboServiceInfo dubboServiceInfo = new DubboServiceInfo();
             dubboServiceInfo.setService(service);
             dubboServiceInfo.setInterfaceName(interfaceName);
             dubboServiceInfo.setMethodName(methodName);
+            dubboServiceInfo.setParametersType(parametersType);
             return dubboServiceInfo;
         }
     }
