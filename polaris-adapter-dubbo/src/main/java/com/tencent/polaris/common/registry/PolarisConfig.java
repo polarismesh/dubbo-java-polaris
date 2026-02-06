@@ -29,18 +29,19 @@ public class PolarisConfig {
 
     private final String namespace;
 
-    private final String discoverAddress;
+    private String discoverAddress;
 
-    private final String configAddress;
+    private String configAddress;
 
     private final String token;
 
     private final int ttl;
 
-    public PolarisConfig(String host, int port, Map<String, String> parameters) {
-        discoverAddress = String.format("%s:%d", host, port);
-        configAddress = String.format("%s:%d", host, Consts.CONFIG_PORT);
+    private final PolarisOperators.OperatorType operatorType;
 
+    public PolarisConfig(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters) {
+        this.operatorType = operatorType;
+        initAddress(host, port, parameters);
         String namespaceStr = parameters.get(Consts.KEY_NAMESPACE);
         if (null == namespaceStr || namespaceStr.isEmpty()) {
             namespaceStr = Consts.DEFAULT_NAMESPACE;
@@ -58,6 +59,28 @@ public class PolarisConfig {
         }
         this.ttl = healthTTL;
         LOG.info("[Common] construct polarisConfig {}", this);
+    }
+
+    private void initAddress(String host, int port, Map<String, String> parameters) {
+        int discoverPort = 8091;
+        int configPort = 8093;
+        switch (operatorType) {
+            case CONFIG:
+                configPort = port;
+                String discoverPortStr = parameters.getOrDefault(Consts.DISCOVER_PORT, discoverPort + "");
+                discoverPort = Integer.parseInt(discoverPortStr);
+                break;
+            case GOVERNANCE:
+                discoverPort = port;
+                configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
+                break;
+            case METADATA_REPORT:
+                discoverPort = port;
+                configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
+                break;
+        }
+        discoverAddress = String.format("%s:%d", host, discoverPort);
+        configAddress = String.format("%s:%d", host, configPort);
     }
 
     public String getNamespace() {
@@ -88,6 +111,7 @@ public class PolarisConfig {
                 ", configAddress='" + configAddress + '\'' +
                 ", token='" + token + '\'' +
                 ", ttl=" + ttl +
+                ", operatorType=" + operatorType +
                 '}';
     }
 }

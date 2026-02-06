@@ -31,7 +31,7 @@ public class PolarisOperatorDelegate {
             if (null != polarisOperator) {
                 return polarisOperator;
             }
-            polarisOperator = PolarisOperators.INSTANCE.getFirstPolarisOperator();
+            polarisOperator = PolarisOperators.getGovernancePolarisOperator();
             return polarisOperator;
         }
     }

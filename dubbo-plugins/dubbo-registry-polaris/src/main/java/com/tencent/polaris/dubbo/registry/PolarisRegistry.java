@@ -56,13 +56,8 @@ public class PolarisRegistry extends FailbackRegistry {
     private final PolarisOperator polarisOperator;
 
     public PolarisRegistry(URL url) {
-        this(url, new BaseBootConfigHandler());
-    }
-
-    // for test
-    public PolarisRegistry(URL url, BootConfigHandler... handlers) {
         super(url);
-        polarisOperator = PolarisOperators.INSTANCE.loadOrStore(url.getHost(), url.getPort(), url.getParameters(), handlers);
+        polarisOperator = PolarisOperators.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
     }
 
     @Override
@@ -76,7 +71,7 @@ public class PolarisRegistry extends FailbackRegistry {
         int port = url.getPort();
         if (port > 0) {
             int weight = url.getParameter(Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT);
-            String version = url.getParameter(CommonConstants.VERSION_KEY, "1.0.0");
+            String version = url.getParameter(CommonConstants.VERSION_KEY);
             polarisOperator.register(url.getServiceInterface(), url.getHost(), port, url.getProtocol(), version, weight,
                     metadata);
             registeredInstances.add(url);

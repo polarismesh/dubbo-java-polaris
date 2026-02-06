@@ -23,8 +23,6 @@ public interface Consts {
 
     int DEFAULT_TTL = 5;
 
-    int CONFIG_PORT = 8093;
-
     String KEY_NAMESPACE = "namespace";
 
     String KEY_TIMEOUT = "timeout";
@@ -37,6 +35,16 @@ public interface Consts {
 
     String KEY_DETECT_WHEN = "detect_when";
 
+    String KEY_METRIC_TYPE = "stat_type";
+
+    String KEY_METRIC_PULL_PORT = "stat_pull_port";
+
+    String KEY_METRIC_PUSH_ADDR = "stat_push_addr";
+
+    String KEY_METRIC_PUSH_INTERVAL = "stat_push_interval";
+
+    String KEY_CONFIG_ENCRYPT_ENABLED = "config_encrypt_enabled";
+
     String INSTANCE_KEY_HEALTHY = "_internal_healthy";
 
     String INSTANCE_KEY_ISOLATED = "_internal_isolated";
@@ -44,4 +52,16 @@ public interface Consts {
     String INSTANCE_KEY_CIRCUIT_BREAKER = "_internal_circuit_breaker";
 
     String INSTANCE_KEY_ID = "_internal_id";
+
+    String INSTANCE_VERSION = "version";
+
+    String INSTANCE_WEIGHT = "weight";
+
+    String DUBBO_PROTOCOL = "dubbo";
+
+    String CONFIG_PORT = "config_port";
+
+    String DISCOVER_PORT = "discover_port";
+
+    String DEFAULT_VERSION = "1.0.0";
 }

@@ -54,9 +54,9 @@ public class PolarisRouter extends AbstractRouter {
         LOGGER.info("[POLARIS] init service router, url is {}, parameters are {}", url,
                 url.getParameters());
         this.priority = url.getParameter(Constants.PRIORITY_KEY, 0);
-        routeRuleHandler = new RuleHandler();
-        polarisOperator = PolarisOperators.INSTANCE.getPolarisOperator(url.getHost(), url.getPort());
-        parser = QueryParser.load();
+        this.routeRuleHandler = new RuleHandler();
+        this.polarisOperator = PolarisOperators.getGovernancePolarisOperator();
+        this.parser = QueryParser.load();
     }
 
     @Override
