@@ -17,10 +17,14 @@
 
 package com.tencent.polaris.dubbo.discovery.example.provider;
 
-import com.tencent.polaris.dubbo.example.api.GreetingService;
-import org.apache.dubbo.config.annotation.DubboService;
+import static org.apache.dubbo.common.constants.CommonConstants.DUBBO_LABELS;
 
-@DubboService(version = "1.0.0")
+import com.tencent.polaris.dubbo.example.api.GreetingService;
+import org.apache.dubbo.common.config.ConfigurationUtils;
+import org.apache.dubbo.config.annotation.DubboService;
+import org.apache.dubbo.rpc.RpcContext;
+
+@DubboService
 public class AnnotatedGreetingService implements GreetingService {
 
     public String sayHello(String name) {
@@ -29,7 +33,10 @@ public class AnnotatedGreetingService implements GreetingService {
 
     @Override
     public String sayHi(String name) {
-        return "[provider by polaris] hi, " + name;
+        String dubboLabel = ConfigurationUtils.getProperty(DUBBO_LABELS);
+        String host = RpcContext.getContext().getLocalHost();
+        String port = String.valueOf(RpcContext.getContext().getLocalPort());
+        return "[provider by polaris] hi, " + name + " (labels: " + dubboLabel + ", provider host: " + host + ", port: " + port + ")";
     }
 
 }
