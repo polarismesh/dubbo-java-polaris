@@ -45,6 +45,10 @@ public interface Consts {
 
     String KEY_CONFIG_ENCRYPT_ENABLED = "config_encrypt_enabled";
 
+    String KEY_PGW_EVENT_ENABLED = "pgw_event_enabled";
+
+    String KEY_PGW_EVENT_ADDR = "pgw_event_addr";
+
     String INSTANCE_KEY_HEALTHY = "_internal_healthy";
 
     String INSTANCE_KEY_ISOLATED = "_internal_isolated";

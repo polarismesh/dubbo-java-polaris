@@ -18,6 +18,8 @@
 package com.tencent.polaris.common.registry;
 
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
+import com.tencent.polaris.api.config.global.StatReporterConfig;
+import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -46,6 +48,7 @@ import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.factory.config.global.AdminConfigImpl;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
+import com.tencent.polaris.plugins.event.pushgateway.PushGatewayEventReporterConfig;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
@@ -57,6 +60,7 @@ import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
+import org.apache.dubbo.common.utils.NetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +103,7 @@ public class PolarisOperator {
         }
         initServerConnectorConfig(configuration);
         initSDKContextConfig(configuration, parameters, polarisConfig);
-
+        configuration.getGlobal().getAPI().setBindIP(NetUtils.getLocalHost());
 
         // 设置服务治理连接地址
         configuration.getGlobal().getServerConnector()
@@ -121,10 +125,10 @@ public class PolarisOperator {
     private void initSDKContextConfig(ConfigurationImpl configuration, Map<String, String> parameters, PolarisConfig polarisConfig) {
 
         PrometheusHandlerConfig prometheusHandlerConfig = configuration.getGlobal().getStatReporter()
-                .getPluginConfig("prometheus", PrometheusHandlerConfig.class);
-        AdminConfigImpl adminConfig = configuration.getGlobal().getAdmin();
+                .getPluginConfig(StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS, PrometheusHandlerConfig.class);
 
-        // 如果设置了改开关
+        AdminConfigImpl adminConfig = configuration.getGlobal().getAdmin();
+        // stat reporter
         if (parameters.containsKey(Consts.KEY_METRIC_TYPE)) {
             String statType = parameters.get(Consts.KEY_METRIC_TYPE);
             switch (statType) {
@@ -163,6 +167,23 @@ public class PolarisOperator {
         }
         configuration.getGlobal().getStatReporter().setPluginConfig("prometheus", prometheusHandlerConfig);
 
+        // event reporter
+        PushGatewayEventReporterConfig pushGatewayEventReporterConfig = configuration.getGlobal().getEventReporter()
+                .getPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, PushGatewayEventReporterConfig.class);
+        configuration.getGlobal().getEventReporter().getReporters().add(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE);
+        if (parameters.containsKey(Consts.KEY_PGW_EVENT_ENABLED)){
+            boolean enabled = Boolean.parseBoolean(parameters.get(Consts.KEY_PGW_EVENT_ENABLED));
+            pushGatewayEventReporterConfig.setEnable(enabled);
+            if (parameters.containsKey(Consts.KEY_PGW_EVENT_ADDR)){
+                pushGatewayEventReporterConfig.setAddress(Collections.singletonList(parameters.get(Consts.KEY_PGW_EVENT_ADDR)));
+            }
+            pushGatewayEventReporterConfig.setEventQueueSize(1000);
+            pushGatewayEventReporterConfig.setMaxBatchSize(100);
+            pushGatewayEventReporterConfig.setNamespace("polaris");
+            pushGatewayEventReporterConfig.setService("polaris.pushgateway");
+        }
+
+        configuration.getGlobal().getEventReporter().setPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, pushGatewayEventReporterConfig);
         // 设置主动探测
         if (parameters.containsKey(Consts.KEY_DETECT_WHEN)) {
             String detectWhen = parameters.get(Consts.KEY_DETECT_WHEN);

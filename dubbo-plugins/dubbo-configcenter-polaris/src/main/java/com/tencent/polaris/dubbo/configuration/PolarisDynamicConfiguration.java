@@ -20,14 +20,20 @@ package com.tencent.polaris.dubbo.configuration;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.event.ConfigEvent;
+import com.tencent.polaris.api.plugin.event.EventConstants;
+import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.common.registry.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.configuration.api.core.ChangeType;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
+import com.tencent.polaris.configuration.api.core.ConfigFileChangeEvent;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.api.rpc.ConfigPublishRequest;
+import java.time.LocalDateTime;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.configcenter.ConfigChangeType;
 import org.apache.dubbo.common.config.configcenter.ConfigChangedEvent;
@@ -75,6 +81,7 @@ public class PolarisDynamicConfiguration implements DynamicConfiguration {
                             key, group, event.getNewValue(), getChangeType(event.getChangeType()));
                     configurationListener.process(dubboEvent);
                 });
+                reportEvent(key, group, event);
             });
             logger.info(String.format("add polaris config listener, key=%s, group=%s", key, group));
             return new CopyOnWriteArraySet<>();
@@ -169,5 +176,19 @@ public class PolarisDynamicConfiguration implements DynamicConfiguration {
                 break;
         }
         return dubboChangeType;
+    }
+
+    private void reportEvent(String key, String group, ConfigFileChangeEvent event){
+        SDKContext context = operator.getSdkContext();
+        ConfigEvent.Builder builder = new ConfigEvent.Builder()
+                .withTimestamp(LocalDateTime.now())
+                .withEventType(EventConstants.EventType.CONFIG)
+                .withEventName(EventConstants.EventName.ConfigUpdated)
+                .withClientId(context.getExtensions().getValueContext().getClientId())
+                .withClientIp(context.getExtensions().getValueContext().getHost())
+                .withNamespace(polarisConfig.getNamespace())
+                .withConfigGroup(group)
+                .withConfigFileName(key);
+        BaseFlow.reportConfigEvent(context.getExtensions(), builder.build());
     }
 }
