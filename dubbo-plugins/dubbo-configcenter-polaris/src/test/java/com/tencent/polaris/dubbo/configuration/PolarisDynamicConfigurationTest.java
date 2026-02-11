@@ -21,6 +21,10 @@ import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.common.ValueContext;
+import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.common.registry.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
@@ -55,11 +59,15 @@ import static org.mockito.Mockito.*;
 public class PolarisDynamicConfigurationTest {
 
     private MockedStatic<PolarisOperators> polarisOperatorsMock;
+    private MockedStatic<BaseFlow> baseFlowMock;
     private PolarisOperator mockOperator;
     private PolarisConfig mockPolarisConfig;
     private ConfigFileService mockConfigFileService;
     private ConfigFilePublishService mockConfigFilePublishService;
     private ConfigFile mockConfigFile;
+    private SDKContext mockSdkContext;
+    private Extensions mockExtensions;
+    private ValueContext mockValueContext;
     private PolarisDynamicConfiguration configuration;
 
     @Before
@@ -70,12 +78,22 @@ public class PolarisDynamicConfigurationTest {
         mockConfigFileService = mock(ConfigFileService.class);
         mockConfigFilePublishService = mock(ConfigFilePublishService.class);
         mockConfigFile = mock(ConfigFile.class);
+        mockSdkContext = mock(SDKContext.class);
+        mockExtensions = mock(Extensions.class);
+        mockValueContext = mock(ValueContext.class);
 
         // 配置 PolarisOperator 的行为
         when(mockOperator.getPolarisConfig()).thenReturn(mockPolarisConfig);
         when(mockOperator.getConfigFileAPI()).thenReturn(mockConfigFileService);
         when(mockOperator.getConfigFilePublishAPI()).thenReturn(mockConfigFilePublishService);
+        when(mockOperator.getSdkContext()).thenReturn(mockSdkContext);
         when(mockPolarisConfig.getNamespace()).thenReturn("default");
+        
+        // 配置 SDKContext 相关的 mock 链
+        when(mockSdkContext.getExtensions()).thenReturn(mockExtensions);
+        when(mockExtensions.getValueContext()).thenReturn(mockValueContext);
+        when(mockValueContext.getClientId()).thenReturn("test-client-id");
+        when(mockValueContext.getHost()).thenReturn("127.0.0.1");
         
         // 配置 ConfigFileService 的行为
         when(mockConfigFileService.getConfigFile(anyString(), anyString(), anyString()))
@@ -85,6 +103,10 @@ public class PolarisDynamicConfigurationTest {
         polarisOperatorsMock = Mockito.mockStatic(PolarisOperators.class);
         polarisOperatorsMock.when(() -> PolarisOperators.loadOrStoreForConfig(anyString(), anyInt(), anyMap()))
                 .thenReturn(mockOperator);
+        
+        // Mock BaseFlow.reportConfigEvent 静态方法
+        baseFlowMock = Mockito.mockStatic(BaseFlow.class);
+        baseFlowMock.when(() -> BaseFlow.reportConfigEvent(any(), any())).then(invocation -> null);
 
         // 创建被测对象
         URL url = URL.valueOf("polaris://127.0.0.1:8091");
@@ -95,6 +117,9 @@ public class PolarisDynamicConfigurationTest {
     public void tearDown() {
         if (polarisOperatorsMock != null) {
             polarisOperatorsMock.close();
+        }
+        if (baseFlowMock != null) {
+            baseFlowMock.close();
         }
     }
 
