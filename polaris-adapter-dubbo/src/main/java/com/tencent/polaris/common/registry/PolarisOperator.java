@@ -195,6 +195,8 @@ public class PolarisOperator {
             }
         }
 
+        // 禁用推空保护
+        configuration.getConfigFile().getServerConnector().setEmptyProtectionEnable(false);
         configuration.getConfigFile().getConfigFilterConfig().setEnable(Boolean.parseBoolean(parameters.getOrDefault(Consts.KEY_CONFIG_ENCRYPT_ENABLED, "true")));
         configuration.getConfigFile().getConfigFilterConfig().getChain().add("crypto");
         configuration.getConfigFile().getConfigFilterConfig().getPlugin().put("crypto", Collections.singletonMap("type", "AES"));
