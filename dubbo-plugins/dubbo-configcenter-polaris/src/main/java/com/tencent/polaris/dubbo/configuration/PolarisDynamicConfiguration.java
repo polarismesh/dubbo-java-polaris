@@ -34,6 +34,11 @@ import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.api.rpc.ConfigPublishRequest;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.configcenter.ConfigChangeType;
 import org.apache.dubbo.common.config.configcenter.ConfigChangedEvent;
@@ -41,12 +46,6 @@ import org.apache.dubbo.common.config.configcenter.ConfigurationListener;
 import org.apache.dubbo.common.config.configcenter.DynamicConfiguration;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 public class PolarisDynamicConfiguration implements DynamicConfiguration {
 
@@ -57,6 +56,7 @@ public class PolarisDynamicConfiguration implements DynamicConfiguration {
     private final PolarisConfig polarisConfig;
 
     private final ConfigFileService fileQuerier;
+
 
     private final ConfigFilePublishService filePublisher;
 
@@ -178,7 +178,7 @@ public class PolarisDynamicConfiguration implements DynamicConfiguration {
         return dubboChangeType;
     }
 
-    private void reportEvent(String key, String group, ConfigFileChangeEvent event){
+    private void reportEvent(String key, String group, ConfigFileChangeEvent event) {
         SDKContext context = operator.getSdkContext();
         ConfigEvent.Builder builder = new ConfigEvent.Builder()
                 .withTimestamp(LocalDateTime.now())

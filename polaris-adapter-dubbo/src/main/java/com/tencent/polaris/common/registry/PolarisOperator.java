@@ -26,9 +26,29 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
-import com.tencent.polaris.api.pojo.*;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
+import com.tencent.polaris.api.pojo.DefaultServiceInstances;
+import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.rpc.*;
+import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.pojo.SourceService;
+import com.tencent.polaris.api.rpc.Criteria;
+import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
+import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
+import com.tencent.polaris.api.rpc.GetServicesRequest;
+import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
+import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
+import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
+import com.tencent.polaris.api.rpc.InstancesResponse;
+import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.api.rpc.ServicesResponse;
+import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
+import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
@@ -60,11 +80,15 @@ import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import org.apache.dubbo.common.utils.NetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 public class PolarisOperator {
 
@@ -88,12 +112,18 @@ public class PolarisOperator {
 
     private ConfigFilePublishService configFilePublishAPI;
 
-    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
+    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters,
+            BootConfigHandler... handlers) {
         polarisConfig = new PolarisConfig(operatorType, host, port, parameters);
         init(operatorType, parameters, handlers);
     }
 
-    private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters, BootConfigHandler... handlers) {
+    protected static String formatCode(Object val) {
+        return "POLARIS:" + val;
+    }
+
+    private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters,
+            BootConfigHandler... handlers) {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
         if (null != handlers) {
@@ -103,14 +133,7 @@ public class PolarisOperator {
         }
         initServerConnectorConfig(configuration);
         initSDKContextConfig(configuration, parameters, polarisConfig);
-        configuration.getGlobal().getAPI().setBindIP(NetUtils.getLocalHost());
 
-        // 设置服务治理连接地址
-        configuration.getGlobal().getServerConnector()
-                .setAddresses(Collections.singletonList(polarisConfig.getDiscoverAddress()));
-        // 设置配置中心连接地址
-        configuration.getConfigFile().getServerConnector()
-                .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
         sdkContext = SDKContext.initContextByConfig(configuration);
         consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
         providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
@@ -122,7 +145,8 @@ public class PolarisOperator {
         configFilePublishAPI = ConfigFileServicePublishFactory.createConfigFilePublishService(sdkContext);
     }
 
-    private void initSDKContextConfig(ConfigurationImpl configuration, Map<String, String> parameters, PolarisConfig polarisConfig) {
+    private void initSDKContextConfig(ConfigurationImpl configuration, Map<String, String> parameters,
+            PolarisConfig polarisConfig) {
 
         PrometheusHandlerConfig prometheusHandlerConfig = configuration.getGlobal().getStatReporter()
                 .getPluginConfig(StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS, PrometheusHandlerConfig.class);
@@ -146,7 +170,8 @@ public class PolarisOperator {
                     if (parameters.containsKey(Consts.KEY_METRIC_PUSH_INTERVAL)) {
                         try {
                             interval = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PUSH_INTERVAL));
-                        } catch (NumberFormatException ignore) {}
+                        } catch (NumberFormatException ignore) {
+                        }
                     }
                     prometheusHandlerConfig.setPushInterval(interval);
                     break;
@@ -155,7 +180,8 @@ public class PolarisOperator {
                     if (parameters.containsKey(Consts.KEY_METRIC_PULL_PORT)) {
                         try {
                             port = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PULL_PORT));
-                        } catch (NumberFormatException ignore) {}
+                        } catch (NumberFormatException ignore) {
+                        }
                     }
                     configuration.getGlobal().getStatReporter().setEnable(true);
                     prometheusHandlerConfig.setType("pull");
@@ -170,12 +196,14 @@ public class PolarisOperator {
         // event reporter
         PushGatewayEventReporterConfig pushGatewayEventReporterConfig = configuration.getGlobal().getEventReporter()
                 .getPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, PushGatewayEventReporterConfig.class);
-        configuration.getGlobal().getEventReporter().getReporters().add(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE);
-        if (parameters.containsKey(Consts.KEY_PGW_EVENT_ENABLED)){
+        configuration.getGlobal().getEventReporter().getReporters()
+                .add(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE);
+        if (parameters.containsKey(Consts.KEY_PGW_EVENT_ENABLED)) {
             boolean enabled = Boolean.parseBoolean(parameters.get(Consts.KEY_PGW_EVENT_ENABLED));
             pushGatewayEventReporterConfig.setEnable(enabled);
-            if (parameters.containsKey(Consts.KEY_PGW_EVENT_ADDR)){
-                pushGatewayEventReporterConfig.setAddress(Collections.singletonList(parameters.get(Consts.KEY_PGW_EVENT_ADDR)));
+            if (parameters.containsKey(Consts.KEY_PGW_EVENT_ADDR)) {
+                pushGatewayEventReporterConfig.setAddress(
+                        Collections.singletonList(parameters.get(Consts.KEY_PGW_EVENT_ADDR)));
             }
             pushGatewayEventReporterConfig.setEventQueueSize(1000);
             pushGatewayEventReporterConfig.setMaxBatchSize(100);
@@ -183,25 +211,36 @@ public class PolarisOperator {
             pushGatewayEventReporterConfig.setService("polaris.pushgateway");
         }
 
-        configuration.getGlobal().getEventReporter().setPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, pushGatewayEventReporterConfig);
+        configuration.getGlobal().getEventReporter()
+                .setPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, pushGatewayEventReporterConfig);
         // 设置主动探测
         if (parameters.containsKey(Consts.KEY_DETECT_WHEN)) {
             String detectWhen = parameters.get(Consts.KEY_DETECT_WHEN);
             try {
-                configuration.getConsumer().getOutlierDetection().setWhen(OutlierDetectionConfig.When.valueOf(detectWhen));
+                configuration.getConsumer().getOutlierDetection()
+                        .setWhen(OutlierDetectionConfig.When.valueOf(detectWhen));
             } catch (IllegalArgumentException e) {
                 LOGGER.warn("Invalid detectWhen value: {}, valid values are: {}",
                         detectWhen, Arrays.toString(OutlierDetectionConfig.When.values()));
             }
         }
-
-        // 禁用推空保护
+        // 禁用配置推空保护
         configuration.getConfigFile().getServerConnector().setEmptyProtectionEnable(false);
-        configuration.getConfigFile().getConfigFilterConfig().setEnable(Boolean.parseBoolean(parameters.getOrDefault(Consts.KEY_CONFIG_ENCRYPT_ENABLED, "true")));
+        configuration.getConfigFile().getConfigFilterConfig()
+                .setEnable(Boolean.parseBoolean(parameters.getOrDefault(Consts.KEY_CONFIG_ENCRYPT_ENABLED, "true")));
         configuration.getConfigFile().getConfigFilterConfig().getChain().add("crypto");
-        configuration.getConfigFile().getConfigFilterConfig().getPlugin().put("crypto", Collections.singletonMap("type", "AES"));
-        configuration.getConsumer().getServiceRouter().getPlugin().put("recoverRouter", Collections.singletonMap("excludeCircuitBreakInstances", "false"));
-        configuration.getConsumer().getServiceRouter().getPlugin().put("recoverRouter", Collections.singletonMap("allRecoverEnable", "false"));
+        configuration.getConfigFile().getConfigFilterConfig().getPlugin()
+                .put("crypto", Collections.singletonMap("type", "AES"));
+
+        // 禁用服务推空保护
+        configuration.getConsumer().getServiceRouter().getPlugin()
+                .put("recoverRouter", Collections.singletonMap("excludeCircuitBreakInstances", "false"));
+        configuration.getConsumer().getServiceRouter().getPlugin()
+                .put("recoverRouter", Collections.singletonMap("allRecoverEnable", "false"));
+
+        configuration.getGlobal().getAPI().setBindIP(NetUtils.getLocalHost());
+
+
     }
 
     private void initServerConnectorConfig(ConfigurationImpl configuration) {
@@ -222,13 +261,19 @@ public class PolarisOperator {
                 configConnector.setToken(polarisConfig.getToken());
             }
         }
+        // 设置服务治理连接地址
+        configuration.getGlobal().getServerConnector()
+                .setAddresses(Collections.singletonList(polarisConfig.getDiscoverAddress()));
+        // 设置配置中心连接地址
+        configuration.getConfigFile().getServerConnector()
+                .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
     }
 
     /**
      * 服务注册
      */
     public void register(String service, String host, int port, String protocol, String version, int weight,
-                         Map<String, String> metadata) {
+            Map<String, String> metadata) {
         LOGGER.info(
                 "[POLARIS] start to register: service {}, host {}, port {}， protocol {}, version {}, weight {}, metadata {}",
                 service, host, port, protocol, version, weight, metadata);
@@ -300,8 +345,9 @@ public class PolarisOperator {
      *
      * @param delay 本次服务调用延迟，单位ms
      */
-    public void reportInvokeResult(String service, String method, String host, int port, String callerIp, long delay, RetStatus retStatus,
-                                   int code) {
+    public void reportInvokeResult(String service, String method, String host, int port, String callerIp, long delay,
+            RetStatus retStatus,
+            int code) {
         ServiceCallResult serviceCallResult = new ServiceCallResult();
         serviceCallResult.setNamespace(polarisConfig.getNamespace());
         serviceCallResult.setService(service);
@@ -436,9 +482,5 @@ public class PolarisOperator {
 
     public CircuitBreakAPI getCircuitBreakAPI() {
         return circuitBreakAPI;
-    }
-
-    protected static String formatCode(Object val) {
-        return "POLARIS:" + val;
     }
 }

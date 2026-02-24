@@ -17,17 +17,12 @@
 
 package com.tencent.polaris.dubbo.configuration;
 
-import com.tencent.polaris.common.registry.PolarisOperator;
-import com.tencent.polaris.common.registry.PolarisOperators;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.configcenter.AbstractDynamicConfigurationFactory;
 import org.apache.dubbo.common.config.configcenter.DynamicConfiguration;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 北极星动态配置工厂类
