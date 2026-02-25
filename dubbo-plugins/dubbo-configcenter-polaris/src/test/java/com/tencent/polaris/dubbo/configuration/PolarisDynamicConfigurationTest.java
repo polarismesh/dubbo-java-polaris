@@ -17,12 +17,26 @@
 
 package com.tencent.polaris.dubbo.configuration;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.common.registry.PolarisConfig;
@@ -34,6 +48,7 @@ import com.tencent.polaris.configuration.api.core.ConfigFileChangeEvent;
 import com.tencent.polaris.configuration.api.core.ConfigFileChangeListener;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.configcenter.ConfigChangeType;
 import org.apache.dubbo.common.config.configcenter.ConfigChangedEvent;
@@ -45,16 +60,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
 /**
- * PolarisDynamicConfiguration 单元测试类 - 配置监听功能测试
+ * PolarisDynamicConfiguration Test
  *
- * @author dubbo-polaris
+ * @author Yuwei Fu
  */
 public class PolarisDynamicConfigurationTest {
 
@@ -88,13 +97,13 @@ public class PolarisDynamicConfigurationTest {
         when(mockOperator.getConfigFilePublishAPI()).thenReturn(mockConfigFilePublishService);
         when(mockOperator.getSdkContext()).thenReturn(mockSdkContext);
         when(mockPolarisConfig.getNamespace()).thenReturn("default");
-        
+
         // 配置 SDKContext 相关的 mock 链
         when(mockSdkContext.getExtensions()).thenReturn(mockExtensions);
         when(mockExtensions.getValueContext()).thenReturn(mockValueContext);
         when(mockValueContext.getClientId()).thenReturn("test-client-id");
         when(mockValueContext.getHost()).thenReturn("127.0.0.1");
-        
+
         // 配置 ConfigFileService 的行为
         when(mockConfigFileService.getConfigFile(anyString(), anyString(), anyString()))
                 .thenReturn(mockConfigFile);
@@ -103,7 +112,7 @@ public class PolarisDynamicConfigurationTest {
         polarisOperatorsMock = Mockito.mockStatic(PolarisOperators.class);
         polarisOperatorsMock.when(() -> PolarisOperators.loadOrStoreForConfig(anyString(), anyInt(), anyMap()))
                 .thenReturn(mockOperator);
-        
+
         // Mock BaseFlow.reportConfigEvent 静态方法
         baseFlowMock = Mockito.mockStatic(BaseFlow.class);
         baseFlowMock.when(() -> BaseFlow.reportConfigEvent(any(), any())).then(invocation -> null);
@@ -155,25 +164,25 @@ public class PolarisDynamicConfigurationTest {
         String group = "test-group";
         String newValue = "new-config-value";
         AtomicReference<ConfigChangedEvent> capturedEvent = new AtomicReference<>();
-        
+
         ConfigurationListener listener = event -> capturedEvent.set(event);
 
         // 捕获 ConfigFileChangeListener
-        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor = 
+        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor =
                 ArgumentCaptor.forClass(ConfigFileChangeListener.class);
 
         // When
         configuration.addListener(key, group, listener);
-        
+
         // 获取注册的 ConfigFileChangeListener
         verify(mockConfigFile).addChangeListener(listenerCaptor.capture());
         ConfigFileChangeListener polarisListener = listenerCaptor.getValue();
-        
+
         // 模拟配置变更事件
         ConfigFileChangeEvent polarisEvent = mock(ConfigFileChangeEvent.class);
         when(polarisEvent.getNewValue()).thenReturn(newValue);
         when(polarisEvent.getChangeType()).thenReturn(ChangeType.MODIFIED);
-        
+
         // 触发配置变更
         polarisListener.onChange(polarisEvent);
 
@@ -193,21 +202,21 @@ public class PolarisDynamicConfigurationTest {
         String key = "test.properties";
         String group = "test-group";
         AtomicReference<ConfigChangedEvent> capturedEvent = new AtomicReference<>();
-        
+
         ConfigurationListener listener = event -> capturedEvent.set(event);
 
-        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor = 
+        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor =
                 ArgumentCaptor.forClass(ConfigFileChangeListener.class);
 
         // When
         configuration.addListener(key, group, listener);
         verify(mockConfigFile).addChangeListener(listenerCaptor.capture());
-        
+
         // 模拟 ADDED 类型的配置变更事件
         ConfigFileChangeEvent polarisEvent = mock(ConfigFileChangeEvent.class);
         when(polarisEvent.getNewValue()).thenReturn("added-value");
         when(polarisEvent.getChangeType()).thenReturn(ChangeType.ADDED);
-        
+
         listenerCaptor.getValue().onChange(polarisEvent);
 
         // Then
@@ -224,21 +233,21 @@ public class PolarisDynamicConfigurationTest {
         String key = "test.properties";
         String group = "test-group";
         AtomicReference<ConfigChangedEvent> capturedEvent = new AtomicReference<>();
-        
+
         ConfigurationListener listener = event -> capturedEvent.set(event);
 
-        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor = 
+        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor =
                 ArgumentCaptor.forClass(ConfigFileChangeListener.class);
 
         // When
         configuration.addListener(key, group, listener);
         verify(mockConfigFile).addChangeListener(listenerCaptor.capture());
-        
+
         // 模拟 DELETED 类型的配置变更事件
         ConfigFileChangeEvent polarisEvent = mock(ConfigFileChangeEvent.class);
         when(polarisEvent.getNewValue()).thenReturn(null);
         when(polarisEvent.getChangeType()).thenReturn(ChangeType.DELETED);
-        
+
         listenerCaptor.getValue().onChange(polarisEvent);
 
         // Then
@@ -255,21 +264,21 @@ public class PolarisDynamicConfigurationTest {
         String key = "test.properties";
         String group = "test-group";
         AtomicReference<ConfigChangedEvent> capturedEvent = new AtomicReference<>();
-        
+
         ConfigurationListener listener = event -> capturedEvent.set(event);
 
-        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor = 
+        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor =
                 ArgumentCaptor.forClass(ConfigFileChangeListener.class);
 
         // When
         configuration.addListener(key, group, listener);
         verify(mockConfigFile).addChangeListener(listenerCaptor.capture());
-        
+
         // 模拟 MODIFIED 类型的配置变更事件
         ConfigFileChangeEvent polarisEvent = mock(ConfigFileChangeEvent.class);
         when(polarisEvent.getNewValue()).thenReturn("modified-value");
         when(polarisEvent.getChangeType()).thenReturn(ChangeType.MODIFIED);
-        
+
         listenerCaptor.getValue().onChange(polarisEvent);
 
         // Then
@@ -286,10 +295,10 @@ public class PolarisDynamicConfigurationTest {
         String key = "test.properties";
         String group = "test-group";
         AtomicReference<ConfigChangedEvent> capturedEvent = new AtomicReference<>();
-        
+
         ConfigurationListener listener = event -> capturedEvent.set(event);
 
-        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor = 
+        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor =
                 ArgumentCaptor.forClass(ConfigFileChangeListener.class);
 
         // 先添加监听器
@@ -298,12 +307,12 @@ public class PolarisDynamicConfigurationTest {
 
         // When - 移除监听器
         configuration.removeListener(key, group, listener);
-        
+
         // 模拟配置变更事件
         ConfigFileChangeEvent polarisEvent = mock(ConfigFileChangeEvent.class);
         when(polarisEvent.getNewValue()).thenReturn("new-value");
         when(polarisEvent.getChangeType()).thenReturn(ChangeType.MODIFIED);
-        
+
         listenerCaptor.getValue().onChange(polarisEvent);
 
         // Then - 监听器已被移除，不应收到事件
@@ -320,24 +329,24 @@ public class PolarisDynamicConfigurationTest {
         String group = "test-group";
         AtomicReference<ConfigChangedEvent> capturedEvent1 = new AtomicReference<>();
         AtomicReference<ConfigChangedEvent> capturedEvent2 = new AtomicReference<>();
-        
+
         ConfigurationListener listener1 = event -> capturedEvent1.set(event);
         ConfigurationListener listener2 = event -> capturedEvent2.set(event);
 
-        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor = 
+        ArgumentCaptor<ConfigFileChangeListener> listenerCaptor =
                 ArgumentCaptor.forClass(ConfigFileChangeListener.class);
 
         // When
         configuration.addListener(key, group, listener1);
         configuration.addListener(key, group, listener2);
-        
+
         verify(mockConfigFile).addChangeListener(listenerCaptor.capture());
-        
+
         // 模拟配置变更事件
         ConfigFileChangeEvent polarisEvent = mock(ConfigFileChangeEvent.class);
         when(polarisEvent.getNewValue()).thenReturn("new-value");
         when(polarisEvent.getChangeType()).thenReturn(ChangeType.MODIFIED);
-        
+
         listenerCaptor.getValue().onChange(polarisEvent);
 
         // Then
@@ -356,7 +365,7 @@ public class PolarisDynamicConfigurationTest {
         String key = "test.properties";
         String group = "test-group";
         String expectedContent = "config-content-value";
-        
+
         when(mockConfigFile.getContent()).thenReturn(expectedContent);
 
         // When
@@ -375,7 +384,7 @@ public class PolarisDynamicConfigurationTest {
         // Given
         String key = "test.properties";
         String group = "test-group";
-        
+
         when(mockConfigFileService.getConfigFile(anyString(), anyString(), anyString()))
                 .thenThrow(new PolarisException(ErrorCode.INTERNAL_ERROR, "Internal Server Error"));
 
@@ -394,7 +403,7 @@ public class PolarisDynamicConfigurationTest {
         // Given
         String key = "internal.property";
         String expectedContent = "internal-value";
-        
+
         when(mockConfigFile.getContent()).thenReturn(expectedContent);
 
         // When
@@ -413,7 +422,7 @@ public class PolarisDynamicConfigurationTest {
     public void testGetInternalProperty_polarisException_returnsNull() {
         // Given
         String key = "internal.property";
-        
+
         when(mockConfigFileService.getConfigFile(anyString(), anyString(), anyString()))
                 .thenThrow(new PolarisException(ErrorCode.INTERNAL_ERROR, "Internal Server Error"));
 
@@ -435,7 +444,7 @@ public class PolarisDynamicConfigurationTest {
         String key = "test.properties";
         String group = "test-group";
         String content = "new-config-content";
-        
+
         ConfigFileResponse mockResponse = mock(ConfigFileResponse.class);
         when(mockResponse.getCode()).thenReturn(ServerCodes.EXECUTE_SUCCESS);
         when(mockConfigFilePublishService.upsertAndPublish(any())).thenReturn(mockResponse);
@@ -456,7 +465,7 @@ public class PolarisDynamicConfigurationTest {
         String key = "test.properties";
         String group = "test-group";
         String content = "new-config-content";
-        
+
         ConfigFileResponse mockResponse = mock(ConfigFileResponse.class);
         when(mockResponse.getCode()).thenReturn(500001); // 非成功响应码
         when(mockResponse.getMessage()).thenReturn("Internal error");
@@ -478,7 +487,7 @@ public class PolarisDynamicConfigurationTest {
         String key = "test.properties";
         String group = "test-group";
         String content = "new-config-content";
-        
+
         when(mockConfigFilePublishService.upsertAndPublish(any()))
                 .thenThrow(new PolarisException(ErrorCode.INTERNAL_ERROR, "Internal Server Error"));
 
@@ -498,11 +507,11 @@ public class PolarisDynamicConfigurationTest {
         String key = "test.properties";
         String group = "test-group";
         String content = "new-config-content";
-        
+
         ConfigFileResponse mockResponse = mock(ConfigFileResponse.class);
         when(mockResponse.getCode()).thenReturn(ServerCodes.EXECUTE_SUCCESS);
-        
-        ArgumentCaptor<com.tencent.polaris.configuration.api.rpc.ConfigPublishRequest> requestCaptor = 
+
+        ArgumentCaptor<com.tencent.polaris.configuration.api.rpc.ConfigPublishRequest> requestCaptor =
                 ArgumentCaptor.forClass(com.tencent.polaris.configuration.api.rpc.ConfigPublishRequest.class);
         when(mockConfigFilePublishService.upsertAndPublish(requestCaptor.capture())).thenReturn(mockResponse);
 

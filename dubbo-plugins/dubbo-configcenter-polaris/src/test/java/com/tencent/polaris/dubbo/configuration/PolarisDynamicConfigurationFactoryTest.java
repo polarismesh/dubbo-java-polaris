@@ -17,6 +17,16 @@
 
 package com.tencent.polaris.dubbo.configuration;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.tencent.polaris.common.registry.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
@@ -30,17 +40,10 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
 /**
  * PolarisDynamicConfigurationFactory 单元测试类
  *
- * @author dubbo-polaris
+ * @author Yuwei Fu
  */
 public class PolarisDynamicConfigurationFactoryTest {
 
@@ -187,8 +190,8 @@ public class PolarisDynamicConfigurationFactoryTest {
                 eq(8091),
                 argThat(params ->
                         "production".equals(params.get("namespace")) &&
-                        "secret".equals(params.get("token")) &&
-                        "3000".equals(params.get("timeout"))
+                                "secret".equals(params.get("token")) &&
+                                "3000".equals(params.get("timeout"))
                 )
         ));
     }

@@ -131,6 +131,8 @@ public class PolarisDynamicConfiguration implements DynamicConfiguration {
     @Override
     public boolean publishConfig(String key, String group, String content) throws UnsupportedOperationException {
         try {
+            // Only used when application-level service discovery is enabled.
+            // Meanwhile, Dubbo documentation discourages users using application-level service discovery in Dubbo 2.7.
             ConfigPublishRequest request = new ConfigPublishRequest();
             request.setNamespace(polarisConfig.getNamespace());
             request.setGroup(group);
