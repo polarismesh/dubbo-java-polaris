@@ -58,7 +58,7 @@
         <junit.version>4.13.1</junit.version>
         <byte-buddy.version>1.14.19</byte-buddy.version>
         <mockito.version>4.9.0</mockito.version>
-        <assertj.version>3.16.1</assertj.version>
+        <assertj.version>3.27.7</assertj.version>
 
         <!-- Maven Plugin -->
         <skip.maven.deploy>false</skip.maven.deploy>
