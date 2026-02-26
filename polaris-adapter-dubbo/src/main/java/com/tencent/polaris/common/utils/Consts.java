@@ -49,6 +49,12 @@ public interface Consts {
 
     String KEY_PGW_EVENT_ADDR = "pgw_event_addr";
 
+    String KEY_OTHER_ADDRESSES = "other_addresses";
+
+    String KEY_LB_POLICY = "lb_policy";
+
+    String KEY_SERVER_SWITCH_INTERVAL = "server_switch_interval";
+
     String INSTANCE_KEY_HEALTHY = "_internal_healthy";
 
     String INSTANCE_KEY_ISOLATED = "_internal_isolated";
@@ -68,4 +74,6 @@ public interface Consts {
     String DISCOVER_PORT = "discover_port";
 
     String DEFAULT_VERSION = "1.0.0";
+
+    String ADDRESSES_SEPARATOR = "/";
 }

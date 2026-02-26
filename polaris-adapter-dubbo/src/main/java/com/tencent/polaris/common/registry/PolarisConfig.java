@@ -17,29 +17,36 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.common.utils.Consts;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 public class PolarisConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(PolarisConfig.class);
 
     private final String namespace;
-
-    private String discoverAddress;
-
-    private String configAddress;
-
     private final String token;
-
     private final int ttl;
-
     private final PolarisOperators.OperatorType operatorType;
+    private final Set<String> discoverAddresses;
 
-    public PolarisConfig(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters) {
+    private final Set<String> configAddresses;
+    private long serverSwitchInterval = 600000;
+
+    private String lbPolicy = LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN;
+
+    public PolarisConfig(PolarisOperators.OperatorType operatorType, String host, int port,
+            Map<String, String> parameters) {
+        this.discoverAddresses = new HashSet<>();
+        this.configAddresses = new HashSet<>();
         this.operatorType = operatorType;
         initAddress(host, port, parameters);
         String namespaceStr = parameters.get(Consts.KEY_NAMESPACE);
@@ -69,30 +76,45 @@ public class PolarisConfig {
                 configPort = port;
                 String discoverPortStr = parameters.getOrDefault(Consts.DISCOVER_PORT, discoverPort + "");
                 discoverPort = Integer.parseInt(discoverPortStr);
+                if (parameters.containsKey(Consts.KEY_OTHER_ADDRESSES)) {
+                    // e.g. dubbo.config-center.parameters=[{other_addresses:127.0.0.1:8093,127.0.0.1:8093}]
+                    String configAddressesStr = parameters.get(Consts.KEY_OTHER_ADDRESSES);
+                    Collections.addAll(this.configAddresses, configAddressesStr.split(Consts.ADDRESSES_SEPARATOR));
+                }
                 break;
             case GOVERNANCE:
                 discoverPort = port;
                 configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
+                if (parameters.containsKey(Consts.KEY_OTHER_ADDRESSES)) {
+                    // e.g. dubbo.registry.parameters=[{other_addresses:127.0.0.1:8091,127.0.0.1:8091}]
+                    String discoverAddressesStr = parameters.get(Consts.KEY_OTHER_ADDRESSES);
+                    Collections.addAll(this.discoverAddresses, discoverAddressesStr.split(Consts.ADDRESSES_SEPARATOR));
+                }
                 break;
             case METADATA_REPORT:
                 discoverPort = port;
                 configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
                 break;
         }
-        discoverAddress = String.format("%s:%d", host, discoverPort);
-        configAddress = String.format("%s:%d", host, configPort);
+
+        if (parameters.containsKey(Consts.KEY_LB_POLICY)) {
+            this.lbPolicy = parameters.get(Consts.KEY_LB_POLICY);
+        }
+        if (parameters.containsKey(Consts.KEY_SERVER_SWITCH_INTERVAL)) {
+            this.serverSwitchInterval = Long.parseLong(parameters.get(Consts.KEY_SERVER_SWITCH_INTERVAL));
+        }
+        String discoverAddress = String.format("%s:%d", host, discoverPort);
+        discoverAddresses.add(discoverAddress);
+        String configAddress = String.format("%s:%d", host, configPort);
+        configAddresses.add(configAddress);
     }
 
     public String getNamespace() {
         return namespace;
     }
 
-    public String getDiscoverAddress() {
-        return discoverAddress;
-    }
-
-    public String getConfigAddress() {
-        return configAddress;
+    public List<String> getDiscoverAddresses() {
+        return new ArrayList<>(discoverAddresses);
     }
 
     public String getToken() {
@@ -103,15 +125,30 @@ public class PolarisConfig {
         return ttl;
     }
 
+    public String getLbPolicy() {
+        return lbPolicy;
+    }
+
+
+    public Long getServerSwitchInterval() {
+        return serverSwitchInterval;
+    }
+
+    public List<String> getConfigAddresses() {
+        return new ArrayList<>(configAddresses);
+    }
+
     @Override
     public String toString() {
         return "PolarisConfig{" +
                 "namespace='" + namespace + '\'' +
-                ", discoverAddress='" + discoverAddress + '\'' +
-                ", configAddress='" + configAddress + '\'' +
                 ", token='" + token + '\'' +
                 ", ttl=" + ttl +
                 ", operatorType=" + operatorType +
+                ", discoverAddresses=" + discoverAddresses +
+                ", configAddresses=" + configAddresses +
+                ", serverSwitchInterval=" + serverSwitchInterval +
+                ", lbPolicy='" + lbPolicy + '\'' +
                 '}';
     }
 }

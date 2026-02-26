@@ -86,6 +86,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.dubbo.common.utils.NetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,11 +160,14 @@ public class PolarisOperator {
                 case "push":
                     String pushAddr = parameters.get(Consts.KEY_METRIC_PUSH_ADDR);
                     if (StringUtils.isBlank(pushAddr)) {
-                        pushAddr = polarisConfig.getDiscoverAddress().split(":")[0] + ":9091";
+                        pushAddr = polarisConfig.getDiscoverAddresses().stream()
+                                .map(addr -> addr.split(":")[0] + ":9091")
+                                .collect(Collectors.joining(Consts.ADDRESSES_SEPARATOR));
                     }
+                    List<String> addresses = Arrays.asList(pushAddr.split(Consts.ADDRESSES_SEPARATOR));
                     configuration.getGlobal().getStatReporter().setEnable(true);
                     prometheusHandlerConfig.setType("push");
-                    prometheusHandlerConfig.setAddress(Collections.singletonList(pushAddr));
+                    prometheusHandlerConfig.setAddress(addresses);
 
                     // 默认为 10s
                     long interval = 10 * 1000L;
@@ -202,8 +206,9 @@ public class PolarisOperator {
             boolean enabled = Boolean.parseBoolean(parameters.get(Consts.KEY_PGW_EVENT_ENABLED));
             pushGatewayEventReporterConfig.setEnable(enabled);
             if (parameters.containsKey(Consts.KEY_PGW_EVENT_ADDR)) {
-                pushGatewayEventReporterConfig.setAddress(
-                        Collections.singletonList(parameters.get(Consts.KEY_PGW_EVENT_ADDR)));
+                List<String> addresses = Arrays.asList(
+                        parameters.get(Consts.KEY_PGW_EVENT_ADDR).split(Consts.ADDRESSES_SEPARATOR));
+                pushGatewayEventReporterConfig.setAddress(addresses);
             }
             pushGatewayEventReporterConfig.setEventQueueSize(1000);
             pushGatewayEventReporterConfig.setMaxBatchSize(100);
@@ -240,7 +245,6 @@ public class PolarisOperator {
 
         configuration.getGlobal().getAPI().setBindIP(NetUtils.getLocalHost());
 
-
     }
 
     private void initServerConnectorConfig(ConfigurationImpl configuration) {
@@ -263,10 +267,15 @@ public class PolarisOperator {
         }
         // 设置服务治理连接地址
         configuration.getGlobal().getServerConnector()
-                .setAddresses(Collections.singletonList(polarisConfig.getDiscoverAddress()));
+                .setAddresses(polarisConfig.getDiscoverAddresses());
+        configuration.getGlobal().getServerConnector().setLbPolicy(polarisConfig.getLbPolicy());
+        configuration.getGlobal().getServerConnector().setServerSwitchInterval(polarisConfig.getServerSwitchInterval());
         // 设置配置中心连接地址
         configuration.getConfigFile().getServerConnector()
-                .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
+                .setAddresses(polarisConfig.getConfigAddresses());
+        configuration.getConfigFile().getServerConnector().setLbPolicy(polarisConfig.getLbPolicy());
+        configuration.getConfigFile().getServerConnector()
+                .setServerSwitchInterval(polarisConfig.getServerSwitchInterval());
     }
 
     /**
