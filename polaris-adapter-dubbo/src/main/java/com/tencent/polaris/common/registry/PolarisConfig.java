@@ -76,11 +76,6 @@ public class PolarisConfig {
                 configPort = port;
                 String discoverPortStr = parameters.getOrDefault(Consts.DISCOVER_PORT, discoverPort + "");
                 discoverPort = Integer.parseInt(discoverPortStr);
-                if (parameters.containsKey(Consts.KEY_OTHER_ADDRESSES)) {
-                    // e.g. dubbo.config-center.parameters=[{other_addresses:127.0.0.1:8093,127.0.0.1:8093}]
-                    String configAddressesStr = parameters.get(Consts.KEY_OTHER_ADDRESSES);
-                    Collections.addAll(this.configAddresses, configAddressesStr.split(Consts.ADDRESSES_SEPARATOR));
-                }
                 break;
             case GOVERNANCE:
                 discoverPort = port;
@@ -90,18 +85,17 @@ public class PolarisConfig {
                     String discoverAddressesStr = parameters.get(Consts.KEY_OTHER_ADDRESSES);
                     Collections.addAll(this.discoverAddresses, discoverAddressesStr.split(Consts.ADDRESSES_SEPARATOR));
                 }
+                if (parameters.containsKey(Consts.KEY_LB_POLICY)) {
+                    this.lbPolicy = parameters.get(Consts.KEY_LB_POLICY);
+                }
+                if (parameters.containsKey(Consts.KEY_SERVER_SWITCH_INTERVAL)) {
+                    this.serverSwitchInterval = Long.parseLong(parameters.get(Consts.KEY_SERVER_SWITCH_INTERVAL));
+                }
                 break;
             case METADATA_REPORT:
                 discoverPort = port;
                 configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
                 break;
-        }
-
-        if (parameters.containsKey(Consts.KEY_LB_POLICY)) {
-            this.lbPolicy = parameters.get(Consts.KEY_LB_POLICY);
-        }
-        if (parameters.containsKey(Consts.KEY_SERVER_SWITCH_INTERVAL)) {
-            this.serverSwitchInterval = Long.parseLong(parameters.get(Consts.KEY_SERVER_SWITCH_INTERVAL));
         }
         String discoverAddress = String.format("%s:%d", host, discoverPort);
         discoverAddresses.add(discoverAddress);
