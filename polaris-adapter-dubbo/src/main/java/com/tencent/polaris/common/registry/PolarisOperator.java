@@ -273,9 +273,6 @@ public class PolarisOperator {
         // 设置配置中心连接地址
         configuration.getConfigFile().getServerConnector()
                 .setAddresses(polarisConfig.getConfigAddresses());
-        configuration.getConfigFile().getServerConnector().setLbPolicy(polarisConfig.getLbPolicy());
-        configuration.getConfigFile().getServerConnector()
-                .setServerSwitchInterval(polarisConfig.getServerSwitchInterval());
     }
 
     /**

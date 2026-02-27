@@ -33,12 +33,17 @@ public class PolarisConfig {
     private static final Logger LOG = LoggerFactory.getLogger(PolarisConfig.class);
 
     private final String namespace;
-    private final String token;
-    private final int ttl;
-    private final PolarisOperators.OperatorType operatorType;
+
     private final Set<String> discoverAddresses;
 
     private final Set<String> configAddresses;
+
+    private final String token;
+
+    private final int ttl;
+
+    private final PolarisOperators.OperatorType operatorType;
+
     private long serverSwitchInterval = 600000;
 
     private String lbPolicy = LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN;
@@ -111,6 +116,10 @@ public class PolarisConfig {
         return new ArrayList<>(discoverAddresses);
     }
 
+    public List<String> getConfigAddresses() {
+        return new ArrayList<>(configAddresses);
+    }
+
     public String getToken() {
         return token;
     }
@@ -126,10 +135,6 @@ public class PolarisConfig {
 
     public Long getServerSwitchInterval() {
         return serverSwitchInterval;
-    }
-
-    public List<String> getConfigAddresses() {
-        return new ArrayList<>(configAddresses);
     }
 
     @Override

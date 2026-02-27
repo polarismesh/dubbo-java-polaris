@@ -36,6 +36,9 @@ public class PolarisOperators {
 
     public static PolarisOperator loadOrStoreForGovernance(String host, int port, Map<String, String> parameters) {
         Map<String, PolarisOperator> operatorMap = INSTANCE.polarisOperatorMap.get(OperatorType.GOVERNANCE);
+        // 目前只支持一个operator，所以key暂时用host+port
+        //Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
+        // String key = host + ":" + port + "|hash_code:" + params.hashCode();
         String key = host + ":" + port;
         return operatorMap.computeIfAbsent(key,
                 s -> new PolarisOperator(OperatorType.GOVERNANCE, host, port, parameters, new BaseBootConfigHandler()));
