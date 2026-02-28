@@ -17,11 +17,16 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.common.utils.Consts;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 public class PolarisConfig {
 
@@ -29,9 +34,9 @@ public class PolarisConfig {
 
     private final String namespace;
 
-    private String discoverAddress;
+    private final Set<String> discoverAddresses;
 
-    private String configAddress;
+    private final Set<String> configAddresses;
 
     private final String token;
 
@@ -39,15 +44,31 @@ public class PolarisConfig {
 
     private final PolarisOperators.OperatorType operatorType;
 
-    public PolarisConfig(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters) {
+    private long serverSwitchInterval = 600000;
+
+    private String lbPolicy = LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN;
+
+    public PolarisConfig(PolarisOperators.OperatorType operatorType, String host, int port,
+            Map<String, String> parameters) {
+        this.discoverAddresses = new HashSet<>();
+        this.configAddresses = new HashSet<>();
         this.operatorType = operatorType;
         initAddress(host, port, parameters);
         String namespaceStr = parameters.get(Consts.KEY_NAMESPACE);
+        String polarisNamespaceStr = parameters.get(Consts.KEY_POLARIS_NAMESPACE);
         if (null == namespaceStr || namespaceStr.isEmpty()) {
             namespaceStr = Consts.DEFAULT_NAMESPACE;
         }
+        if (null != polarisNamespaceStr && !polarisNamespaceStr.isEmpty()) {
+            namespaceStr = polarisNamespaceStr;
+        }
         this.namespace = namespaceStr;
-        this.token = parameters.get(Consts.KEY_TOKEN);
+        String tokenStr = parameters.get(Consts.KEY_TOKEN);
+        String polarisTokenStr = parameters.get(Consts.KEY_POLARIS_TOKEN);
+        if (null != polarisTokenStr && !polarisTokenStr.isEmpty()) {
+            tokenStr = polarisTokenStr;
+        }
+        this.token = tokenStr;
         int healthTTL = Consts.DEFAULT_TTL;
         String ttlStr = System.getProperty(Consts.KEY_TTL);
         if (null != ttlStr && !ttlStr.isEmpty()) {
@@ -55,6 +76,14 @@ public class PolarisConfig {
                 healthTTL = Integer.parseInt(ttlStr);
             } catch (Exception e) {
                 LOG.info("[Common] fail to convert ttlStr {}", ttlStr, e);
+            }
+        }
+        String polarisTtlStr = System.getProperty(Consts.KEY_POLARIS_TTL);
+        if (null != polarisTtlStr && !polarisTtlStr.isEmpty()) {
+            try {
+                healthTTL = Integer.parseInt(polarisTtlStr);
+            } catch (Exception e) {
+                LOG.info("[Common] fail to convert ttlStr {}", polarisTtlStr, e);
             }
         }
         this.ttl = healthTTL;
@@ -73,26 +102,39 @@ public class PolarisConfig {
             case GOVERNANCE:
                 discoverPort = port;
                 configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
+                if (parameters.containsKey(Consts.KEY_OTHER_ADDRESSES)) {
+                    // e.g. dubbo.registry.parameters=[{other_addresses:127.0.0.1:8091,127.0.0.1:8091}]
+                    String discoverAddressesStr = parameters.get(Consts.KEY_OTHER_ADDRESSES);
+                    Collections.addAll(this.discoverAddresses, discoverAddressesStr.split(Consts.ADDRESSES_SEPARATOR));
+                }
+                if (parameters.containsKey(Consts.KEY_LB_POLICY)) {
+                    this.lbPolicy = parameters.get(Consts.KEY_LB_POLICY);
+                }
+                if (parameters.containsKey(Consts.KEY_SERVER_SWITCH_INTERVAL)) {
+                    this.serverSwitchInterval = Long.parseLong(parameters.get(Consts.KEY_SERVER_SWITCH_INTERVAL));
+                }
                 break;
             case METADATA_REPORT:
                 discoverPort = port;
                 configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
                 break;
         }
-        discoverAddress = String.format("%s:%d", host, discoverPort);
-        configAddress = String.format("%s:%d", host, configPort);
+        String discoverAddress = String.format("%s:%d", host, discoverPort);
+        discoverAddresses.add(discoverAddress);
+        String configAddress = String.format("%s:%d", host, configPort);
+        configAddresses.add(configAddress);
     }
 
     public String getNamespace() {
         return namespace;
     }
 
-    public String getDiscoverAddress() {
-        return discoverAddress;
+    public List<String> getDiscoverAddresses() {
+        return new ArrayList<>(discoverAddresses);
     }
 
-    public String getConfigAddress() {
-        return configAddress;
+    public List<String> getConfigAddresses() {
+        return new ArrayList<>(configAddresses);
     }
 
     public String getToken() {
@@ -103,15 +145,26 @@ public class PolarisConfig {
         return ttl;
     }
 
+    public String getLbPolicy() {
+        return lbPolicy;
+    }
+
+
+    public Long getServerSwitchInterval() {
+        return serverSwitchInterval;
+    }
+
     @Override
     public String toString() {
         return "PolarisConfig{" +
                 "namespace='" + namespace + '\'' +
-                ", discoverAddress='" + discoverAddress + '\'' +
-                ", configAddress='" + configAddress + '\'' +
                 ", token='" + token + '\'' +
                 ", ttl=" + ttl +
                 ", operatorType=" + operatorType +
+                ", discoverAddresses=" + discoverAddresses +
+                ", configAddresses=" + configAddresses +
+                ", serverSwitchInterval=" + serverSwitchInterval +
+                ", lbPolicy='" + lbPolicy + '\'' +
                 '}';
     }
 }

@@ -86,6 +86,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.dubbo.common.utils.NetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,19 +154,31 @@ public class PolarisOperator {
 
         AdminConfigImpl adminConfig = configuration.getGlobal().getAdmin();
         // stat reporter
-        if (parameters.containsKey(Consts.KEY_METRIC_TYPE)) {
-            String statType = parameters.get(Consts.KEY_METRIC_TYPE);
+        // polaris_stat_type 优先级高于 stat_type
+        String statType = parameters.get(Consts.KEY_METRIC_TYPE);
+        if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_METRIC_TYPE))) {
+            statType = parameters.get(Consts.KEY_POLARIS_METRIC_TYPE);
+        }
+        if (StringUtils.isNotBlank(statType)) {
             switch (statType) {
                 case "push":
+                    // polaris_stat_push_addr 优先级高于 stat_push_addr
                     String pushAddr = parameters.get(Consts.KEY_METRIC_PUSH_ADDR);
-                    if (StringUtils.isBlank(pushAddr)) {
-                        pushAddr = polarisConfig.getDiscoverAddress().split(":")[0] + ":9091";
+                    if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_ADDR))) {
+                        pushAddr = parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_ADDR);
                     }
+                    if (StringUtils.isBlank(pushAddr)) {
+                        pushAddr = polarisConfig.getDiscoverAddresses().stream()
+                                .map(addr -> addr.split(":")[0] + ":9091")
+                                .collect(Collectors.joining(Consts.ADDRESSES_SEPARATOR));
+                    }
+                    List<String> addresses = Arrays.asList(pushAddr.split(Consts.ADDRESSES_SEPARATOR));
                     configuration.getGlobal().getStatReporter().setEnable(true);
                     prometheusHandlerConfig.setType("push");
-                    prometheusHandlerConfig.setAddress(Collections.singletonList(pushAddr));
+                    prometheusHandlerConfig.setAddress(addresses);
 
                     // 默认为 10s
+                    // polaris_stat_push_interval 优先级高于 stat_push_interval
                     long interval = 10 * 1000L;
                     if (parameters.containsKey(Consts.KEY_METRIC_PUSH_INTERVAL)) {
                         try {
@@ -173,13 +186,26 @@ public class PolarisOperator {
                         } catch (NumberFormatException ignore) {
                         }
                     }
+                    if (parameters.containsKey(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL)) {
+                        try {
+                            interval = Integer.parseInt(parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL));
+                        } catch (NumberFormatException ignore) {
+                        }
+                    }
                     prometheusHandlerConfig.setPushInterval(interval);
                     break;
                 case "pull":
+                    // polaris_stat_pull_port 优先级高于 stat_pull_port
                     int port = 9091;
                     if (parameters.containsKey(Consts.KEY_METRIC_PULL_PORT)) {
                         try {
                             port = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PULL_PORT));
+                        } catch (NumberFormatException ignore) {
+                        }
+                    }
+                    if (parameters.containsKey(Consts.KEY_POLARIS_METRIC_PULL_PORT)) {
+                        try {
+                            port = Integer.parseInt(parameters.get(Consts.KEY_POLARIS_METRIC_PULL_PORT));
                         } catch (NumberFormatException ignore) {
                         }
                     }
@@ -202,8 +228,9 @@ public class PolarisOperator {
             boolean enabled = Boolean.parseBoolean(parameters.get(Consts.KEY_PGW_EVENT_ENABLED));
             pushGatewayEventReporterConfig.setEnable(enabled);
             if (parameters.containsKey(Consts.KEY_PGW_EVENT_ADDR)) {
-                pushGatewayEventReporterConfig.setAddress(
-                        Collections.singletonList(parameters.get(Consts.KEY_PGW_EVENT_ADDR)));
+                List<String> addresses = Arrays.asList(
+                        parameters.get(Consts.KEY_PGW_EVENT_ADDR).split(Consts.ADDRESSES_SEPARATOR));
+                pushGatewayEventReporterConfig.setAddress(addresses);
             }
             pushGatewayEventReporterConfig.setEventQueueSize(1000);
             pushGatewayEventReporterConfig.setMaxBatchSize(100);
@@ -214,8 +241,12 @@ public class PolarisOperator {
         configuration.getGlobal().getEventReporter()
                 .setPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, pushGatewayEventReporterConfig);
         // 设置主动探测
-        if (parameters.containsKey(Consts.KEY_DETECT_WHEN)) {
+        // polaris_detect_when 优先级高于 detect_when
+        if (parameters.containsKey(Consts.KEY_DETECT_WHEN) || parameters.containsKey(Consts.KEY_POLARIS_DETECT_WHEN)) {
             String detectWhen = parameters.get(Consts.KEY_DETECT_WHEN);
+            if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_DETECT_WHEN))) {
+                detectWhen = parameters.get(Consts.KEY_POLARIS_DETECT_WHEN);
+            }
             try {
                 configuration.getConsumer().getOutlierDetection()
                         .setWhen(OutlierDetectionConfig.When.valueOf(detectWhen));
@@ -240,7 +271,6 @@ public class PolarisOperator {
 
         configuration.getGlobal().getAPI().setBindIP(NetUtils.getLocalHost());
 
-
     }
 
     private void initServerConnectorConfig(ConfigurationImpl configuration) {
@@ -263,10 +293,12 @@ public class PolarisOperator {
         }
         // 设置服务治理连接地址
         configuration.getGlobal().getServerConnector()
-                .setAddresses(Collections.singletonList(polarisConfig.getDiscoverAddress()));
+                .setAddresses(polarisConfig.getDiscoverAddresses());
+        configuration.getGlobal().getServerConnector().setLbPolicy(polarisConfig.getLbPolicy());
+        configuration.getGlobal().getServerConnector().setServerSwitchInterval(polarisConfig.getServerSwitchInterval());
         // 设置配置中心连接地址
         configuration.getConfigFile().getServerConnector()
-                .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
+                .setAddresses(polarisConfig.getConfigAddresses());
     }
 
     /**
