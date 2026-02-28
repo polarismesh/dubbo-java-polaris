@@ -55,11 +55,20 @@ public class PolarisConfig {
         this.operatorType = operatorType;
         initAddress(host, port, parameters);
         String namespaceStr = parameters.get(Consts.KEY_NAMESPACE);
+        String polarisNamespaceStr = parameters.get(Consts.KEY_POLARIS_NAMESPACE);
         if (null == namespaceStr || namespaceStr.isEmpty()) {
             namespaceStr = Consts.DEFAULT_NAMESPACE;
         }
+        if (null != polarisNamespaceStr && !polarisNamespaceStr.isEmpty()) {
+            namespaceStr = polarisNamespaceStr;
+        }
         this.namespace = namespaceStr;
-        this.token = parameters.get(Consts.KEY_TOKEN);
+        String tokenStr = parameters.get(Consts.KEY_TOKEN);
+        String polarisTokenStr = parameters.get(Consts.KEY_POLARIS_TOKEN);
+        if (null != polarisTokenStr && !polarisTokenStr.isEmpty()) {
+            tokenStr = polarisTokenStr;
+        }
+        this.token = tokenStr;
         int healthTTL = Consts.DEFAULT_TTL;
         String ttlStr = System.getProperty(Consts.KEY_TTL);
         if (null != ttlStr && !ttlStr.isEmpty()) {
@@ -67,6 +76,14 @@ public class PolarisConfig {
                 healthTTL = Integer.parseInt(ttlStr);
             } catch (Exception e) {
                 LOG.info("[Common] fail to convert ttlStr {}", ttlStr, e);
+            }
+        }
+        String polarisTtlStr = System.getProperty(Consts.KEY_POLARIS_TTL);
+        if (null != polarisTtlStr && !polarisTtlStr.isEmpty()) {
+            try {
+                healthTTL = Integer.parseInt(polarisTtlStr);
+            } catch (Exception e) {
+                LOG.info("[Common] fail to convert ttlStr {}", polarisTtlStr, e);
             }
         }
         this.ttl = healthTTL;

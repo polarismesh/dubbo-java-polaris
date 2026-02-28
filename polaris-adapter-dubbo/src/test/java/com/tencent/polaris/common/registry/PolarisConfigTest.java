@@ -39,11 +39,13 @@ public class PolarisConfigTest {
     private static final Logger LOG = LoggerFactory.getLogger(PolarisConfigTest.class);
 
     private String originalTtlProperty;
+    private String originalPolarisTtlProperty;
 
     @Before
     public void before() {
         // 保存原始系统属性，避免测试间干扰
         originalTtlProperty = System.getProperty(Consts.KEY_TTL);
+        originalPolarisTtlProperty = System.getProperty(Consts.KEY_POLARIS_TTL);
     }
 
     @After
@@ -53,6 +55,11 @@ public class PolarisConfigTest {
             System.setProperty(Consts.KEY_TTL, originalTtlProperty);
         } else {
             System.clearProperty(Consts.KEY_TTL);
+        }
+        if (originalPolarisTtlProperty != null) {
+            System.setProperty(Consts.KEY_POLARIS_TTL, originalPolarisTtlProperty);
+        } else {
+            System.clearProperty(Consts.KEY_POLARIS_TTL);
         }
     }
 
@@ -356,6 +363,172 @@ public class PolarisConfigTest {
 
         // Assert
         Assert.assertEquals(Consts.DEFAULT_TTL, config.getTtl());
+    }
+
+    // ==================== polaris_namespace 覆盖优先级测试 ====================
+
+    /**
+     * 测试：polaris_namespace 参数覆盖 namespace 参数
+     */
+    @Test
+    public void testPolarisNamespace_overridesNamespace() {
+        // Arrange
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_NAMESPACE, "original-ns");
+        parameters.put(Consts.KEY_POLARIS_NAMESPACE, "polaris-ns");
+
+        // Act
+        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
+                "127.0.0.1", 8091, parameters);
+
+        // Assert - polaris_namespace 应覆盖 namespace
+        Assert.assertEquals("polaris-ns", config.getNamespace());
+    }
+
+    /**
+     * 测试：polaris_namespace 为空时不覆盖 namespace
+     */
+    @Test
+    public void testPolarisNamespace_emptyDoesNotOverride() {
+        // Arrange
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_NAMESPACE, "original-ns");
+        parameters.put(Consts.KEY_POLARIS_NAMESPACE, "");
+
+        // Act
+        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
+                "127.0.0.1", 8091, parameters);
+
+        // Assert - 空的 polaris_namespace 不覆盖，应使用原始 namespace
+        Assert.assertEquals("original-ns", config.getNamespace());
+    }
+
+    /**
+     * 测试：namespace 为空且 polaris_namespace 存在时，使用 polaris_namespace
+     */
+    @Test
+    public void testPolarisNamespace_overridesDefaultNamespace() {
+        // Arrange
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_POLARIS_NAMESPACE, "polaris-ns");
+
+        // Act
+        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
+                "127.0.0.1", 8091, parameters);
+
+        // Assert - 即使 namespace 未设置，polaris_namespace 也应生效
+        Assert.assertEquals("polaris-ns", config.getNamespace());
+    }
+
+    // ==================== polaris_token 覆盖优先级测试 ====================
+
+    /**
+     * 测试：polaris_token 参数覆盖 token 参数
+     */
+    @Test
+    public void testPolarisToken_overridesToken() {
+        // Arrange
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_TOKEN, "original-token");
+        parameters.put(Consts.KEY_POLARIS_TOKEN, "polaris-token");
+
+        // Act
+        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
+                "127.0.0.1", 8091, parameters);
+
+        // Assert - polaris_token 应覆盖 token
+        Assert.assertEquals("polaris-token", config.getToken());
+    }
+
+    /**
+     * 测试：polaris_token 为空时不覆盖 token
+     */
+    @Test
+    public void testPolarisToken_emptyDoesNotOverride() {
+        // Arrange
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_TOKEN, "original-token");
+        parameters.put(Consts.KEY_POLARIS_TOKEN, "");
+
+        // Act
+        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
+                "127.0.0.1", 8091, parameters);
+
+        // Assert - 空的 polaris_token 不覆盖，应使用原始 token
+        Assert.assertEquals("original-token", config.getToken());
+    }
+
+    /**
+     * 测试：仅设置 polaris_token（无 token）
+     */
+    @Test
+    public void testPolarisToken_onlyPolarisTokenSet() {
+        // Arrange
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_POLARIS_TOKEN, "polaris-only-token");
+
+        // Act
+        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
+                "127.0.0.1", 8091, parameters);
+
+        // Assert
+        Assert.assertEquals("polaris-only-token", config.getToken());
+    }
+
+    // ==================== polaris_ttl 系统属性覆盖优先级测试 ====================
+
+    /**
+     * 测试：polaris_ttl 系统属性覆盖 ttl 系统属性
+     */
+    @Test
+    public void testPolarisTtl_overridesTtl() {
+        // Arrange
+        System.setProperty(Consts.KEY_TTL, "10");
+        System.setProperty(Consts.KEY_POLARIS_TTL, "20");
+        Map<String, String> parameters = new HashMap<>();
+
+        // Act
+        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
+                "127.0.0.1", 8091, parameters);
+
+        // Assert - polaris_ttl 应覆盖 ttl
+        Assert.assertEquals(20, config.getTtl());
+    }
+
+    /**
+     * 测试：仅设置 polaris_ttl 系统属性
+     */
+    @Test
+    public void testPolarisTtl_onlyPolarisTtlSet() {
+        // Arrange
+        System.clearProperty(Consts.KEY_TTL);
+        System.setProperty(Consts.KEY_POLARIS_TTL, "15");
+        Map<String, String> parameters = new HashMap<>();
+
+        // Act
+        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
+                "127.0.0.1", 8091, parameters);
+
+        // Assert
+        Assert.assertEquals(15, config.getTtl());
+    }
+
+    /**
+     * 测试：polaris_ttl 无效值时保持 ttl 的值
+     */
+    @Test
+    public void testPolarisTtl_invalidValue_keepsTtlValue() {
+        // Arrange
+        System.setProperty(Consts.KEY_TTL, "10");
+        System.setProperty(Consts.KEY_POLARIS_TTL, "not_a_number");
+        Map<String, String> parameters = new HashMap<>();
+
+        // Act
+        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
+                "127.0.0.1", 8091, parameters);
+
+        // Assert - polaris_ttl 无效，应保持 ttl 的值
+        Assert.assertEquals(10, config.getTtl());
     }
 
     // ==================== toString 测试 ====================

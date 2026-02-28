@@ -19,10 +19,9 @@ package com.tencent.polaris.common.registry;
 
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 public class BaseBootConfigHandler implements BootConfigHandler {
 
@@ -39,11 +38,24 @@ public class BaseBootConfigHandler implements BootConfigHandler {
                 LOGGER.info("[Common] fail to convert ttlStr {}", timeoutStr, e);
             }
         }
+        timeoutStr = parameters.get(Consts.KEY_POLARIS_TIMEOUT);
+        if (null != timeoutStr && timeoutStr.length() > 0) {
+            try {
+                timeout = Integer.parseInt(timeoutStr);
+            } catch (Exception e) {
+                LOGGER.info("[Common] fail to convert ttlStr {}", timeoutStr, e);
+            }
+        }
+
         if (timeout > 0) {
             configuration.getGlobal().getAPI().setTimeout(timeout);
         }
         Boolean persistEnable = null;
         String persistEnableStr = parameters.get(Consts.KEY_PERSIST_ENABLE);
+        if (null != persistEnableStr && persistEnableStr.length() > 0) {
+            persistEnable = Boolean.parseBoolean(persistEnableStr);
+        }
+        persistEnableStr = parameters.get(Consts.KEY_POLARIS_PERSIST_ENABLE);
         if (null != persistEnableStr && persistEnableStr.length() > 0) {
             persistEnable = Boolean.parseBoolean(persistEnableStr);
         }
