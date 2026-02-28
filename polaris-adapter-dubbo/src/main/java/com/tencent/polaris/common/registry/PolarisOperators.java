@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.common.config.BaseBootConfigHandler;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;

@@ -17,11 +17,11 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
-
 import java.util.Map;
 
 public interface BootConfigHandler {
 
-    void handle(Map<String, String> parameters, ConfigurationImpl configuration);
+    void handle(PolarisConfig polarisConfig, Map<String, String> parameters, ConfigurationImpl configuration);
 }

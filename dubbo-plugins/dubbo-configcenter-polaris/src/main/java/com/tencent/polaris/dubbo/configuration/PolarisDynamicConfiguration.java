@@ -24,7 +24,7 @@ import com.tencent.polaris.api.plugin.event.ConfigEvent;
 import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.flow.BaseFlow;
-import com.tencent.polaris.common.registry.PolarisConfig;
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.configuration.api.core.ChangeType;

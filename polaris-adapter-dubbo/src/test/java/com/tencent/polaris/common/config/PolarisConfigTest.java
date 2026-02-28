@@ -15,9 +15,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.common.registry;
+package com.tencent.polaris.common.config;
 
 import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
+import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.utils.Consts;
 import java.util.HashMap;
 import java.util.List;
