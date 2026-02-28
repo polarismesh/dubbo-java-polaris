@@ -43,15 +43,25 @@ public interface Consts {
 
     String KEY_POLARIS_TTL = "polaris_ttl";
 
-    String KEY_DETECT_WHEN = "polaris_detect_when";
+    String KEY_DETECT_WHEN = "detect_when";
 
-    String KEY_METRIC_TYPE = "polaris_stat_type";
+    String KEY_POLARIS_DETECT_WHEN = "polaris_detect_when";
 
-    String KEY_METRIC_PULL_PORT = "polaris_stat_pull_port";
+    String KEY_METRIC_TYPE = "stat_type";
 
-    String KEY_METRIC_PUSH_ADDR = "polaris_stat_push_addr";
+    String KEY_POLARIS_METRIC_TYPE = "polaris_stat_type";
 
-    String KEY_METRIC_PUSH_INTERVAL = "polaris_stat_push_interval";
+    String KEY_METRIC_PULL_PORT = "stat_pull_port";
+
+    String KEY_POLARIS_METRIC_PULL_PORT = "polaris_stat_pull_port";
+
+    String KEY_METRIC_PUSH_ADDR = "stat_push_addr";
+
+    String KEY_POLARIS_METRIC_PUSH_ADDR = "polaris_stat_push_addr";
+
+    String KEY_METRIC_PUSH_INTERVAL = "stat_push_interval";
+
+    String KEY_POLARIS_METRIC_PUSH_INTERVAL = "polaris_stat_push_interval";
 
     String KEY_CONFIG_ENCRYPT_ENABLED = "polaris_config_encrypt_enabled";
 

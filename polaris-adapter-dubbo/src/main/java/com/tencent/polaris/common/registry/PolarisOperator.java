@@ -154,11 +154,19 @@ public class PolarisOperator {
 
         AdminConfigImpl adminConfig = configuration.getGlobal().getAdmin();
         // stat reporter
-        if (parameters.containsKey(Consts.KEY_METRIC_TYPE)) {
-            String statType = parameters.get(Consts.KEY_METRIC_TYPE);
+        // polaris_stat_type 优先级高于 stat_type
+        String statType = parameters.get(Consts.KEY_METRIC_TYPE);
+        if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_METRIC_TYPE))) {
+            statType = parameters.get(Consts.KEY_POLARIS_METRIC_TYPE);
+        }
+        if (StringUtils.isNotBlank(statType)) {
             switch (statType) {
                 case "push":
+                    // polaris_stat_push_addr 优先级高于 stat_push_addr
                     String pushAddr = parameters.get(Consts.KEY_METRIC_PUSH_ADDR);
+                    if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_ADDR))) {
+                        pushAddr = parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_ADDR);
+                    }
                     if (StringUtils.isBlank(pushAddr)) {
                         pushAddr = polarisConfig.getDiscoverAddresses().stream()
                                 .map(addr -> addr.split(":")[0] + ":9091")
@@ -170,6 +178,7 @@ public class PolarisOperator {
                     prometheusHandlerConfig.setAddress(addresses);
 
                     // 默认为 10s
+                    // polaris_stat_push_interval 优先级高于 stat_push_interval
                     long interval = 10 * 1000L;
                     if (parameters.containsKey(Consts.KEY_METRIC_PUSH_INTERVAL)) {
                         try {
@@ -177,13 +186,26 @@ public class PolarisOperator {
                         } catch (NumberFormatException ignore) {
                         }
                     }
+                    if (parameters.containsKey(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL)) {
+                        try {
+                            interval = Integer.parseInt(parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL));
+                        } catch (NumberFormatException ignore) {
+                        }
+                    }
                     prometheusHandlerConfig.setPushInterval(interval);
                     break;
                 case "pull":
+                    // polaris_stat_pull_port 优先级高于 stat_pull_port
                     int port = 9091;
                     if (parameters.containsKey(Consts.KEY_METRIC_PULL_PORT)) {
                         try {
                             port = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PULL_PORT));
+                        } catch (NumberFormatException ignore) {
+                        }
+                    }
+                    if (parameters.containsKey(Consts.KEY_POLARIS_METRIC_PULL_PORT)) {
+                        try {
+                            port = Integer.parseInt(parameters.get(Consts.KEY_POLARIS_METRIC_PULL_PORT));
                         } catch (NumberFormatException ignore) {
                         }
                     }
@@ -219,8 +241,12 @@ public class PolarisOperator {
         configuration.getGlobal().getEventReporter()
                 .setPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, pushGatewayEventReporterConfig);
         // 设置主动探测
-        if (parameters.containsKey(Consts.KEY_DETECT_WHEN)) {
+        // polaris_detect_when 优先级高于 detect_when
+        if (parameters.containsKey(Consts.KEY_DETECT_WHEN) || parameters.containsKey(Consts.KEY_POLARIS_DETECT_WHEN)) {
             String detectWhen = parameters.get(Consts.KEY_DETECT_WHEN);
+            if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_DETECT_WHEN))) {
+                detectWhen = parameters.get(Consts.KEY_POLARIS_DETECT_WHEN);
+            }
             try {
                 configuration.getConsumer().getOutlierDetection()
                         .setWhen(OutlierDetectionConfig.When.valueOf(detectWhen));

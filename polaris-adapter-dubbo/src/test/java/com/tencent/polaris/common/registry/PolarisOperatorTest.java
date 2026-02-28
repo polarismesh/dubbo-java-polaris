@@ -1294,6 +1294,153 @@ public class PolarisOperatorTest {
     }
 
     /**
+     * 测试初始化：polaris_stat_type 覆盖 stat_type
+     */
+    @Test
+    public void testInit_polarisMetricType_overridesMetricType() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_METRIC_TYPE, "pull");
+        parameters.put(Consts.KEY_POLARIS_METRIC_TYPE, "push");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：仅设置 polaris_stat_type
+     */
+    @Test
+    public void testInit_onlyPolarisMetricType() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_POLARIS_METRIC_TYPE, "push");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：polaris_stat_type 为空时不覆盖 stat_type
+     */
+    @Test
+    public void testInit_emptyPolarisMetricType_usesMetricType() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_METRIC_TYPE, "push");
+        parameters.put(Consts.KEY_POLARIS_METRIC_TYPE, "");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：polaris_stat_push_addr 覆盖 stat_push_addr
+     */
+    @Test
+    public void testInit_polarisPushAddr_overridesPushAddr() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_METRIC_TYPE, "push");
+        parameters.put(Consts.KEY_METRIC_PUSH_ADDR, "192.168.1.1:9091");
+        parameters.put(Consts.KEY_POLARIS_METRIC_PUSH_ADDR, "10.0.0.1:9091");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：仅设置 polaris_stat_push_addr
+     */
+    @Test
+    public void testInit_onlyPolarisPushAddr() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_METRIC_TYPE, "push");
+        parameters.put(Consts.KEY_POLARIS_METRIC_PUSH_ADDR, "10.0.0.1:9091");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：polaris_stat_push_interval 覆盖 stat_push_interval
+     */
+    @Test
+    public void testInit_polarisPushInterval_overridesPushInterval() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_METRIC_TYPE, "push");
+        parameters.put(Consts.KEY_METRIC_PUSH_INTERVAL, "10000");
+        parameters.put(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL, "50000");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：仅设置 polaris_stat_push_interval
+     */
+    @Test
+    public void testInit_onlyPolarisPushInterval() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_METRIC_TYPE, "push");
+        parameters.put(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL, "25000");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：polaris_stat_push_interval 无效时保持 stat_push_interval 的值
+     */
+    @Test
+    public void testInit_invalidPolarisPushInterval_usesPushInterval() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_METRIC_TYPE, "push");
+        parameters.put(Consts.KEY_METRIC_PUSH_INTERVAL, "10000");
+        parameters.put(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL, "invalid");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：polaris_stat_pull_port 覆盖 stat_pull_port
+     */
+    @Test
+    public void testInit_polarisPullPort_overridesPullPort() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_METRIC_TYPE, "pull");
+        parameters.put(Consts.KEY_METRIC_PULL_PORT, "18091");
+        parameters.put(Consts.KEY_POLARIS_METRIC_PULL_PORT, "28091");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：仅设置 polaris_stat_pull_port
+     */
+    @Test
+    public void testInit_onlyPolarisPullPort() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_METRIC_TYPE, "pull");
+        parameters.put(Consts.KEY_POLARIS_METRIC_PULL_PORT, "38091");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：polaris_stat_pull_port 无效时保持 stat_pull_port 的值
+     */
+    @Test
+    public void testInit_invalidPolarisPullPort_usesPullPort() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_METRIC_TYPE, "pull");
+        parameters.put(Consts.KEY_METRIC_PULL_PORT, "18091");
+        parameters.put(Consts.KEY_POLARIS_METRIC_PULL_PORT, "invalid");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
      * 测试初始化：未配置 stat_type（关闭统计上报）
      */
     @Test
@@ -1360,6 +1507,56 @@ public class PolarisOperatorTest {
     public void testInit_invalidDetectWhen() {
         Map<String, String> parameters = new HashMap<>();
         parameters.put(Consts.KEY_DETECT_WHEN, "invalid_value");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：polaris_detect_when 覆盖 detect_when
+     */
+    @Test
+    public void testInit_polarisDetectWhen_overridesDetectWhen() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_DETECT_WHEN, "never");
+        parameters.put(Consts.KEY_POLARIS_DETECT_WHEN, "always");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：仅设置 polaris_detect_when
+     */
+    @Test
+    public void testInit_onlyPolarisDetectWhen() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_POLARIS_DETECT_WHEN, "always");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：polaris_detect_when 为空时不覆盖 detect_when
+     */
+    @Test
+    public void testInit_emptyPolarisDetectWhen_usesDetectWhen() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_DETECT_WHEN, "always");
+        parameters.put(Consts.KEY_POLARIS_DETECT_WHEN, "");
+
+        PolarisOperator operator = createOperatorViaConstructor(parameters);
+        Assert.assertNotNull(operator);
+    }
+
+    /**
+     * 测试初始化：polaris_detect_when 无效值
+     */
+    @Test
+    public void testInit_invalidPolarisDetectWhen() {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(Consts.KEY_POLARIS_DETECT_WHEN, "invalid_value");
 
         PolarisOperator operator = createOperatorViaConstructor(parameters);
         Assert.assertNotNull(operator);
