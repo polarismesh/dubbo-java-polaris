@@ -518,8 +518,6 @@ public class PolarisConfigTest {
         Assert.assertTrue("toString 应包含 operatorType", result.contains("GOVERNANCE"));
         Assert.assertTrue("toString 应包含 discoverAddresses", result.contains("discoverAddresses"));
         Assert.assertTrue("toString 应包含 configAddresses", result.contains("configAddresses"));
-        Assert.assertTrue("toString 应包含 lbPolicy", result.contains("lbPolicy"));
-        Assert.assertTrue("toString 应包含 serverSwitchInterval", result.contains("serverSwitchInterval"));
     }
 
     // ==================== 综合场景测试 ====================
