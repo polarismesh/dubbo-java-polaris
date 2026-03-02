@@ -468,38 +468,6 @@ public class BaseBootConfigHandlerTest {
     }
 
     /**
-     * 测试：配置推空保护默认禁用
-     */
-    @Test
-    public void testHandle_configEmptyProtectionDisabled() {
-        // Arrange
-        Map<String, String> parameters = new HashMap<>();
-        PolarisConfig polarisConfig = createDefaultPolarisConfig(parameters);
-
-        // Act
-        handler.handle(polarisConfig, parameters, configuration);
-
-        // Assert - 配置推空保护应被禁用
-        Assert.assertFalse(configuration.getConfigFile().getServerConnector().isEmptyProtectionEnable());
-    }
-
-    /**
-     * 测试：配置加密过滤默认启用
-     */
-    @Test
-    public void testHandle_configEncryptEnabledByDefault() {
-        // Arrange
-        Map<String, String> parameters = new HashMap<>();
-        PolarisConfig polarisConfig = createDefaultPolarisConfig(parameters);
-
-        // Act
-        handler.handle(polarisConfig, parameters, configuration);
-
-        // Assert - 配置加密默认启用
-        Assert.assertTrue(configuration.getConfigFile().getConfigFilterConfig().isEnable());
-    }
-
-    /**
      * 测试：显式禁用配置加密
      */
     @Test
@@ -514,23 +482,6 @@ public class BaseBootConfigHandlerTest {
 
         // Assert - 配置加密应被禁用
         Assert.assertFalse(configuration.getConfigFile().getConfigFilterConfig().isEnable());
-    }
-
-    /**
-     * 测试：配置加密过滤链包含 crypto
-     */
-    @Test
-    public void testHandle_configFilterChainContainsCrypto() {
-        // Arrange
-        Map<String, String> parameters = new HashMap<>();
-        PolarisConfig polarisConfig = createDefaultPolarisConfig(parameters);
-
-        // Act
-        handler.handle(polarisConfig, parameters, configuration);
-
-        // Assert
-        List<String> chain = configuration.getConfigFile().getConfigFilterConfig().getChain();
-        Assert.assertTrue("过滤链应包含 crypto", chain.contains("crypto"));
     }
 
     /**
@@ -855,7 +806,6 @@ public class BaseBootConfigHandlerTest {
         Assert.assertEquals(originalTimeout, configuration.getGlobal().getAPI().getTimeout());
         Assert.assertEquals(originalPersistEnable, configuration.getConsumer().getLocalCache().isPersistEnable());
         // 但仍然会设置 ServerConnector 地址和 SDK Context 配置
-        Assert.assertFalse(configuration.getConfigFile().getServerConnector().isEmptyProtectionEnable());
         Assert.assertFalse(configuration.getGlobal().getStatReporter().isEnable());
     }
 

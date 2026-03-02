@@ -104,14 +104,11 @@ public class BaseBootConfigHandler implements BootConfigHandler {
         // 设置服务治理连接地址
         configuration.getGlobal().getServerConnector()
                 .setAddresses(polarisConfig.getDiscoverAddresses());
-
-
     }
 
 
     private void initSDKContextConfig(ConfigurationImpl configuration, Map<String, String> parameters,
             PolarisConfig polarisConfig) {
-
         // 设置主动探测
         // polaris_detect_when 优先级高于 detect_when
         if (parameters.containsKey(Consts.KEY_DETECT_WHEN) || parameters.containsKey(Consts.KEY_POLARIS_DETECT_WHEN)) {
