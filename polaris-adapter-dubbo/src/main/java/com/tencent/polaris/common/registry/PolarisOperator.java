@@ -105,15 +105,14 @@ public class PolarisOperator {
 
     PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters) {
         polarisConfig = new PolarisConfig(operatorType, host, port, parameters);
-        init(operatorType, parameters);
+        init(parameters);
     }
 
     protected static String formatCode(Object val) {
         return "POLARIS:" + val;
     }
 
-    private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters,
-            BootConfigHandler... handlers) {
+    private void init(Map<String, String> parameters) {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
         ExtensionLoader<BootConfigHandler> extensionLoader =
