@@ -410,27 +410,6 @@ public class BaseBootConfigHandlerTest {
         Assert.assertTrue("配置中心地址应包含 127.0.0.1:8093", configAddresses.contains("127.0.0.1:8093"));
     }
 
-    /**
-     * 测试：ServerConnector 负载均衡策略和切换间隔设置
-     */
-    @Test
-    public void testHandle_serverConnectorLbPolicyAndSwitchInterval() {
-        // Arrange
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put(Consts.KEY_LB_POLICY, "weightedRandom");
-        parameters.put(Consts.KEY_SERVER_SWITCH_INTERVAL, "300000");
-        PolarisConfig polarisConfig = createDefaultPolarisConfig(parameters);
-
-        // Act
-        handler.handle(polarisConfig, parameters, configuration);
-
-        // Assert
-        Assert.assertEquals("weightedRandom",
-                configuration.getGlobal().getServerConnector().getLbPolicy());
-        Assert.assertEquals(300000L,
-                configuration.getGlobal().getServerConnector().getServerSwitchInterval());
-    }
-
     // ==================== SDK Context 配置测试 ====================
 
     /**

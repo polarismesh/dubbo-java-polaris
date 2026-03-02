@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.common.config;
 
-import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.utils.Consts;
 import java.util.ArrayList;
@@ -45,9 +44,6 @@ public class PolarisConfig {
 
     private final PolarisOperators.OperatorType operatorType;
 
-    private long serverSwitchInterval = 600000;
-
-    private String lbPolicy = LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN;
 
     public PolarisConfig(PolarisOperators.OperatorType operatorType, String host, int port,
             Map<String, String> parameters) {
@@ -97,27 +93,36 @@ public class PolarisConfig {
         switch (operatorType) {
             case CONFIG:
                 configPort = port;
-                String discoverPortStr = parameters.getOrDefault(Consts.DISCOVER_PORT, discoverPort + "");
-                discoverPort = Integer.parseInt(discoverPortStr);
+                // if config center setting has parameter "discover_port" or "polaris_discover_port" (high priority)
+                String discoverPortStr = parameters.getOrDefault(Consts.KEY_DISCOVER_PORT, discoverPort + "");
+                discoverPortStr = parameters.getOrDefault(Consts.KEY_POLARIS_DISCOVER_PORT, discoverPortStr);
+                try {
+                    discoverPort = Integer.parseInt(discoverPortStr);
+                } catch (NumberFormatException e) {
+                    LOG.info("[Common] fail to convert discoverPortStr {}, use default port {}", discoverPortStr,
+                            discoverPort);
+                }
                 break;
             case GOVERNANCE:
                 discoverPort = port;
-                configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
+                // if config center url has parameter "config_port" or "polaris_config_port" (high priority)
+                String configPortStr = parameters.getOrDefault(Consts.KEY_CONFIG_PORT, configPort + "");
+                configPortStr = parameters.getOrDefault(Consts.KEY_POLARIS_CONFIG_PORT, configPortStr);
+                try {
+                    configPort = Integer.parseInt(configPortStr);
+                } catch (NumberFormatException e) {
+                    LOG.info("[Common] fail to convert configPortStr {}, use default port {}", configPortStr,
+                            configPort);
+                }
                 if (parameters.containsKey(Consts.KEY_OTHER_ADDRESSES)) {
                     // e.g. dubbo.registry.parameters=[{other_addresses:127.0.0.1:8091,127.0.0.1:8091}]
                     String discoverAddressesStr = parameters.get(Consts.KEY_OTHER_ADDRESSES);
                     Collections.addAll(this.discoverAddresses, discoverAddressesStr.split(Consts.ADDRESSES_SEPARATOR));
                 }
-                if (parameters.containsKey(Consts.KEY_LB_POLICY)) {
-                    this.lbPolicy = parameters.get(Consts.KEY_LB_POLICY);
-                }
-                if (parameters.containsKey(Consts.KEY_SERVER_SWITCH_INTERVAL)) {
-                    this.serverSwitchInterval = Long.parseLong(parameters.get(Consts.KEY_SERVER_SWITCH_INTERVAL));
-                }
                 break;
             case METADATA_REPORT:
                 discoverPort = port;
-                configPort = Integer.parseInt(parameters.getOrDefault(Consts.CONFIG_PORT, configPort + ""));
+                configPort = Integer.parseInt(parameters.getOrDefault(Consts.KEY_CONFIG_PORT, configPort + ""));
                 break;
         }
         String discoverAddress = String.format("%s:%d", host, discoverPort);
@@ -146,15 +151,6 @@ public class PolarisConfig {
         return ttl;
     }
 
-    public String getLbPolicy() {
-        return lbPolicy;
-    }
-
-
-    public Long getServerSwitchInterval() {
-        return serverSwitchInterval;
-    }
-
     @Override
     public String toString() {
         return "PolarisConfig{" +
@@ -164,8 +160,6 @@ public class PolarisConfig {
                 ", operatorType=" + operatorType +
                 ", discoverAddresses=" + discoverAddresses +
                 ", configAddresses=" + configAddresses +
-                ", serverSwitchInterval=" + serverSwitchInterval +
-                ", lbPolicy='" + lbPolicy + '\'' +
                 '}';
     }
 }

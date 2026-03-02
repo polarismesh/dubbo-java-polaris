@@ -53,6 +53,7 @@ import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import com.tencent.polaris.common.config.BootConfigHandler;
 import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
@@ -76,6 +77,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,10 +103,9 @@ public class PolarisOperator {
 
     private ConfigFilePublishService configFilePublishAPI;
 
-    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters,
-            BootConfigHandler... handlers) {
+    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters) {
         polarisConfig = new PolarisConfig(operatorType, host, port, parameters);
-        init(operatorType, parameters, handlers);
+        init(operatorType, parameters);
     }
 
     protected static String formatCode(Object val) {
@@ -115,10 +116,11 @@ public class PolarisOperator {
             BootConfigHandler... handlers) {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
-        if (null != handlers) {
-            for (BootConfigHandler bootConfigHandler : handlers) {
-                bootConfigHandler.handle(polarisConfig, parameters, configuration);
-            }
+        ExtensionLoader<BootConfigHandler> extensionLoader =
+                ExtensionLoader.getExtensionLoader(BootConfigHandler.class);
+        Set<String> extensionNames = extensionLoader.getSupportedExtensions();
+        for (String extensionName : extensionNames) {
+            extensionLoader.getExtension(extensionName).handle(polarisConfig, parameters, configuration);
         }
         sdkContext = SDKContext.initContextByConfig(configuration);
         consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);

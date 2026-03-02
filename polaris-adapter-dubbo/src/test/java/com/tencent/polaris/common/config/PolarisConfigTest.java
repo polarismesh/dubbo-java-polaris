@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.common.config;
 
-import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.utils.Consts;
 import java.util.HashMap;
@@ -83,8 +82,6 @@ public class PolarisConfigTest {
         Assert.assertEquals(Consts.DEFAULT_NAMESPACE, config.getNamespace());
         Assert.assertNull(config.getToken());
         Assert.assertEquals(Consts.DEFAULT_TTL, config.getTtl());
-        Assert.assertEquals(LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN, config.getLbPolicy());
-        Assert.assertEquals(Long.valueOf(600000L), config.getServerSwitchInterval());
 
         // GOVERNANCE 类型：主端口是 discover 端口，config 端口默认 8093
         List<String> discoverAddresses = config.getDiscoverAddresses();
@@ -141,7 +138,7 @@ public class PolarisConfigTest {
     public void testGovernanceType_withCustomConfigPort() {
         // Arrange
         Map<String, String> parameters = new HashMap<>();
-        parameters.put(Consts.CONFIG_PORT, "9093");
+        parameters.put(Consts.KEY_CONFIG_PORT, "9093");
 
         // Act
         PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
@@ -180,40 +177,6 @@ public class PolarisConfigTest {
                 discoverAddresses.contains("10.0.0.3:8091"));
     }
 
-    /**
-     * 测试 GOVERNANCE 类型：自定义负载均衡策略
-     */
-    @Test
-    public void testGovernanceType_withCustomLbPolicy() {
-        // Arrange
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put(Consts.KEY_LB_POLICY, "weightedRandom");
-
-        // Act
-        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
-                "127.0.0.1", 8091, parameters);
-
-        // Assert
-        Assert.assertEquals("weightedRandom", config.getLbPolicy());
-    }
-
-    /**
-     * 测试 GOVERNANCE 类型：自定义 serverSwitchInterval
-     */
-    @Test
-    public void testGovernanceType_withCustomServerSwitchInterval() {
-        // Arrange
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put(Consts.KEY_SERVER_SWITCH_INTERVAL, "300000");
-
-        // Act
-        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
-                "127.0.0.1", 8091, parameters);
-
-        // Assert
-        Assert.assertEquals(Long.valueOf(300000L), config.getServerSwitchInterval());
-    }
-
     // ==================== CONFIG 类型测试 ====================
 
     /**
@@ -249,7 +212,7 @@ public class PolarisConfigTest {
     public void testConfigType_withCustomDiscoverPort() {
         // Arrange
         Map<String, String> parameters = new HashMap<>();
-        parameters.put(Consts.DISCOVER_PORT, "9091");
+        parameters.put(Consts.KEY_DISCOVER_PORT, "9091");
 
         // Act
         PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.CONFIG,
@@ -301,7 +264,7 @@ public class PolarisConfigTest {
     public void testMetadataReportType_withCustomConfigPort() {
         // Arrange
         Map<String, String> parameters = new HashMap<>();
-        parameters.put(Consts.CONFIG_PORT, "9093");
+        parameters.put(Consts.KEY_CONFIG_PORT, "9093");
 
         // Act
         PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.METADATA_REPORT,
@@ -571,10 +534,8 @@ public class PolarisConfigTest {
         Map<String, String> parameters = new HashMap<>();
         parameters.put(Consts.KEY_NAMESPACE, "custom-ns");
         parameters.put(Consts.KEY_TOKEN, "custom-token");
-        parameters.put(Consts.CONFIG_PORT, "9093");
+        parameters.put(Consts.KEY_CONFIG_PORT, "9093");
         parameters.put(Consts.KEY_OTHER_ADDRESSES, "10.0.0.2:8091");
-        parameters.put(Consts.KEY_LB_POLICY, "ringHash");
-        parameters.put(Consts.KEY_SERVER_SWITCH_INTERVAL, "120000");
 
         // Act
         PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
@@ -584,8 +545,6 @@ public class PolarisConfigTest {
         Assert.assertEquals("custom-ns", config.getNamespace());
         Assert.assertEquals("custom-token", config.getToken());
         Assert.assertEquals(15, config.getTtl());
-        Assert.assertEquals("ringHash", config.getLbPolicy());
-        Assert.assertEquals(Long.valueOf(120000L), config.getServerSwitchInterval());
 
         List<String> discoverAddresses = config.getDiscoverAddresses();
         Assert.assertTrue(discoverAddresses.contains("10.0.0.1:8091"));
@@ -595,25 +554,5 @@ public class PolarisConfigTest {
         Assert.assertTrue(configAddresses.contains("10.0.0.1:9093"));
 
         LOG.info("[Test] GOVERNANCE 全参数测试通过: {}", config);
-    }
-
-    /**
-     * 测试：不同 OperatorType 对 lbPolicy 和 serverSwitchInterval 的影响
-     * 只有 GOVERNANCE 类型才会解析 lb_policy 和 server_switch_interval 参数
-     */
-    @Test
-    public void testConfigType_lbPolicyAndSwitchInterval_notParsed() {
-        // Arrange
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put(Consts.KEY_LB_POLICY, "weightedRandom");
-        parameters.put(Consts.KEY_SERVER_SWITCH_INTERVAL, "300000");
-
-        // Act
-        PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.CONFIG,
-                "127.0.0.1", 8093, parameters);
-
-        // Assert - CONFIG 类型不解析 lb_policy 和 server_switch_interval，应保持默认值
-        Assert.assertEquals(LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN, config.getLbPolicy());
-        Assert.assertEquals(Long.valueOf(600000L), config.getServerSwitchInterval());
     }
 }

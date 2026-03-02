@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.common.registry;
 
-import com.tencent.polaris.common.config.BaseBootConfigHandler;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -42,7 +41,7 @@ public class PolarisOperators {
         // String key = host + ":" + port + "|hash_code:" + params.hashCode();
         String key = host + ":" + port;
         return operatorMap.computeIfAbsent(key,
-                s -> new PolarisOperator(OperatorType.GOVERNANCE, host, port, parameters, new BaseBootConfigHandler()));
+                s -> new PolarisOperator(OperatorType.GOVERNANCE, host, port, parameters));
     }
 
     public static PolarisOperator loadOrStoreForConfig(String host, int port, Map<String, String> parameters) {
@@ -50,7 +49,7 @@ public class PolarisOperators {
         Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
         String key = host + ":" + port + "|hash_code:" + params.hashCode();
         return operatorMap.computeIfAbsent(key,
-                s -> new PolarisOperator(OperatorType.CONFIG, host, port, parameters, new BaseBootConfigHandler()));
+                s -> new PolarisOperator(OperatorType.CONFIG, host, port, parameters));
     }
 
     public static PolarisOperator loadOrStoreForMetaReport(String host, int port, Map<String, String> parameters) {
@@ -58,8 +57,7 @@ public class PolarisOperators {
         Map<String, String> params = Optional.ofNullable(parameters).orElse(Collections.emptyMap());
         String key = host + ":" + port + "|hash_code:" + params.hashCode();
         return operatorMap.computeIfAbsent(key,
-                s -> new PolarisOperator(OperatorType.METADATA_REPORT, host, port, parameters,
-                        new BaseBootConfigHandler()));
+                s -> new PolarisOperator(OperatorType.METADATA_REPORT, host, port, parameters));
     }
 
     public static PolarisOperator getGovernancePolarisOperator() {

@@ -22,7 +22,6 @@ import com.tencent.polaris.api.config.global.StatReporterConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.common.registry.BootConfigHandler;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.factory.config.global.AdminConfigImpl;
@@ -105,11 +104,8 @@ public class BaseBootConfigHandler implements BootConfigHandler {
         // 设置服务治理连接地址
         configuration.getGlobal().getServerConnector()
                 .setAddresses(polarisConfig.getDiscoverAddresses());
-        configuration.getGlobal().getServerConnector().setLbPolicy(polarisConfig.getLbPolicy());
-        configuration.getGlobal().getServerConnector().setServerSwitchInterval(polarisConfig.getServerSwitchInterval());
-        // 设置配置中心连接地址
-        configuration.getConfigFile().getServerConnector()
-                .setAddresses(polarisConfig.getConfigAddresses());
+
+
     }
 
 
@@ -131,13 +127,6 @@ public class BaseBootConfigHandler implements BootConfigHandler {
                         detectWhen, Arrays.toString(OutlierDetectionConfig.When.values()));
             }
         }
-        // 禁用配置推空保护
-        configuration.getConfigFile().getServerConnector().setEmptyProtectionEnable(false);
-        configuration.getConfigFile().getConfigFilterConfig()
-                .setEnable(Boolean.parseBoolean(parameters.getOrDefault(Consts.KEY_CONFIG_ENCRYPT_ENABLED, "true")));
-        configuration.getConfigFile().getConfigFilterConfig().getChain().add("crypto");
-        configuration.getConfigFile().getConfigFilterConfig().getPlugin()
-                .put("crypto", Collections.singletonMap("type", "AES"));
 
         // 禁用服务推空保护
         configuration.getConsumer().getServiceRouter().getPlugin()

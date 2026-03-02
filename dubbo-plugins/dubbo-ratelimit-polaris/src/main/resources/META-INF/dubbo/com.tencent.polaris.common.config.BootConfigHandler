@@ -1,0 +1,1 @@
+rateLimitBootConfigHandler = com.tencent.polaris.dubbo.ratelimit.RateLimitBootConfigHandler
