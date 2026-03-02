@@ -17,9 +17,6 @@
 
 package com.tencent.polaris.common.registry;
 
-import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
-import com.tencent.polaris.api.config.global.StatReporterConfig;
-import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -49,7 +46,6 @@ import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
-import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.flow.CircuitBreakerFlow;
@@ -57,7 +53,8 @@ import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
-import com.tencent.polaris.common.utils.Consts;
+import com.tencent.polaris.common.config.BootConfigHandler;
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
@@ -66,10 +63,6 @@ import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
-import com.tencent.polaris.factory.config.global.AdminConfigImpl;
-import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
-import com.tencent.polaris.plugins.event.pushgateway.PushGatewayEventReporterConfig;
-import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
@@ -80,14 +73,11 @@ import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
-import org.apache.dubbo.common.utils.NetUtils;
+import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,28 +103,24 @@ public class PolarisOperator {
 
     private ConfigFilePublishService configFilePublishAPI;
 
-    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters,
-            BootConfigHandler... handlers) {
+    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters) {
         polarisConfig = new PolarisConfig(operatorType, host, port, parameters);
-        init(operatorType, parameters, handlers);
+        init(parameters);
     }
 
     protected static String formatCode(Object val) {
         return "POLARIS:" + val;
     }
 
-    private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters,
-            BootConfigHandler... handlers) {
+    private void init(Map<String, String> parameters) {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
-        if (null != handlers) {
-            for (BootConfigHandler bootConfigHandler : handlers) {
-                bootConfigHandler.handle(parameters, configuration);
-            }
+        ExtensionLoader<BootConfigHandler> extensionLoader =
+                ExtensionLoader.getExtensionLoader(BootConfigHandler.class);
+        Set<String> extensionNames = extensionLoader.getSupportedExtensions();
+        for (String extensionName : extensionNames) {
+            extensionLoader.getExtension(extensionName).handle(polarisConfig, parameters, configuration);
         }
-        initServerConnectorConfig(configuration);
-        initSDKContextConfig(configuration, parameters, polarisConfig);
-
         sdkContext = SDKContext.initContextByConfig(configuration);
         consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
         providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
@@ -146,160 +132,6 @@ public class PolarisOperator {
         configFilePublishAPI = ConfigFileServicePublishFactory.createConfigFilePublishService(sdkContext);
     }
 
-    private void initSDKContextConfig(ConfigurationImpl configuration, Map<String, String> parameters,
-            PolarisConfig polarisConfig) {
-
-        PrometheusHandlerConfig prometheusHandlerConfig = configuration.getGlobal().getStatReporter()
-                .getPluginConfig(StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS, PrometheusHandlerConfig.class);
-
-        AdminConfigImpl adminConfig = configuration.getGlobal().getAdmin();
-        // stat reporter
-        // polaris_stat_type 优先级高于 stat_type
-        String statType = parameters.get(Consts.KEY_METRIC_TYPE);
-        if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_METRIC_TYPE))) {
-            statType = parameters.get(Consts.KEY_POLARIS_METRIC_TYPE);
-        }
-        if (StringUtils.isNotBlank(statType)) {
-            switch (statType) {
-                case "push":
-                    // polaris_stat_push_addr 优先级高于 stat_push_addr
-                    String pushAddr = parameters.get(Consts.KEY_METRIC_PUSH_ADDR);
-                    if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_ADDR))) {
-                        pushAddr = parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_ADDR);
-                    }
-                    if (StringUtils.isBlank(pushAddr)) {
-                        pushAddr = polarisConfig.getDiscoverAddresses().stream()
-                                .map(addr -> addr.split(":")[0] + ":9091")
-                                .collect(Collectors.joining(Consts.ADDRESSES_SEPARATOR));
-                    }
-                    List<String> addresses = Arrays.asList(pushAddr.split(Consts.ADDRESSES_SEPARATOR));
-                    configuration.getGlobal().getStatReporter().setEnable(true);
-                    prometheusHandlerConfig.setType("push");
-                    prometheusHandlerConfig.setAddress(addresses);
-
-                    // 默认为 10s
-                    // polaris_stat_push_interval 优先级高于 stat_push_interval
-                    long interval = 10 * 1000L;
-                    if (parameters.containsKey(Consts.KEY_METRIC_PUSH_INTERVAL)) {
-                        try {
-                            interval = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PUSH_INTERVAL));
-                        } catch (NumberFormatException ignore) {
-                        }
-                    }
-                    if (parameters.containsKey(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL)) {
-                        try {
-                            interval = Integer.parseInt(parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL));
-                        } catch (NumberFormatException ignore) {
-                        }
-                    }
-                    prometheusHandlerConfig.setPushInterval(interval);
-                    break;
-                case "pull":
-                    // polaris_stat_pull_port 优先级高于 stat_pull_port
-                    int port = 9091;
-                    if (parameters.containsKey(Consts.KEY_METRIC_PULL_PORT)) {
-                        try {
-                            port = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PULL_PORT));
-                        } catch (NumberFormatException ignore) {
-                        }
-                    }
-                    if (parameters.containsKey(Consts.KEY_POLARIS_METRIC_PULL_PORT)) {
-                        try {
-                            port = Integer.parseInt(parameters.get(Consts.KEY_POLARIS_METRIC_PULL_PORT));
-                        } catch (NumberFormatException ignore) {
-                        }
-                    }
-                    configuration.getGlobal().getStatReporter().setEnable(true);
-                    prometheusHandlerConfig.setType("pull");
-                    adminConfig.setPort(port);
-                    break;
-            }
-        } else {
-            configuration.getGlobal().getStatReporter().setEnable(false);
-        }
-        configuration.getGlobal().getStatReporter().setPluginConfig("prometheus", prometheusHandlerConfig);
-
-        // event reporter
-        PushGatewayEventReporterConfig pushGatewayEventReporterConfig = configuration.getGlobal().getEventReporter()
-                .getPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, PushGatewayEventReporterConfig.class);
-        configuration.getGlobal().getEventReporter().getReporters()
-                .add(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE);
-        if (parameters.containsKey(Consts.KEY_PGW_EVENT_ENABLED)) {
-            boolean enabled = Boolean.parseBoolean(parameters.get(Consts.KEY_PGW_EVENT_ENABLED));
-            pushGatewayEventReporterConfig.setEnable(enabled);
-            if (parameters.containsKey(Consts.KEY_PGW_EVENT_ADDR)) {
-                List<String> addresses = Arrays.asList(
-                        parameters.get(Consts.KEY_PGW_EVENT_ADDR).split(Consts.ADDRESSES_SEPARATOR));
-                pushGatewayEventReporterConfig.setAddress(addresses);
-            }
-            pushGatewayEventReporterConfig.setEventQueueSize(1000);
-            pushGatewayEventReporterConfig.setMaxBatchSize(100);
-            pushGatewayEventReporterConfig.setNamespace("polaris");
-            pushGatewayEventReporterConfig.setService("polaris.pushgateway");
-        }
-
-        configuration.getGlobal().getEventReporter()
-                .setPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, pushGatewayEventReporterConfig);
-        // 设置主动探测
-        // polaris_detect_when 优先级高于 detect_when
-        if (parameters.containsKey(Consts.KEY_DETECT_WHEN) || parameters.containsKey(Consts.KEY_POLARIS_DETECT_WHEN)) {
-            String detectWhen = parameters.get(Consts.KEY_DETECT_WHEN);
-            if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_DETECT_WHEN))) {
-                detectWhen = parameters.get(Consts.KEY_POLARIS_DETECT_WHEN);
-            }
-            try {
-                configuration.getConsumer().getOutlierDetection()
-                        .setWhen(OutlierDetectionConfig.When.valueOf(detectWhen));
-            } catch (IllegalArgumentException e) {
-                LOGGER.warn("Invalid detectWhen value: {}, valid values are: {}",
-                        detectWhen, Arrays.toString(OutlierDetectionConfig.When.values()));
-            }
-        }
-        // 禁用配置推空保护
-        configuration.getConfigFile().getServerConnector().setEmptyProtectionEnable(false);
-        configuration.getConfigFile().getConfigFilterConfig()
-                .setEnable(Boolean.parseBoolean(parameters.getOrDefault(Consts.KEY_CONFIG_ENCRYPT_ENABLED, "true")));
-        configuration.getConfigFile().getConfigFilterConfig().getChain().add("crypto");
-        configuration.getConfigFile().getConfigFilterConfig().getPlugin()
-                .put("crypto", Collections.singletonMap("type", "AES"));
-
-        // 禁用服务推空保护
-        configuration.getConsumer().getServiceRouter().getPlugin()
-                .put("recoverRouter", Collections.singletonMap("excludeCircuitBreakInstances", "false"));
-        configuration.getConsumer().getServiceRouter().getPlugin()
-                .put("recoverRouter", Collections.singletonMap("allRecoverEnable", "false"));
-
-        configuration.getGlobal().getAPI().setBindIP(NetUtils.getLocalHost());
-
-    }
-
-    private void initServerConnectorConfig(ConfigurationImpl configuration) {
-        if (StringUtils.isNotBlank(polarisConfig.getToken())) {
-            // 设置服务治理 ServerConnector 的配置
-            ServerConnectorConfigImpl connector = configuration.getGlobal().getServerConnector();
-            if (Objects.nonNull(connector)) {
-                connector.setToken(polarisConfig.getToken());
-            }
-            List<ServerConnectorConfigImpl> connectors = configuration.getGlobal().getServerConnectors();
-            if (CollectionUtils.isNotEmpty(connectors)) {
-                connectors.forEach(connectorConfig -> connectorConfig.setToken(polarisConfig.getToken()));
-            }
-
-            // 设置配置中心 ServerConnector 的配置
-            ServerConnectorConfigImpl configConnector = configuration.getConfigFile().getServerConnector();
-            if (Objects.nonNull(connector)) {
-                configConnector.setToken(polarisConfig.getToken());
-            }
-        }
-        // 设置服务治理连接地址
-        configuration.getGlobal().getServerConnector()
-                .setAddresses(polarisConfig.getDiscoverAddresses());
-        configuration.getGlobal().getServerConnector().setLbPolicy(polarisConfig.getLbPolicy());
-        configuration.getGlobal().getServerConnector().setServerSwitchInterval(polarisConfig.getServerSwitchInterval());
-        // 设置配置中心连接地址
-        configuration.getConfigFile().getServerConnector()
-                .setAddresses(polarisConfig.getConfigAddresses());
-    }
 
     /**
      * 服务注册

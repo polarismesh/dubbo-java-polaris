@@ -1,0 +1,1 @@
+circuitBreakerBootConfigHandler = com.tencent.polaris.dubbo.circuitbreaker.CircuitBreakerBootConfigHandler

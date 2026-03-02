@@ -75,6 +75,14 @@ public interface Consts {
 
     String KEY_SERVER_SWITCH_INTERVAL = "polaris_server_switch_interval";
 
+    String KEY_CONFIG_PORT = "config_port";
+
+    String KEY_DISCOVER_PORT = "discover_port";
+
+    String KEY_POLARIS_CONFIG_PORT = "polaris_config_port";
+
+    String KEY_POLARIS_DISCOVER_PORT = "polaris_discover_port";
+
     String INSTANCE_KEY_HEALTHY = "_internal_healthy";
 
     String INSTANCE_KEY_ISOLATED = "_internal_isolated";
@@ -88,10 +96,6 @@ public interface Consts {
     String INSTANCE_WEIGHT = "weight";
 
     String DUBBO_PROTOCOL = "dubbo";
-
-    String CONFIG_PORT = "config_port";
-
-    String DISCOVER_PORT = "discover_port";
 
     String DEFAULT_VERSION = "1.0.0";
 

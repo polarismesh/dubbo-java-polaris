@@ -1,0 +1,1 @@
+configCenterBootConfigHandler = com.tencent.polaris.dubbo.configuration.ConfigCenterBootConfigHandler
