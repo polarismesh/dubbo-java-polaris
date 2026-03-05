@@ -276,7 +276,7 @@
                     <excludeArtifacts>
                         <excludeArtifact>dubbo-examples</excludeArtifact>
                         <excludeArtifact>dubbo-api-example</excludeArtifact>
-                        <excludeArtifact>dubbo-discovery-example</excludeArtifact>
+                        <excludeArtifact>dubbo-quickstart-example</excludeArtifact>
                         <excludeArtifact>dubbo-quick-consumer</excludeArtifact>
                         <excludeArtifact>dubbo-quick-provider</excludeArtifact>
                         <excludeArtifact>dubbo-governance-example</excludeArtifact>

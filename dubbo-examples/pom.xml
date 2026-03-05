@@ -15,11 +15,12 @@
     <packaging>pom</packaging>
     <modules>
         <module>dubbo-api-example</module>
-        <module>dubbo-discovery-example</module>
+        <module>dubbo-quickstart-example</module>
     </modules>
 
     <properties>
         <spring.version>4.3.30.RELEASE</spring.version>
+        <spring-boot-maven-plugin.version>2.7.18</spring-boot-maven-plugin.version>
         <log4j2.version>2.20.0</log4j2.version>
         <junit.version>4.13.1</junit.version>
         <skip.maven.deploy>true</skip.maven.deploy>
@@ -57,4 +58,16 @@
             <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot-maven-plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>
