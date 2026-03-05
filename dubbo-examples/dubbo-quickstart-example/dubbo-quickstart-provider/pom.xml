@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>dubbo-quickstart-example</artifactId>
+        <groupId>com.tencent.polaris</groupId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>dubbo-quickstart-provider</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-api-example</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <!--    引入 polaris 注册能力    -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-registry-polaris</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>dubbo-configcenter-polaris</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <!--        &lt;!&ndash;    引入 polaris 元数据中心能力    &ndash;&gt;-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.tencent.polaris</groupId>-->
+        <!--            <artifactId>dubbo-metadatareport-polaris</artifactId>-->
+        <!--            <version>${revision}</version>-->
+        <!--        </dependency>-->
+    </dependencies>
+
+</project>
