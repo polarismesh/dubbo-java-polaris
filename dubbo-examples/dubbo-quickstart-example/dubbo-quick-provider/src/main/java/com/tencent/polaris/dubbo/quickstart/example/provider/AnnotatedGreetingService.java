@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.dubbo.discovery.example.provider;
+package com.tencent.polaris.dubbo.quickstart.example.provider;
 
 import static org.apache.dubbo.common.constants.CommonConstants.DUBBO_LABELS;
 

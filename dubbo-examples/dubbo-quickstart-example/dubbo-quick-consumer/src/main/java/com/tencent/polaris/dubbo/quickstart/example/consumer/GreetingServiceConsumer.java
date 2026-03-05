@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.dubbo.discovery.example.consumer;
+package com.tencent.polaris.dubbo.quickstart.example.consumer;
 
 import com.tencent.polaris.dubbo.example.api.EchoService;
 import com.tencent.polaris.dubbo.example.api.GreetingService;

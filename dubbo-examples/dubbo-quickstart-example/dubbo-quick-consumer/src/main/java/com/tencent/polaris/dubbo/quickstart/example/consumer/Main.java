@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.dubbo.discovery.example.consumer;
+package com.tencent.polaris.dubbo.quickstart.example.consumer;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -101,9 +101,9 @@ public class Main {
 
 
     @Configuration
-    @EnableDubbo(scanBasePackages = "com.tencent.polaris.dubbo.discovery.example.consumer")
+    @EnableDubbo(scanBasePackages = "com.tencent.polaris.dubbo.quickstart.example.consumer")
     @PropertySource("classpath:/spring/dubbo-consumer.properties")
-    @ComponentScan(value = {"com.tencent.polaris.dubbo.discovery.example.consumer"})
+    @ComponentScan(value = {"com.tencent.polaris.dubbo.quickstart.example.consumer"})
     static class ConsumerConfiguration {
 
     }

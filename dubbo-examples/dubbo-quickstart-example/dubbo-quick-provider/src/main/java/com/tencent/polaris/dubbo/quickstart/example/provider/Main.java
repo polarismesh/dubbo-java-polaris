@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.dubbo.discovery.example.provider;
+package com.tencent.polaris.dubbo.quickstart.example.provider;
 
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -35,9 +35,9 @@ public class Main {
     }
 
     @Configuration
-    @EnableDubbo(scanBasePackages = "com.tencent.polaris.dubbo.discovery.example.provider")
+    @EnableDubbo(scanBasePackages = "com.tencent.polaris.dubbo.quickstart.example.provider")
     @PropertySource("classpath:/spring/dubbo-provider.properties")
-    @ComponentScan(value = {"com.tencent.polaris.dubbo.discovery.example.provider"})
+    @ComponentScan(value = {"com.tencent.polaris.dubbo.quickstart.example.provider"})
     static class ConsumerConfiguration {
 
     }
