@@ -49,10 +49,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <mainClass>com.tencent.polaris.dubbo.discovery.example.consumer.Main</mainClass>
-                    <layout>ZIP</layout>
-                </configuration>
             </plugin>
         </plugins>
     </build>
