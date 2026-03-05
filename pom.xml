@@ -277,8 +277,8 @@
                         <excludeArtifact>dubbo-examples</excludeArtifact>
                         <excludeArtifact>dubbo-api-example</excludeArtifact>
                         <excludeArtifact>dubbo-quickstart-example</excludeArtifact>
-                        <excludeArtifact>dubbo-quick-consumer</excludeArtifact>
-                        <excludeArtifact>dubbo-quick-provider</excludeArtifact>
+                        <excludeArtifact>dubbo-quickstart-consumer</excludeArtifact>
+                        <excludeArtifact>dubbo-quickstart-provider</excludeArtifact>
                         <excludeArtifact>dubbo-governance-example</excludeArtifact>
                         <excludeArtifact>dubbo-governance-consumer</excludeArtifact>
                         <excludeArtifact>dubbo-governance-provider</excludeArtifact>

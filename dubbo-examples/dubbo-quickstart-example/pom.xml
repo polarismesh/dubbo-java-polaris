@@ -14,8 +14,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>dubbo-quick-provider</module>
-        <module>dubbo-quick-consumer</module>
+        <module>dubbo-quickstart-provider</module>
+        <module>dubbo-quickstart-consumer</module>
     </modules>
 
 </project>
