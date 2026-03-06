@@ -26,6 +26,7 @@ import com.tencent.polaris.common.parser.QueryParser;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.router.RuleHandler;
+import com.tencent.polaris.common.router.InstanceInvoker;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.rpc.Invocation;

@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.dubbo.router;
+package com.tencent.polaris.common.router;
 
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.common.utils.Consts;
@@ -202,10 +202,6 @@ public class InstanceInvoker<T> implements Instance, Invoker<T> {
     public int compareTo(Instance o) {
         return defaultInstance.compareTo(o);
     }
-
-    private static final String SEP_CIRCUIT_BREAKER = ",";
-
-    private static final String SEP_CIRCUIT_BREAKER_VALUE = ":";
 
     @Override
     public boolean equals(Object o) {

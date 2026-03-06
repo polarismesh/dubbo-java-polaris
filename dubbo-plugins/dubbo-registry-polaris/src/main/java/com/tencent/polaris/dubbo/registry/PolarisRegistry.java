@@ -25,6 +25,7 @@ import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.registry.*;
 import com.tencent.polaris.common.utils.Consts;
+import com.tencent.polaris.common.utils.ConvertUtils;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.URLBuilder;
 import org.apache.dubbo.common.constants.CommonConstants;

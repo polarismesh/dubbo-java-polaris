@@ -20,6 +20,7 @@
         <module>dubbo-ratelimit-polaris</module>
         <module>dubbo-circuitbreaker-polaris</module>
         <module>dubbo-configcenter-polaris</module>
+        <module>dubbo-loadbalance-polaris</module>
     </modules>
 
 </project>
