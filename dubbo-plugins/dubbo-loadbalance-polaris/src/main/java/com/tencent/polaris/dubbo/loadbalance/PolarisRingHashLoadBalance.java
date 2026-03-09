@@ -34,6 +34,11 @@ public class PolarisRingHashLoadBalance extends AbstractPolarisLoadBalance {
 
     @Override
     protected String buildHashKey(URL url, Invocation invocation) {
+        // The hash key construction method is the same as dubbo consistenthash-loadbalance
+        // see https://cn.dubbo.apache.org/zh-cn/docsv2.7/user/examples/loadbalance/#consistenthash-loadbalance
+        // By default, only the first parameter is hashed.
+        // To modify, configure <dubbo:parameter key="hash.arguments" value="0,1" />
+        // for example, foo(value1, value2) built hashKey is "foovalue1" by default.
         String methodName = invocation.getMethodName();
         String hashArguments = url.getMethodParameter(methodName, HASH_ARGUMENTS, DEFAULT_HASH_ARGUMENTS);
         Object[] arguments = invocation.getArguments();
