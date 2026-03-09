@@ -246,11 +246,12 @@ public class PolarisOperator {
         return processRoutersResponse.getServiceInstances().getInstances();
     }
 
-    public Instance loadBalance(String service, String hashKey, List<Instance> instances) {
+    public Instance loadBalance(String service, String lbPolicy, String hashKey, List<Instance> instances) {
         ServiceKey serviceKey = new ServiceKey(polarisConfig.getNamespace(), service);
         DefaultServiceInstances defaultServiceInstances = new DefaultServiceInstances(serviceKey, instances);
         ProcessLoadBalanceRequest processLoadBalanceRequest = new ProcessLoadBalanceRequest();
         processLoadBalanceRequest.setDstInstances(defaultServiceInstances);
+        processLoadBalanceRequest.setLbPolicy(lbPolicy);
         Criteria criteria = new Criteria();
         criteria.setHashKey(hashKey);
         processLoadBalanceRequest.setCriteria(criteria);

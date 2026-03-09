@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.ErrorCode;
@@ -474,7 +475,7 @@ public class PolarisOperatorTest {
                 .thenReturn(mockResponse);
 
         // Act
-        Instance result = polarisOperator.loadBalance(TEST_SERVICE, hashKey, instances);
+        Instance result = polarisOperator.loadBalance(TEST_SERVICE, LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN , hashKey, instances);
 
         // Assert
         Assert.assertNotNull(result);
@@ -498,7 +499,7 @@ public class PolarisOperatorTest {
                 .thenReturn(mockResponse);
 
         // Act
-        Instance result = polarisOperator.loadBalance(TEST_SERVICE, null, instances);
+        Instance result = polarisOperator.loadBalance(TEST_SERVICE,LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN, null, instances);
 
         // Assert
         Assert.assertNotNull(result);

@@ -20,21 +20,9 @@
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>dubbo-configcenter-polaris</artifactId>
+            <artifactId>dubbo-polaris-all</artifactId>
             <version>${revision}</version>
         </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>dubbo-registry-polaris</artifactId>
-            <version>${revision}</version>
-        </dependency>
-
-        <!--        &lt;!&ndash;    引入 polaris 元数据中心能力    &ndash;&gt;-->
-        <!--        <dependency>-->
-        <!--            <groupId>com.tencent.polaris</groupId>-->
-        <!--            <artifactId>dubbo-metadatareport-polaris</artifactId>-->
-        <!--            <version>${revision}</version>-->
-        <!--        </dependency>-->
     </dependencies>
 
 </project>
