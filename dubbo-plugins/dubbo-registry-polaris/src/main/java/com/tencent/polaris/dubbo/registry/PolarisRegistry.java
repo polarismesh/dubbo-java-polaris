@@ -20,7 +20,6 @@ package com.tencent.polaris.dubbo.registry;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
-import com.tencent.polaris.api.plugin.lossless.InstanceProperties;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.pojo.BaseInstance;
 import com.tencent.polaris.api.pojo.DefaultBaseInstance;
