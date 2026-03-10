@@ -18,6 +18,7 @@
 package com.tencent.polaris.common.registry;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.core.LosslessAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
@@ -103,6 +104,8 @@ public class PolarisOperator {
 
     private ConfigFilePublishService configFilePublishAPI;
 
+    private LosslessAPI losslessAPI;
+
     PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters) {
         polarisConfig = new PolarisConfig(operatorType, host, port, parameters);
         init(parameters);
@@ -130,6 +133,7 @@ public class PolarisOperator {
         //
         configFileAPI = ConfigFileServiceFactory.createConfigFileService(sdkContext);
         configFilePublishAPI = ConfigFileServicePublishFactory.createConfigFilePublishService(sdkContext);
+        losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
     }
 
 
@@ -314,6 +318,9 @@ public class PolarisOperator {
     }
 
     public void destroy() {
+        if (losslessAPI != null) {
+            losslessAPI.close();
+        }
         sdkContext.close();
     }
 
@@ -347,5 +354,9 @@ public class PolarisOperator {
 
     public CircuitBreakAPI getCircuitBreakAPI() {
         return circuitBreakAPI;
+    }
+
+    public LosslessAPI getLosslessAPI() {
+        return losslessAPI;
     }
 }

@@ -1,1 +1,2 @@
 registryBootConfigHandler = com.tencent.polaris.dubbo.registry.RegistryBootConfigHandler
+losslessBootConfigHandler = com.tencent.polaris.dubbo.registry.LosslessBootConfigHandler

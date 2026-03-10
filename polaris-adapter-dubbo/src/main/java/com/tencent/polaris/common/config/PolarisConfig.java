@@ -42,6 +42,8 @@ public class PolarisConfig {
 
     private final int ttl;
 
+    private final boolean losslessEnabled;
+
     private final PolarisOperators.OperatorType operatorType;
 
 
@@ -84,6 +86,12 @@ public class PolarisConfig {
             }
         }
         this.ttl = healthTTL;
+        String losslessEnabledStr = parameters.get(Consts.KEY_POLARIS_LOSSLESS_ENABLED);
+        if (null != losslessEnabledStr && !losslessEnabledStr.isEmpty()) {
+            this.losslessEnabled = Boolean.parseBoolean(losslessEnabledStr);
+        } else {
+            this.losslessEnabled = true;
+        }
         LOG.info("[Common] construct polarisConfig {}", this);
     }
 
@@ -151,12 +159,17 @@ public class PolarisConfig {
         return ttl;
     }
 
+    public boolean isLosslessEnabled() {
+        return losslessEnabled;
+    }
+
     @Override
     public String toString() {
         return "PolarisConfig{" +
                 "namespace='" + namespace + '\'' +
                 ", token='" + token + '\'' +
                 ", ttl=" + ttl +
+                ", losslessEnabled=" + losslessEnabled +
                 ", operatorType=" + operatorType +
                 ", discoverAddresses=" + discoverAddresses +
                 ", configAddresses=" + configAddresses +
