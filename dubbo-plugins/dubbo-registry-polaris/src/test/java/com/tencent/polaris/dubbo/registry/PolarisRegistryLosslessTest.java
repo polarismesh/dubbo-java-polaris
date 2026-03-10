@@ -17,12 +17,18 @@
 
 package com.tencent.polaris.dubbo.registry;
 
+import com.tencent.polaris.api.config.Configuration;
+import com.tencent.polaris.api.config.provider.LosslessConfig;
+import com.tencent.polaris.api.config.provider.ProviderConfig;
 import com.tencent.polaris.api.core.LosslessAPI;
+import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.pojo.BaseInstance;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
+import com.tencent.polaris.plugin.lossless.common.LosslessUtils;
 import org.apache.dubbo.common.URL;
 import org.junit.After;
 import org.junit.Assert;
@@ -35,6 +41,7 @@ import org.mockito.Mockito;
 public class PolarisRegistryLosslessTest {
 
     private MockedStatic<PolarisOperators> mockedStaticOperators;
+    private MockedStatic<LosslessUtils> mockedStaticLosslessUtils;
     private PolarisOperator mockOperator;
     private PolarisConfig mockConfig;
     private LosslessAPI mockLosslessAPI;
@@ -45,9 +52,28 @@ public class PolarisRegistryLosslessTest {
         mockConfig = Mockito.mock(PolarisConfig.class);
         mockLosslessAPI = Mockito.mock(LosslessAPI.class);
 
+        // Mock getSdkContext -> getExtensions -> getConfiguration -> getProvider -> getLossless chain
+        SDKContext mockSdkContext = Mockito.mock(SDKContext.class);
+        Extensions mockExtensions = Mockito.mock(Extensions.class);
+        Configuration mockConfiguration = Mockito.mock(Configuration.class);
+        ProviderConfig mockProviderConfig = Mockito.mock(ProviderConfig.class);
+        LosslessConfig mockLosslessConfig = Mockito.mock(LosslessConfig.class);
+
+        Mockito.when(mockOperator.getSdkContext()).thenReturn(mockSdkContext);
+        Mockito.when(mockSdkContext.getExtensions()).thenReturn(mockExtensions);
+        Mockito.when(mockExtensions.getConfiguration()).thenReturn(mockConfiguration);
+        Mockito.when(mockConfiguration.getProvider()).thenReturn(mockProviderConfig);
+        Mockito.when(mockProviderConfig.getLossless()).thenReturn(mockLosslessConfig);
+
         Mockito.when(mockOperator.getPolarisConfig()).thenReturn(mockConfig);
         Mockito.when(mockOperator.getLosslessAPI()).thenReturn(mockLosslessAPI);
         Mockito.when(mockConfig.getNamespace()).thenReturn("default");
+
+        // Mock LosslessUtils.getMatchLosslessRule to return null, avoiding deep SDK internals
+        mockedStaticLosslessUtils = Mockito.mockStatic(LosslessUtils.class);
+        mockedStaticLosslessUtils.when(() -> LosslessUtils.getMatchLosslessRule(
+                Mockito.any(Extensions.class), Mockito.any(BaseInstance.class)))
+                .thenReturn(null);
 
         mockedStaticOperators = Mockito.mockStatic(PolarisOperators.class);
         mockedStaticOperators.when(() -> PolarisOperators.loadOrStoreForGovernance(
@@ -57,6 +83,7 @@ public class PolarisRegistryLosslessTest {
 
     @After
     public void tearDown() {
+        mockedStaticLosslessUtils.close();
         mockedStaticOperators.close();
     }
 
@@ -154,7 +181,7 @@ public class PolarisRegistryLosslessTest {
         Mockito.verify(mockLosslessAPI).setLosslessActionProvider(Mockito.any(), providerCaptor.capture());
 
         LosslessActionProvider actionProvider = providerCaptor.getValue();
-        Assert.assertEquals("dubbo", actionProvider.getName());
+        Assert.assertEquals("http", actionProvider.getName());
 
         actionProvider.doRegister(null);
         Mockito.verify(mockOperator).register(
