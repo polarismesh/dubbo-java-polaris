@@ -30,6 +30,7 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.registry.*;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.common.utils.ConvertUtils;
+import com.tencent.polaris.plugin.lossless.common.HttpLosslessActionProvider;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.URLBuilder;
 import org.apache.dubbo.common.constants.CommonConstants;
@@ -104,32 +105,7 @@ public class PolarisRegistry extends FailbackRegistry {
                 url.getServiceInterface(), url.getHost(), port, url.getProtocol(), version, weight, metadata);
         Runnable deregisterAction = () -> polarisOperator.deregister(
                 url.getServiceInterface(), url.getHost(), port);
-        LosslessActionProvider actionProvider = new LosslessActionProvider() {
-            @Override
-            public String getName() {
-                return "dubbo";
-            }
-
-            @Override
-            public void doRegister(InstanceProperties instanceProperties) {
-                registerAction.run();
-            }
-
-            @Override
-            public void doDeregister() {
-                deregisterAction.run();
-            }
-
-            @Override
-            public boolean isEnableHealthCheck() {
-                return false;
-            }
-
-            @Override
-            public boolean doHealthCheck() {
-                return false;
-            }
-        };
+        LosslessActionProvider actionProvider = new HttpLosslessActionProvider(registerAction,deregisterAction,port,instance,polarisOperator.getSdkContext().getExtensions());
 
         losslessInstanceMap.put(url, instance);
         polarisOperator.getLosslessAPI().setLosslessActionProvider(instance, actionProvider);
