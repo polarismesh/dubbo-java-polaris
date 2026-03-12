@@ -47,7 +47,7 @@ public class RouterBootConfigHandler implements BootConfigHandler {
                 configuration.getConsumer().getServiceRouter()
                         .setPluginConfig(ServiceRouterConfig.DEFAULT_ROUTER_NEARBY, nearbyRouterConfig);
             } catch (Exception e) {
-                LOG.warn("failed to parse nearby match level: " + matchLevel + ", use default match level.");
+                LOG.warn("failed to parse nearby match level: {}, use default match level.", matchLevel);
             }
         }
     }

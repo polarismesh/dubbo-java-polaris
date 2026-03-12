@@ -23,10 +23,6 @@ import java.util.ServiceLoader;
 
 public interface QueryParser {
 
-    Optional<String> parse(String query, Object[] parameters);
-
-    String name();
-
     static QueryParser load() {
         ServiceLoader<QueryParser> loader = ServiceLoader.load(QueryParser.class);
         if (loader.iterator().hasNext()) {
@@ -36,10 +32,14 @@ public interface QueryParser {
             }
         }
         String parser = System.getProperty("dubbo.polaris.query_parser");
-        if (parser != null && parser.equals("JsonPath")) {
+        if ("JsonPath".equals(parser)) {
             return new JsonPathQueryParser();
         }
         return new JavaObjectQueryParser();
     }
+
+    Optional<String> parse(String query, Object[] parameters);
+
+    String name();
 
 }
