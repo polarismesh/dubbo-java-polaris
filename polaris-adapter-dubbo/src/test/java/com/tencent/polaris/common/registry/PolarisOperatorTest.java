@@ -121,6 +121,10 @@ public class PolarisOperatorTest {
         mockSdkContext = Mockito.mock(SDKContext.class);
         mockPolarisConfig = Mockito.mock(PolarisConfig.class);
 
+        // 设置 SDKContext 默认行为：mock ValueContext 用于 register() 中获取位置信息
+        ValueContext mockValueContext = Mockito.mock(ValueContext.class);
+        Mockito.when(mockSdkContext.getValueContext()).thenReturn(mockValueContext);
+
         // 设置 PolarisConfig 默认行为
         Mockito.when(mockPolarisConfig.getNamespace()).thenReturn(TEST_NAMESPACE);
         Mockito.when(mockPolarisConfig.getTtl()).thenReturn(5);
