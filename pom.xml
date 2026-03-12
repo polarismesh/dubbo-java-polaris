@@ -99,6 +99,18 @@
                 <artifactId>json-path</artifactId>
                 <version>${json_path_version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-test-mock-discovery</artifactId>
+                <version>${polaris.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-test-common</artifactId>
+                <version>${polaris.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

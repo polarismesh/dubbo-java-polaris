@@ -55,6 +55,7 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.common.config.BootConfigHandler;
 import com.tencent.polaris.common.config.PolarisConfig;
+import com.tencent.polaris.common.metadata.MetadataContextHolder;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
@@ -73,6 +74,8 @@ import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.NearbyRoutingConfig.LocationLevel;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -155,6 +158,9 @@ public class PolarisOperator {
         instanceRegisterRequest.setMetadata(metadata);
         instanceRegisterRequest.setProtocol(protocol);
         instanceRegisterRequest.setToken(token);
+        instanceRegisterRequest.setRegion(sdkContext.getValueContext().getValue(LocationLevel.REGION.name()));
+        instanceRegisterRequest.setZone(sdkContext.getValueContext().getValue(LocationLevel.ZONE.name()));
+        instanceRegisterRequest.setCampus(sdkContext.getValueContext().getValue(LocationLevel.CAMPUS.name()));
         InstanceRegisterResponse response = providerAPI.registerInstance(instanceRegisterRequest);
         LOGGER.info("register result is {} for service {}", response, service);
     }
@@ -242,6 +248,8 @@ public class PolarisOperator {
         request.setDstInstances(defaultServiceInstances);
         request.setMethod(method);
         request.setSourceService(serviceInfo);
+        request.setMetadataContext(MetadataContextHolder.get());
+        request.setMetadataContainerGroup(MetadataContextHolder.get().getMetadataContainerGroup(false));
         ProcessRoutersResponse processRoutersResponse = routerAPI.processRouters(request);
         return processRoutersResponse.getServiceInstances().getInstances();
     }

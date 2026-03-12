@@ -20,12 +20,15 @@ package com.tencent.polaris.dubbo.registry;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
+import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.registry.*;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.common.utils.ConvertUtils;
+import com.tencent.polaris.common.metadata.StaticMetadataManager;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.URLBuilder;
 import org.apache.dubbo.common.constants.CommonConstants;
@@ -59,6 +62,22 @@ public class PolarisRegistry extends FailbackRegistry {
     public PolarisRegistry(URL url) {
         super(url);
         polarisOperator = PolarisOperators.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
+        StaticMetadataManager.getOrCreate(url);
+        // set instance's location info
+        String region = StaticMetadataManager.getInstance().getRegion();
+        String zone = StaticMetadataManager.getInstance().getZone();
+        String campus = StaticMetadataManager.getInstance().getCampus();
+
+        ValueContext valueContext = polarisOperator.getSdkContext().getValueContext();
+        if (StringUtils.isNotBlank(region)) {
+            valueContext.setValue(RoutingProto.NearbyRoutingConfig.LocationLevel.REGION.name(), region);
+        }
+        if (StringUtils.isNotBlank(zone)) {
+            valueContext.setValue(RoutingProto.NearbyRoutingConfig.LocationLevel.ZONE.name(), zone);
+        }
+        if (StringUtils.isNotBlank(campus)) {
+            valueContext.setValue(RoutingProto.NearbyRoutingConfig.LocationLevel.CAMPUS.name(), campus);
+        }
     }
 
     @Override
@@ -69,6 +88,10 @@ public class PolarisRegistry extends FailbackRegistry {
         LOGGER.info("[POLARIS] register service to polaris: {}", url);
         Map<String, String> metadata = new HashMap<>(url.getParameters());
         metadata.put(CommonConstants.PATH_KEY, url.getPath());
+        // Inject static metadata from StaticMetadataManager
+        StaticMetadataManager staticMetadataManager = StaticMetadataManager.getInstance();
+        metadata.putAll(staticMetadataManager.getMergedStaticMetadata());
+        metadata.putAll(staticMetadataManager.getLocationMetadata());
         int port = url.getPort();
         if (port > 0) {
             int weight = url.getParameter(Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT);

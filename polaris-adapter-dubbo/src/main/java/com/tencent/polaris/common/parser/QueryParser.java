@@ -36,7 +36,7 @@ public interface QueryParser {
             }
         }
         String parser = System.getProperty("dubbo.polaris.query_parser");
-        if (parser.equals("JsonPath")) {
+        if (parser != null && parser.equals("JsonPath")) {
             return new JsonPathQueryParser();
         }
         return new JavaObjectQueryParser();

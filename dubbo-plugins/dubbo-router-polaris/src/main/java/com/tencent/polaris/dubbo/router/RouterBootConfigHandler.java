@@ -17,15 +17,38 @@
 
 package com.tencent.polaris.dubbo.router;
 
+import static com.tencent.polaris.common.utils.Consts.KEY_NEARBY_MATCH_LEVEL;
+
+import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.config.BootConfigHandler;
 import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.plugins.router.nearby.NearbyRouterConfig;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RouterBootConfigHandler implements BootConfigHandler {
 
+    private static final Logger LOG = LoggerFactory.getLogger(RouterBootConfigHandler.class);
+
     @Override
     public void handle(PolarisConfig polarisConfig, Map<String, String> parameters, ConfigurationImpl configuration) {
-        
+        if (parameters.containsKey(KEY_NEARBY_MATCH_LEVEL)) {
+            String matchLevel = parameters.get(KEY_NEARBY_MATCH_LEVEL);
+            try {
+                RoutingProto.NearbyRoutingConfig.LocationLevel locationLevel =
+                        RoutingProto.NearbyRoutingConfig.LocationLevel.valueOf(StringUtils.upperCase(matchLevel));
+                NearbyRouterConfig nearbyRouterConfig = configuration.getConsumer().getServiceRouter().getPluginConfig(
+                        ServiceRouterConfig.DEFAULT_ROUTER_NEARBY, NearbyRouterConfig.class);
+                nearbyRouterConfig.setMatchLevel(locationLevel);
+                configuration.getConsumer().getServiceRouter()
+                        .setPluginConfig(ServiceRouterConfig.DEFAULT_ROUTER_NEARBY, nearbyRouterConfig);
+            } catch (Exception e) {
+                LOG.warn("failed to parse nearby match level: " + matchLevel + ", use default match level.");
+            }
+        }
     }
 }
