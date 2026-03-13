@@ -103,7 +103,6 @@ public class PolarisRegistry extends FailbackRegistry {
         Runnable deregisterAction = () -> {
             polarisOperator.deregister(
                     url.getServiceInterface(), url.getHost(), port);
-            System.out.println("deregister action run");
         };
         LosslessActionProvider actionProvider = new HttpLosslessActionProvider(registerAction, deregisterAction, port,
                 instance, polarisOperator.getSdkContext().getExtensions());
