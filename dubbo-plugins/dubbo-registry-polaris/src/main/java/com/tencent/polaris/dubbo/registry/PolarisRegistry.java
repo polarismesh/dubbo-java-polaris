@@ -119,6 +119,10 @@ public class PolarisRegistry extends FailbackRegistry {
         if (!shouldRegister(url)) {
             return;
         }
+        if (!registeredInstances.contains(url)) {
+            LOGGER.info("[POLARIS] url {} has been unregistered.", url);
+            return;
+        }
         LOGGER.info("[POLARIS] unregister service from polaris: {}", url);
         int port = url.getPort();
         if (port > 0) {

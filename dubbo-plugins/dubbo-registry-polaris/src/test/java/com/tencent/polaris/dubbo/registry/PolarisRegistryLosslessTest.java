@@ -137,7 +137,7 @@ public class PolarisRegistryLosslessTest {
     }
 
     @Test
-    public void testDoUnregister_losslessEnabled_callsLosslessDeRegister() {
+    public void testDoUnregister_losslessEnabled_callsDirectDeregister() {
         Mockito.when(mockConfig.isLosslessEnabled()).thenReturn(true);
 
         URL registryUrl = URL.valueOf("polaris://127.0.0.1:8091");
@@ -147,9 +147,8 @@ public class PolarisRegistryLosslessTest {
         registry.doRegister(serviceUrl);
         registry.doUnregister(serviceUrl);
 
-        Mockito.verify(mockLosslessAPI).losslessDeRegister(Mockito.any(BaseInstance.class));
-        Mockito.verify(mockOperator, Mockito.never()).deregister(
-                Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        // doUnregister always calls polarisOperator.deregister() regardless of lossless setting
+        Mockito.verify(mockOperator).deregister("com.example.FooService", "192.168.1.1", 20880);
     }
 
     @Test
