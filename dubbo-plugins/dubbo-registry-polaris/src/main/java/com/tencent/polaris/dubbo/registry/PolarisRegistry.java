@@ -117,7 +117,6 @@ public class PolarisRegistry extends FailbackRegistry {
     @Override
     public void doUnregister(URL url) {
         if (!shouldRegister(url)) {
-            LOGGER.info("[POLARIS] should not unregister consumer: {}", url);
             return;
         }
         LOGGER.info("[POLARIS] unregister service from polaris: {}", url);
