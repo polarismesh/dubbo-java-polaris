@@ -59,8 +59,6 @@ public class PolarisRegistry extends FailbackRegistry {
 
     private final Map<URL, ServiceListener> serviceListeners = new ConcurrentHashMap<>();
 
-    private final Map<URL, BaseInstance> losslessInstanceMap = new ConcurrentHashMap<>();
-
     private final PolarisOperator polarisOperator;
 
     public PolarisRegistry(URL url) {
@@ -102,11 +100,13 @@ public class PolarisRegistry extends FailbackRegistry {
 
         Runnable registerAction = () -> polarisOperator.register(
                 url.getServiceInterface(), url.getHost(), port, url.getProtocol(), version, weight, metadata);
-        Runnable deregisterAction = () -> polarisOperator.deregister(
-                url.getServiceInterface(), url.getHost(), port);
-        LosslessActionProvider actionProvider = new HttpLosslessActionProvider(registerAction,deregisterAction,port,instance,polarisOperator.getSdkContext().getExtensions());
-
-        losslessInstanceMap.put(url, instance);
+        Runnable deregisterAction = () -> {
+            polarisOperator.deregister(
+                    url.getServiceInterface(), url.getHost(), port);
+            System.out.println("deregister action run");
+        };
+        LosslessActionProvider actionProvider = new HttpLosslessActionProvider(registerAction, deregisterAction, port,
+                instance, polarisOperator.getSdkContext().getExtensions());
         polarisOperator.getLosslessAPI().setLosslessActionProvider(instance, actionProvider);
         polarisOperator.getLosslessAPI().losslessRegister(instance);
     }
@@ -118,17 +118,13 @@ public class PolarisRegistry extends FailbackRegistry {
     @Override
     public void doUnregister(URL url) {
         if (!shouldRegister(url)) {
+            LOGGER.info("[POLARIS] should not unregister consumer: {}", url);
             return;
         }
         LOGGER.info("[POLARIS] unregister service from polaris: {}", url);
         int port = url.getPort();
         if (port > 0) {
-            BaseInstance instance = losslessInstanceMap.remove(url);
-            if (instance != null && polarisOperator.getPolarisConfig().isLosslessEnabled()) {
-                polarisOperator.getLosslessAPI().losslessDeRegister(instance);
-            } else {
-                polarisOperator.deregister(url.getServiceInterface(), url.getHost(), url.getPort());
-            }
+            polarisOperator.deregister(url.getServiceInterface(), url.getHost(), url.getPort());
             registeredInstances.remove(url);
         }
     }
