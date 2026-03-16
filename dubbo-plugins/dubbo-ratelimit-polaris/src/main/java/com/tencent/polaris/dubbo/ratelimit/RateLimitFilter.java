@@ -96,10 +96,15 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
         }
         if (StringUtils.isNotEmpty(serviceInfo.getMethodName())) {
             arguments.add(Argument.buildMethod(serviceInfo.getMethodName()));
+            arguments.add(Argument.buildCustom("dubbo_method_param", serviceInfo.getParametersTypeString()));
         }
         QuotaResponse quotaResponse = null;
         try {
-            quotaResponse = operator.getQuota(serviceInfo.getService(), serviceInfo.getDubboInterface(), arguments);
+            String methodName = serviceInfo.getMethodName();
+            if (!StringUtils.isBlank(serviceInfo.getInterfaceName())) {
+                methodName = serviceInfo.getInterfaceName();
+            }
+            quotaResponse = operator.getQuota(serviceInfo.getService(), methodName, arguments);
         } catch (PolarisException e) {
             Map<String, Object> externalParam = new HashMap<>();
             externalParam.put("serviceInfo", serviceInfo);
@@ -112,7 +117,7 @@ public class RateLimitFilter extends PolarisOperatorDelegate implements Filter, 
         if (null != quotaResponse && quotaResponse.getCode() == QuotaResultCode.QuotaResultLimited) {
             // 请求被限流，则抛出异常
             throw new RpcException(RpcException.LIMIT_EXCEEDED_EXCEPTION, new PolarisBlockException(
-                    String.format("url=%s, info=%s", invoker.getUrl(), quotaResponse.getInfo())));
+                    String.format("rate limited: custom response=%s, url=%s", quotaResponse.getActiveRule().getCustomResponse(), invoker.getUrl())));
         }
     }
 
