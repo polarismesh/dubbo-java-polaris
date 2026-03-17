@@ -40,29 +40,7 @@ public interface MetadataConstants {
     String URL_METADATA_DISPOSABLE_PREFIX = "polaris_metadata_disposable_";
 
     int URL_METADATA_DISPOSABLE_PREFIX_LENGTH = URL_METADATA_DISPOSABLE_PREFIX.length();
-
-    /**
-     * Transitive header prefix used in RPC attachments.
-     */
-    String POLARIS_TRANSITIVE_HEADER_PREFIX = "X-Polaris-Metadata-Transitive-";
-
-    int POLARIS_TRANSITIVE_HEADER_PREFIX_LENGTH = POLARIS_TRANSITIVE_HEADER_PREFIX.length();
-
-    /**
-     * Attachment key for custom transitive metadata (JSON).
-     */
-    String CUSTOM_METADATA = "POLARIS-CUSTOM-METADATA";
-
-    /**
-     * Attachment key for custom disposable metadata (JSON).
-     */
-    String CUSTOM_DISPOSABLE_METADATA = "POLARIS-CUSTOM-DISPOSABLE-METADATA";
-
-    /**
-     * Attachment key for application metadata (JSON).
-     */
-    String APPLICATION_METADATA = "POLARIS-APPLICATION-METADATA";
-
+    
     /**
      * Environment variable: comma-separated keys that should be transitive.
      */
