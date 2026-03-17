@@ -42,6 +42,8 @@ public class PolarisConfig {
 
     private final int ttl;
 
+    private final boolean losslessEnabled;
+
     private final PolarisOperators.OperatorType operatorType;
 
     private final boolean nearbyEnabled;
@@ -86,6 +88,12 @@ public class PolarisConfig {
             }
         }
         this.ttl = healthTTL;
+        String losslessEnabledStr = parameters.get(Consts.KEY_POLARIS_LOSSLESS_ENABLED);
+        if (null != losslessEnabledStr && !losslessEnabledStr.isEmpty()) {
+            this.losslessEnabled = Boolean.parseBoolean(losslessEnabledStr);
+        } else {
+            this.losslessEnabled = true;
+        }
         if (parameters.containsKey(Consts.KEY_NEARBY_ENABLED)) {
             this.nearbyEnabled = Boolean.parseBoolean(parameters.get(Consts.KEY_NEARBY_ENABLED));
         } else {
@@ -159,6 +167,10 @@ public class PolarisConfig {
         return ttl;
     }
 
+    public boolean isLosslessEnabled() {
+        return losslessEnabled;
+    }
+
     public boolean isNearbyEnabled() {
         return nearbyEnabled;
     }
@@ -169,6 +181,7 @@ public class PolarisConfig {
                 "namespace='" + namespace + '\'' +
                 ", token='" + token + '\'' +
                 ", ttl=" + ttl +
+                ", losslessEnabled=" + losslessEnabled +
                 ", operatorType=" + operatorType +
                 ", discoverAddresses=" + discoverAddresses +
                 ", configAddresses=" + configAddresses +

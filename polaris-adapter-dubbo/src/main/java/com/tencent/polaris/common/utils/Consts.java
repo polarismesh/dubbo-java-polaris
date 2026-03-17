@@ -104,4 +104,14 @@ public interface Consts {
     String DEFAULT_VERSION = "1.0.0";
 
     String ADDRESSES_SEPARATOR = "/";
+
+    String KEY_POLARIS_LOSSLESS_ENABLED = "polaris_lossless_enabled";
+
+    String KEY_POLARIS_LOSSLESS_DELAY_REGISTER_INTERVAL = "polaris_lossless_delay_register_interval";
+
+    String KEY_POLARIS_LOSSLESS_HEALTH_CHECK_PATH = "polaris_lossless_health_check_path";
+
+    String KEY_POLARIS_LOSSLESS_ADMIN_PORT = "polaris_lossless_admin_port";
+
+    String KEY_POLARIS_LOSSLESS_HEALTH_CHECK_INTERVAL = "polaris_lossless_health_check_interval";
 }

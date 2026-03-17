@@ -20,6 +20,9 @@ package com.tencent.polaris.dubbo.registry;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
+import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
+import com.tencent.polaris.api.pojo.BaseInstance;
+import com.tencent.polaris.api.pojo.DefaultBaseInstance;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
@@ -29,6 +32,7 @@ import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.common.utils.ConvertUtils;
 import com.tencent.polaris.common.metadata.StaticMetadataManager;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+import com.tencent.polaris.plugin.lossless.common.HttpLosslessActionProvider;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.URLBuilder;
 import org.apache.dubbo.common.constants.CommonConstants;
@@ -57,6 +61,7 @@ public class PolarisRegistry extends FailbackRegistry {
     private final Map<URL, Set<NotifyListener>> dubboListeners = new ConcurrentHashMap<>();
 
     private final Map<URL, ServiceListener> serviceListeners = new ConcurrentHashMap<>();
+
     private final PolarisOperator polarisOperator;
 
     public PolarisRegistry(URL url) {
@@ -96,13 +101,36 @@ public class PolarisRegistry extends FailbackRegistry {
         if (port > 0) {
             int weight = url.getParameter(Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT);
             String version = url.getParameter(CommonConstants.VERSION_KEY);
-            polarisOperator.register(url.getServiceInterface(), url.getHost(), port, url.getProtocol(), version, weight,
-                    metadata);
+            if (polarisOperator.getPolarisConfig().isLosslessEnabled()) {
+                doLosslessRegister(url, metadata, port, weight, version);
+            } else {
+                polarisOperator.register(url.getServiceInterface(), url.getHost(), port, url.getProtocol(), version,
+                        weight, metadata);
+            }
             registeredInstances.add(url);
         } else {
             LOGGER.warn("[POLARIS] skip register url {} for zero port value", url);
             throw new PolarisException(ErrorCode.INVALID_REQUEST, "zero port url: " + url);
         }
+    }
+
+    private void doLosslessRegister(URL url, Map<String, String> metadata, int port, int weight, String version) {
+        DefaultBaseInstance instance = new DefaultBaseInstance();
+        instance.setNamespace(polarisOperator.getPolarisConfig().getNamespace());
+        instance.setService(url.getServiceInterface());
+        instance.setHost(url.getHost());
+        instance.setPort(port);
+
+        Runnable registerAction = () -> polarisOperator.register(
+                url.getServiceInterface(), url.getHost(), port, url.getProtocol(), version, weight, metadata);
+        Runnable deregisterAction = () -> {
+            polarisOperator.deregister(
+                    url.getServiceInterface(), url.getHost(), port);
+        };
+        LosslessActionProvider actionProvider = new HttpLosslessActionProvider(registerAction, deregisterAction, port,
+                instance, polarisOperator.getSdkContext().getExtensions());
+        polarisOperator.getLosslessAPI().setLosslessActionProvider(instance, actionProvider);
+        polarisOperator.getLosslessAPI().losslessRegister(instance);
     }
 
     private boolean shouldRegister(URL url) {
@@ -112,6 +140,10 @@ public class PolarisRegistry extends FailbackRegistry {
     @Override
     public void doUnregister(URL url) {
         if (!shouldRegister(url)) {
+            return;
+        }
+        if (!registeredInstances.contains(url)) {
+            LOGGER.info("[POLARIS] url {} has been unregistered.", url);
             return;
         }
         LOGGER.info("[POLARIS] unregister service from polaris: {}", url);
