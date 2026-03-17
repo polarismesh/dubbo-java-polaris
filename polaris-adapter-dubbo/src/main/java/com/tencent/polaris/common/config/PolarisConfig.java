@@ -92,7 +92,7 @@ public class PolarisConfig {
         if (null != losslessEnabledStr && !losslessEnabledStr.isEmpty()) {
             this.losslessEnabled = Boolean.parseBoolean(losslessEnabledStr);
         } else {
-            this.losslessEnabled = true;
+            this.losslessEnabled = false;
         }
         if (parameters.containsKey(Consts.KEY_NEARBY_ENABLED)) {
             this.nearbyEnabled = Boolean.parseBoolean(parameters.get(Consts.KEY_NEARBY_ENABLED));
