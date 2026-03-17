@@ -17,14 +17,21 @@
 
 package com.tencent.polaris.common.metadata;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.tencent.polaris.metadata.core.MetadataContainer;
+import com.tencent.polaris.metadata.core.MetadataStringValue;
+import com.tencent.polaris.metadata.core.MetadataType;
+import com.tencent.polaris.metadata.core.TransitiveType;
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class MetadataContextHolderTest {
+
+    private static String getStringValue(MetadataContainer container, String key) {
+        MetadataStringValue metadataValue = container.getMetadataValue(key);
+        return metadataValue != null ? metadataValue.getStringValue() : null;
+    }
 
     @After
     public void after() {
@@ -33,8 +40,7 @@ public class MetadataContextHolderTest {
 
     @Test
     public void testGetReturnsNonNull() {
-        MetadataContext ctx = MetadataContextHolder.get();
-        Assert.assertNotNull(ctx);
+        Assert.assertNotNull(MetadataContextHolder.get());
     }
 
     @Test
@@ -47,66 +53,26 @@ public class MetadataContextHolderTest {
     @Test
     public void testSetAndGet() {
         MetadataContext custom = new MetadataContext();
-        Map<String, String> data = new HashMap<>();
-        data.put("test-key", "test-val");
-        custom.putFragmentContext(MetadataContext.FRAGMENT_TRANSITIVE, data);
+        MetadataContainer container = custom.getMetadataContainer(MetadataType.CUSTOM, false);
+        container.putMetadataStringValue("test-key", "test-val", TransitiveType.PASS_THROUGH);
 
         MetadataContextHolder.set(custom);
         MetadataContext retrieved = MetadataContextHolder.get();
 
-        Assert.assertEquals("test-val", retrieved.getTransitiveMetadata().get("test-key"));
+        String value = getStringValue(retrieved.getMetadataContainer(MetadataType.CUSTOM, false), "test-key");
+        Assert.assertEquals("test-val", value);
     }
 
     @Test
     public void testRemoveClearsContext() {
         MetadataContext ctx1 = MetadataContextHolder.get();
-        Map<String, String> data = new HashMap<>();
-        data.put("key", "val");
-        ctx1.putFragmentContext(MetadataContext.FRAGMENT_TRANSITIVE, data);
+        MetadataContainer container = ctx1.getMetadataContainer(MetadataType.CUSTOM, false);
+        container.putMetadataStringValue("key", "val", TransitiveType.PASS_THROUGH);
 
         MetadataContextHolder.remove();
 
         MetadataContext ctx2 = MetadataContextHolder.get();
         // After remove, a fresh context is created
         Assert.assertNotSame(ctx1, ctx2);
-    }
-
-    @Test
-    public void testInitInjectsUpstreamMetadata() {
-        Map<String, String> transitiveData = new HashMap<>();
-        transitiveData.put("t-key", "t-val");
-
-        Map<String, String> disposableData = new HashMap<>();
-        disposableData.put("d-key", "d-val");
-
-        Map<String, String> appData = new HashMap<>();
-        appData.put("a-key", "a-val");
-
-        MetadataContextHolder.init(transitiveData, disposableData, appData);
-
-        MetadataContext ctx = MetadataContextHolder.get();
-        Assert.assertEquals("t-val", ctx.getTransitiveMetadata().get("t-key"));
-        // disposable data is injected to upstream (caller) container
-        Map<String, String> upstreamDisposable = ctx.getFragmentContext(MetadataContext.FRAGMENT_UPSTREAM_DISPOSABLE);
-        Assert.assertEquals("d-val", upstreamDisposable.get("d-key"));
-        // application data is injected to upstream (caller) container
-        Map<String, String> upstreamApp = ctx.getFragmentContext(MetadataContext.FRAGMENT_UPSTREAM_APPLICATION);
-        Assert.assertEquals("a-val", upstreamApp.get("a-key"));
-    }
-
-    @Test
-    public void testInitWithNullMaps() {
-        // Should not throw
-        MetadataContextHolder.init(null, null, null);
-        MetadataContext ctx = MetadataContextHolder.get();
-        Assert.assertNotNull(ctx);
-    }
-
-    @Test
-    public void testInitWithEmptyMaps() {
-        MetadataContextHolder.init(new HashMap<>(), new HashMap<>(), new HashMap<>());
-        MetadataContext ctx = MetadataContextHolder.get();
-        Assert.assertNotNull(ctx);
-        Assert.assertTrue(ctx.getTransitiveMetadata().isEmpty());
     }
 }

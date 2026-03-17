@@ -17,13 +17,12 @@
 
 package com.tencent.polaris.common.metadata;
 
+import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.api.utils.StringUtils;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.slf4j.Logger;
@@ -95,7 +94,7 @@ public class StaticMetadataManager {
             if (StringUtils.isNotBlank(key) && key.startsWith(MetadataConstants.URL_METADATA_PREFIX)) {
                 String sourceKey = key.substring(MetadataConstants.URL_METADATA_PREFIX_LENGTH);
                 urlMetadata.put(sourceKey, entry.getValue());
-                LOGGER.info("[POLARIS] resolve metadata from URL. key = {}, value = {}", sourceKey, entry.getValue());
+                LOGGER.debug("[POLARIS] resolve metadata from URL. key = {}, value = {}", sourceKey, entry.getValue());
             }
         }
         urlMetadata = Collections.unmodifiableMap(urlMetadata);
@@ -105,7 +104,8 @@ public class StaticMetadataManager {
             if (StringUtils.isNotBlank(key) && key.startsWith(MetadataConstants.URL_METADATA_TRANSITIVE_PREFIX)) {
                 String sourceKey = key.substring(MetadataConstants.URL_METADATA_TRANSITIVE_PREFIX_LENGTH);
                 urlTransitiveMetadata.put(sourceKey, entry.getValue());
-                LOGGER.info("[POLARIS] resolve transitive metadata from URL. key = {}, value = {}", sourceKey, entry.getValue());
+                LOGGER.debug("[POLARIS] resolve transitive metadata from URL. key = {}, value = {}", sourceKey,
+                        entry.getValue());
             }
         }
         urlTransitiveMetadata = Collections.unmodifiableMap(urlTransitiveMetadata);
@@ -115,7 +115,8 @@ public class StaticMetadataManager {
             if (StringUtils.isNotBlank(key) && key.startsWith(MetadataConstants.URL_METADATA_DISPOSABLE_PREFIX)) {
                 String sourceKey = key.substring(MetadataConstants.URL_METADATA_DISPOSABLE_PREFIX_LENGTH);
                 urlDisposableMetadata.put(sourceKey, entry.getValue());
-                LOGGER.info("[POLARIS] resolve disposable metadata from URL. key = {}, value = {}", sourceKey, entry.getValue());
+                LOGGER.debug("[POLARIS] resolve disposable metadata from URL. key = {}, value = {}", sourceKey,
+                        entry.getValue());
             }
         }
         urlDisposableMetadata = Collections.unmodifiableMap(urlDisposableMetadata);
@@ -178,7 +179,8 @@ public class StaticMetadataManager {
         customSPIDisposableMetadata = new HashMap<>();
 
         try {
-            ExtensionLoader<InstanceMetadataProvider> loader = ExtensionLoader.getExtensionLoader(InstanceMetadataProvider.class);
+            ExtensionLoader<InstanceMetadataProvider> loader = ExtensionLoader.getExtensionLoader(
+                    InstanceMetadataProvider.class);
             Set<String> extensions = loader.getSupportedExtensions();
             if (!CollectionUtils.isEmpty(extensions)) {
                 for (String name : extensions) {
@@ -248,7 +250,8 @@ public class StaticMetadataManager {
 
     private String resolveLocationFromSPI(java.util.function.Function<InstanceMetadataProvider, String> extractor) {
         try {
-            ExtensionLoader<InstanceMetadataProvider> loader = ExtensionLoader.getExtensionLoader(InstanceMetadataProvider.class);
+            ExtensionLoader<InstanceMetadataProvider> loader = ExtensionLoader.getExtensionLoader(
+                    InstanceMetadataProvider.class);
             Set<String> extensions = loader.getSupportedExtensions();
             if (!CollectionUtils.isEmpty(extensions)) {
                 for (String name : extensions) {

@@ -17,35 +17,42 @@
 
 package com.tencent.polaris.common.metadata;
 
-import java.util.Map;
-
-import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.metadata.core.MetadataContainer;
 import com.tencent.polaris.metadata.core.MetadataType;
 import com.tencent.polaris.metadata.core.TransitiveType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
+import java.util.Map;
 
 /**
  * Thread-local holder for {@link MetadataContext}.
  * Delegates to polaris-java's MetadataContextHolder for thread-local management.
+ *
+ * <p>Uses the polaris-java base {@link MetadataContext} directly instead of a custom subclass,
+ * so that it stays compatible with Spring Cloud Tencent's MetadataContext when both
+ * frameworks coexist in the same classloader.</p>
+ *
+ * <p>Does NOT register a global initializer via {@code setInitializer}, so it won't conflict
+ * with Spring Cloud Tencent's initializer. Instead, it lazily enriches the context with
+ * Dubbo-side static metadata on every {@link #get()} call.</p>
  */
 public final class MetadataContextHolder {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MetadataContextHolder.class);
-
-    static {
-        com.tencent.polaris.metadata.core.manager.MetadataContextHolder.setInitializer(MetadataContextHolder::createMetadataContext);
-    }
+    private static final ThreadLocal<MetadataContext> ENRICHED = new ThreadLocal<>();
 
     private MetadataContextHolder() {
     }
 
     /**
      * Get current thread's MetadataContext (create if absent).
+     * Lazily enriches the context with Dubbo-side static metadata.
      */
     public static MetadataContext get() {
-        return (MetadataContext) com.tencent.polaris.metadata.core.manager.MetadataContextHolder.getOrCreate();
+        MetadataContext ctx = com.tencent.polaris.metadata.core.manager.MetadataContextHolder.getOrCreate();
+        if (ENRICHED.get() != ctx) {
+            enrichWithDubboStaticMetadata(ctx);
+            ENRICHED.set(ctx);
+        }
+        return ctx;
     }
 
     /**
@@ -56,53 +63,22 @@ public final class MetadataContextHolder {
     }
 
     /**
-     * Initialize the metadata context with upstream dynamic metadata.
-     * Called by the provider-side filter when receiving a request.
-     *
-     * @param dynamicTransitiveMetadata transitive metadata from upstream
-     * @param dynamicDisposableMetadata disposable metadata from upstream
-     * @param dynamicApplicationMetadata application metadata from upstream
-     */
-    public static void init(Map<String, String> dynamicTransitiveMetadata,
-                            Map<String, String> dynamicDisposableMetadata,
-                            Map<String, String> dynamicApplicationMetadata) {
-        com.tencent.polaris.metadata.core.manager.MetadataContextHolder.refresh(metadataManager -> {
-            // caller transitive metadata -> callee custom transitive metadata
-            MetadataContainer calleeCustomContainer = metadataManager.getMetadataContainer(MetadataType.CUSTOM, false);
-            if (CollectionUtils.isNotEmpty(dynamicTransitiveMetadata)) {
-                for (Map.Entry<String, String> entry : dynamicTransitiveMetadata.entrySet()) {
-                    calleeCustomContainer.putMetadataStringValue(entry.getKey(), entry.getValue(), TransitiveType.PASS_THROUGH);
-                }
-            }
-            // caller disposable metadata -> caller custom disposable metadata
-            MetadataContainer callerCustomContainer = metadataManager.getMetadataContainer(MetadataType.CUSTOM, true);
-            if (CollectionUtils.isNotEmpty(dynamicDisposableMetadata)) {
-                for (Map.Entry<String, String> entry : dynamicDisposableMetadata.entrySet()) {
-                    callerCustomContainer.putMetadataStringValue(entry.getKey(), entry.getValue(), TransitiveType.DISPOSABLE);
-                }
-            }
-            // caller application metadata -> caller application disposable metadata
-            MetadataContainer callerAppContainer = metadataManager.getMetadataContainer(MetadataType.APPLICATION, true);
-            if (CollectionUtils.isNotEmpty(dynamicApplicationMetadata)) {
-                for (Map.Entry<String, String> entry : dynamicApplicationMetadata.entrySet()) {
-                    callerAppContainer.putMetadataStringValue(entry.getKey(), entry.getValue(), TransitiveType.DISPOSABLE);
-                }
-            }
-        });
-    }
-
-    /**
      * Remove metadata context from current thread.
      */
     public static void remove() {
+        ENRICHED.remove();
         com.tencent.polaris.metadata.core.manager.MetadataContextHolder.remove();
     }
 
-    private static MetadataContext createMetadataContext() {
-        MetadataContext metadataContext = new MetadataContext();
+    /**
+     * Enrich the given MetadataContext with Dubbo-side static metadata.
+     * This is idempotent — calling it multiple times with the same context is safe
+     * because putMetadataStringValue overwrites with the same value.
+     */
+    private static void enrichWithDubboStaticMetadata(MetadataContext metadataContext) {
         StaticMetadataManager staticManager = StaticMetadataManager.getInstance();
         if (staticManager == null) {
-            return metadataContext;
+            return;
         }
 
         // local custom metadata (NONE transitive type)
@@ -110,6 +86,12 @@ public final class MetadataContextHolder {
         Map<String, String> mergedStaticMetadata = staticManager.getMergedStaticMetadata();
         for (Map.Entry<String, String> entry : mergedStaticMetadata.entrySet()) {
             customContainer.putMetadataStringValue(entry.getKey(), entry.getValue(), TransitiveType.NONE);
+        }
+
+        // local application disposable metadata
+        MetadataContainer appContainer = metadataContext.getMetadataContainer(MetadataType.APPLICATION, false);
+        for (Map.Entry<String, String> entry : mergedStaticMetadata.entrySet()) {
+            appContainer.putMetadataStringValue(entry.getKey(), entry.getValue(), TransitiveType.DISPOSABLE);
         }
 
         // local custom transitive metadata
@@ -123,13 +105,5 @@ public final class MetadataContextHolder {
         for (Map.Entry<String, String> entry : mergedDisposable.entrySet()) {
             customContainer.putMetadataStringValue(entry.getKey(), entry.getValue(), TransitiveType.DISPOSABLE);
         }
-
-        // local application disposable metadata
-        MetadataContainer appContainer = metadataContext.getMetadataContainer(MetadataType.APPLICATION, false);
-        for (Map.Entry<String, String> entry : mergedStaticMetadata.entrySet()) {
-            appContainer.putMetadataStringValue(entry.getKey(), entry.getValue(), TransitiveType.DISPOSABLE);
-        }
-
-        return metadataContext;
     }
 }

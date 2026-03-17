@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.tencent.polaris</groupId>
@@ -54,6 +54,7 @@
         <!-- Apache Dubbo version -->
         <apache.dubbo.version>2.7.23</apache.dubbo.version>
 
+        <common.lang3.version>3.20.0</common.lang3.version>
         <slf4j.version>1.7.25</slf4j.version>
         <json_path_version>2.9.0</json_path_version>
         <junit.version>4.13.1</junit.version>
@@ -301,6 +302,9 @@
                         <excludeArtifact>dubbo-backend-example</excludeArtifact>
                         <excludeArtifact>dubbo-front-example</excludeArtifact>
                         <excludeArtifact>dubbo-middle-example</excludeArtifact>
+                        <excludeArtifact>dubbo-springcloud-example</excludeArtifact>
+                        <excludeArtifact>dubbo-springcloud-provider</excludeArtifact>
+                        <excludeArtifact>dubbo-springcloud-consumer</excludeArtifact>
                     </excludeArtifacts>
                 </configuration>
             </plugin>
