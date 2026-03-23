@@ -56,21 +56,6 @@ public final class MetadataContextHolder {
     }
 
     /**
-     * Set metadata context for current thread.
-     */
-    public static void set(MetadataContext metadataContext) {
-        com.tencent.polaris.metadata.core.manager.MetadataContextHolder.set(metadataContext);
-    }
-
-    /**
-     * Remove metadata context from current thread.
-     */
-    public static void remove() {
-        ENRICHED.remove();
-        com.tencent.polaris.metadata.core.manager.MetadataContextHolder.remove();
-    }
-
-    /**
      * Enrich the given MetadataContext with Dubbo-side static metadata.
      * This is idempotent — calling it multiple times with the same context is safe
      * because putMetadataStringValue overwrites with the same value.

@@ -54,7 +54,7 @@
         <!-- Apache Dubbo version -->
         <apache.dubbo.version>2.7.23</apache.dubbo.version>
 
-        <common.lang3.version>3.20.0</common.lang3.version>
+
         <slf4j.version>1.7.25</slf4j.version>
         <json_path_version>2.9.0</json_path_version>
         <junit.version>4.13.1</junit.version>
@@ -84,11 +84,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>${common.lang3.version}</version>
-            </dependency>
             <!-- polaris -->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>

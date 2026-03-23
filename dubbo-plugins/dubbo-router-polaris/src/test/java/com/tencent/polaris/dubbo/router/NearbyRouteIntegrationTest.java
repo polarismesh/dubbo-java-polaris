@@ -100,7 +100,7 @@ public class NearbyRouteIntegrationTest {
 
     @After
     public void after() {
-        MetadataContextHolder.remove();
+        com.tencent.polaris.metadata.core.manager.MetadataContextHolder.remove();
         if (polarisOperator != null) {
             try {
                 polarisOperator.destroy();
