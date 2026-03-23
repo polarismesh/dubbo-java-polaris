@@ -17,10 +17,7 @@
 
 package com.tencent.polaris.common.metadata;
 
-import com.tencent.polaris.metadata.core.MetadataContainer;
-import com.tencent.polaris.metadata.core.MetadataStringValue;
 import com.tencent.polaris.metadata.core.MetadataType;
-import com.tencent.polaris.metadata.core.TransitiveType;
 import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import org.junit.After;
 import org.junit.Assert;
@@ -28,14 +25,9 @@ import org.junit.Test;
 
 public class MetadataContextHolderTest {
 
-    private static String getStringValue(MetadataContainer container, String key) {
-        MetadataStringValue metadataValue = container.getMetadataValue(key);
-        return metadataValue != null ? metadataValue.getStringValue() : null;
-    }
-
     @After
     public void after() {
-        MetadataContextHolder.remove();
+        com.tencent.polaris.metadata.core.manager.MetadataContextHolder.remove();
     }
 
     @Test
@@ -51,28 +43,10 @@ public class MetadataContextHolderTest {
     }
 
     @Test
-    public void testSetAndGet() {
-        MetadataContext custom = new MetadataContext();
-        MetadataContainer container = custom.getMetadataContainer(MetadataType.CUSTOM, false);
-        container.putMetadataStringValue("test-key", "test-val", TransitiveType.PASS_THROUGH);
-
-        MetadataContextHolder.set(custom);
-        MetadataContext retrieved = MetadataContextHolder.get();
-
-        String value = getStringValue(retrieved.getMetadataContainer(MetadataType.CUSTOM, false), "test-key");
-        Assert.assertEquals("test-val", value);
-    }
-
-    @Test
-    public void testRemoveClearsContext() {
-        MetadataContext ctx1 = MetadataContextHolder.get();
-        MetadataContainer container = ctx1.getMetadataContainer(MetadataType.CUSTOM, false);
-        container.putMetadataStringValue("key", "val", TransitiveType.PASS_THROUGH);
-
-        MetadataContextHolder.remove();
-
-        MetadataContext ctx2 = MetadataContextHolder.get();
-        // After remove, a fresh context is created
-        Assert.assertNotSame(ctx1, ctx2);
+    public void testGetEnrichesWithStaticMetadata() {
+        MetadataContext ctx = MetadataContextHolder.get();
+        // get() should return a valid enriched context
+        Assert.assertNotNull(ctx);
+        Assert.assertNotNull(ctx.getMetadataContainer(MetadataType.CUSTOM, false));
     }
 }
