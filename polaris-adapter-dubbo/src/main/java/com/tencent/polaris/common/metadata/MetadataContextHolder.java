@@ -56,6 +56,18 @@ public final class MetadataContextHolder {
     }
 
     /**
+     * Remove metadata context from current thread.
+     * <p>Must be called at the end of each request (e.g. in a Filter's finally block)
+     * to prevent thread-local pollution when threads are reused by thread pools.
+     * Without removal, metadata written during request A (such as transitive headers)
+     * would leak into request B if both run on the same pooled thread.</p>
+     */
+    public static void remove() {
+        ENRICHED.remove();
+        com.tencent.polaris.metadata.core.manager.MetadataContextHolder.remove();
+    }
+
+    /**
      * Enrich the given MetadataContext with Dubbo-side static metadata.
      * This is idempotent — calling it multiple times with the same context is safe
      * because putMetadataStringValue overwrites with the same value.
