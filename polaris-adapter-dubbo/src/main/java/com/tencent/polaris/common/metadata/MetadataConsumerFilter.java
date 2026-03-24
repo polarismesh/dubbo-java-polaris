@@ -28,23 +28,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Filter that cleans up thread-local {@link com.tencent.polaris.metadata.core.manager.MetadataContext}
+ * Consumer-side filter that cleans up thread-local {@link com.tencent.polaris.metadata.core.manager.MetadataContext}
  * after each RPC invocation to prevent metadata pollution when threads are reused by thread pools.
  *
  * <p>Without this cleanup, metadata written during request A (such as transitive headers or
  * tracing data) would leak into request B if both run on the same pooled thread.</p>
  *
- * <p>Activated on both consumer and provider side with {@code order = Integer.MAX_VALUE},
- * making it the last filter in the chain — so all other filters and the actual invocation
- * have finished before cleanup happens.</p>
+ * <p>Activated with {@code order = Integer.MIN_VALUE} so it wraps the entire consumer filter chain,
+ * ensuring cleanup happens after all other filters have completed.</p>
  */
-@Activate(group = {CommonConstants.CONSUMER, CommonConstants.PROVIDER}, order = Integer.MAX_VALUE)
-public class MetadataCleanupFilter implements Filter {
+@Activate(group = CommonConstants.CONSUMER, order = Integer.MIN_VALUE)
+public class MetadataConsumerFilter implements Filter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MetadataCleanupFilter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(MetadataConsumerFilter.class);
 
-	public MetadataCleanupFilter() {
-		LOGGER.info("[POLARIS] init polaris metadata cleanup filter");
+	public MetadataConsumerFilter() {
+		LOGGER.info("[POLARIS] init polaris metadata consumer filter");
 	}
 
 	@Override

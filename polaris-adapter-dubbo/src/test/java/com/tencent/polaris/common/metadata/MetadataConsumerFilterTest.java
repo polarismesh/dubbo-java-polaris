@@ -31,9 +31,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-public class MetadataCleanupFilterTest {
+public class MetadataConsumerFilterTest {
 
-    private final MetadataCleanupFilter filter = new MetadataCleanupFilter();
+    private final MetadataConsumerFilter filter = new MetadataConsumerFilter();
 
     private static String getStringValue(MetadataContainer container, String key) {
         MetadataStringValue val = container.getMetadataValue(key);
@@ -45,10 +45,6 @@ public class MetadataCleanupFilterTest {
         MetadataContextHolder.remove();
     }
 
-    /**
-     * After a normal invocation the filter must have cleared the thread-local context,
-     * so a subsequent get() returns a fresh instance without the old data.
-     */
     @Test
     public void testContextClearedAfterSuccessfulInvocation() {
         Invoker<?> invoker = Mockito.mock(Invoker.class);
@@ -56,35 +52,28 @@ public class MetadataCleanupFilterTest {
         Result result = Mockito.mock(Result.class);
         Mockito.when(invoker.invoke(invocation)).thenReturn(result);
 
-        // Simulate request A: write some request-scoped metadata
         MetadataContext ctxA = MetadataContextHolder.get();
         ctxA.getMetadataContainer(MetadataType.CUSTOM, false)
                 .putMetadataStringValue("trace-id", "aaa-111", TransitiveType.PASS_THROUGH);
 
         MetadataContext ctxB = MetadataContextHolder.get();
         Assert.assertSame("context must be the same before cleanup", ctxA, ctxB);
-        // Execute the filter — should clean up after invoker.invoke()
-        Result ret = filter.invoke(invoker, invocation);
 
+        Result ret = filter.invoke(invoker, invocation);
         Assert.assertSame(result, ret);
 
-        // After filter, context must be a fresh instance without old data
         MetadataContext ctxC = MetadataContextHolder.get();
         Assert.assertNotSame("context must be renewed after cleanup", ctxA, ctxC);
         Assert.assertNull("old metadata must not leak",
                 getStringValue(ctxC.getMetadataContainer(MetadataType.CUSTOM, false), "trace-id"));
     }
 
-    /**
-     * Even when the invocation throws, the filter must still clear the context.
-     */
     @Test
     public void testContextClearedAfterException() {
         Invoker<?> invoker = Mockito.mock(Invoker.class);
         Invocation invocation = Mockito.mock(Invocation.class);
         Mockito.when(invoker.invoke(invocation)).thenThrow(new RpcException("boom"));
 
-        // Simulate request A
         MetadataContext ctxA = MetadataContextHolder.get();
         ctxA.getMetadataContainer(MetadataType.CUSTOM, false)
                 .putMetadataStringValue("trace-id", "err-222", TransitiveType.PASS_THROUGH);
@@ -95,36 +84,31 @@ public class MetadataCleanupFilterTest {
         } catch (RpcException ignored) {
         }
 
-        // Context must still be cleaned even after exception
         MetadataContext ctxB = MetadataContextHolder.get();
         Assert.assertNotSame("context must be renewed after cleanup", ctxA, ctxB);
         Assert.assertNull("old metadata must not leak after exception",
                 getStringValue(ctxB.getMetadataContainer(MetadataType.CUSTOM, false), "trace-id"));
     }
 
-    /**
-     * Simulates two back-to-back requests on the same thread (thread-pool reuse).
-     * Request B must not see any metadata from request A.
-     */
     @Test
     public void testThreadReuseNoPollution() {
         Invoker<?> invoker = Mockito.mock(Invoker.class);
         Result result = Mockito.mock(Result.class);
         Mockito.when(invoker.invoke(Mockito.any())).thenReturn(result);
 
-        // ---- Request A ----
+        // Request A
         MetadataContext ctxA = MetadataContextHolder.get();
         ctxA.getMetadataContainer(MetadataType.CUSTOM, false)
                 .putMetadataStringValue("user-id", "user-A", TransitiveType.PASS_THROUGH);
         filter.invoke(invoker, Mockito.mock(Invocation.class));
 
-        // ---- Request B (same thread) ----
+        // Request B (same thread)
         MetadataContext ctxB = MetadataContextHolder.get();
         ctxB.getMetadataContainer(MetadataType.CUSTOM, false)
                 .putMetadataStringValue("user-id", "user-B", TransitiveType.PASS_THROUGH);
         filter.invoke(invoker, Mockito.mock(Invocation.class));
 
-        // ---- Request C (same thread) — should be completely clean ----
+        // Request C — should be completely clean
         MetadataContext ctxC = MetadataContextHolder.get();
         MetadataContainer containerC = ctxC.getMetadataContainer(MetadataType.CUSTOM, false);
 
