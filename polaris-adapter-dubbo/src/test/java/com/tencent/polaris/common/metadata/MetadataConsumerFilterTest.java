@@ -25,7 +25,6 @@ import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.Result;
-import org.apache.dubbo.rpc.RpcException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,76 +44,80 @@ public class MetadataConsumerFilterTest {
         MetadataContextHolder.remove();
     }
 
+    /**
+     * Consumer filter should ensure MetadataContext is initialized (enriched)
+     * before the invocation proceeds.
+     */
     @Test
-    public void testContextClearedAfterSuccessfulInvocation() {
+    public void testContextInitializedBeforeInvocation() {
         Invoker<?> invoker = Mockito.mock(Invoker.class);
         Invocation invocation = Mockito.mock(Invocation.class);
         Result result = Mockito.mock(Result.class);
         Mockito.when(invoker.invoke(invocation)).thenReturn(result);
 
-        MetadataContext ctxA = MetadataContextHolder.get();
-        ctxA.getMetadataContainer(MetadataType.CUSTOM, false)
-                .putMetadataStringValue("trace-id", "aaa-111", TransitiveType.PASS_THROUGH);
-
-        MetadataContext ctxB = MetadataContextHolder.get();
-        Assert.assertSame("context must be the same before cleanup", ctxA, ctxB);
-
         Result ret = filter.invoke(invoker, invocation);
-        Assert.assertSame(result, ret);
 
-        MetadataContext ctxC = MetadataContextHolder.get();
-        Assert.assertNotSame("context must be renewed after cleanup", ctxA, ctxC);
-        Assert.assertNull("old metadata must not leak",
-                getStringValue(ctxC.getMetadataContainer(MetadataType.CUSTOM, false), "trace-id"));
+        Assert.assertSame(result, ret);
+        Mockito.verify(invoker).invoke(invocation);
     }
 
+    /**
+     * Consumer filter must NOT clean up context after invocation,
+     * because the business thread may call multiple Dubbo services sharing the same context.
+     */
     @Test
-    public void testContextClearedAfterException() {
+    public void testContextNotClearedAfterInvocation() {
         Invoker<?> invoker = Mockito.mock(Invoker.class);
         Invocation invocation = Mockito.mock(Invocation.class);
-        Mockito.when(invoker.invoke(invocation)).thenThrow(new RpcException("boom"));
+        Result result = Mockito.mock(Result.class);
+        Mockito.when(invoker.invoke(invocation)).thenReturn(result);
 
-        MetadataContext ctxA = MetadataContextHolder.get();
-        ctxA.getMetadataContainer(MetadataType.CUSTOM, false)
-                .putMetadataStringValue("trace-id", "err-222", TransitiveType.PASS_THROUGH);
+        // Write metadata before invocation
+        MetadataContext ctxBefore = MetadataContextHolder.get();
+        ctxBefore.getMetadataContainer(MetadataType.CUSTOM, false)
+                .putMetadataStringValue("trace-id", "aaa-111", TransitiveType.PASS_THROUGH);
 
-        try {
-            filter.invoke(invoker, invocation);
-            Assert.fail("expected RpcException");
-        } catch (RpcException ignored) {
-        }
+        filter.invoke(invoker, invocation);
 
-        MetadataContext ctxB = MetadataContextHolder.get();
-        Assert.assertNotSame("context must be renewed after cleanup", ctxA, ctxB);
-        Assert.assertNull("old metadata must not leak after exception",
-                getStringValue(ctxB.getMetadataContainer(MetadataType.CUSTOM, false), "trace-id"));
+        // After filter, context must still be the SAME instance with data intact
+        MetadataContext ctxAfter = MetadataContextHolder.get();
+        Assert.assertSame("consumer filter must not clear context", ctxBefore, ctxAfter);
+        Assert.assertEquals("metadata must survive across consumer filter",
+                "aaa-111",
+                getStringValue(ctxAfter.getMetadataContainer(MetadataType.CUSTOM, false), "trace-id"));
     }
 
+    /**
+     * Simulates a business thread calling two Dubbo services sequentially.
+     * The second call must still see the metadata from before the first call.
+     */
     @Test
-    public void testThreadReuseNoPollution() {
+    public void testContextSharedAcrossMultipleConsumerCalls() {
         Invoker<?> invoker = Mockito.mock(Invoker.class);
         Result result = Mockito.mock(Result.class);
         Mockito.when(invoker.invoke(Mockito.any())).thenReturn(result);
 
-        // Request A
-        MetadataContext ctxA = MetadataContextHolder.get();
-        ctxA.getMetadataContainer(MetadataType.CUSTOM, false)
-                .putMetadataStringValue("user-id", "user-A", TransitiveType.PASS_THROUGH);
+        // Business thread sets up metadata
+        MetadataContext ctx = MetadataContextHolder.get();
+        ctx.getMetadataContainer(MetadataType.CUSTOM, false)
+                .putMetadataStringValue("biz-key", "shared-val", TransitiveType.PASS_THROUGH);
+
+        // Call service A
         filter.invoke(invoker, Mockito.mock(Invocation.class));
 
-        // Request B (same thread)
+        // Call service B — should still see the metadata
         MetadataContext ctxB = MetadataContextHolder.get();
-        ctxB.getMetadataContainer(MetadataType.CUSTOM, false)
-                .putMetadataStringValue("user-id", "user-B", TransitiveType.PASS_THROUGH);
+        Assert.assertSame("same context across calls", ctx, ctxB);
+        Assert.assertEquals("metadata shared across calls",
+                "shared-val",
+                getStringValue(ctxB.getMetadataContainer(MetadataType.CUSTOM, false), "biz-key"));
+
         filter.invoke(invoker, Mockito.mock(Invocation.class));
 
-        // Request C — should be completely clean
+        // Still intact
         MetadataContext ctxC = MetadataContextHolder.get();
-        MetadataContainer containerC = ctxC.getMetadataContainer(MetadataType.CUSTOM, false);
-
-        Assert.assertNotSame(ctxA, ctxC);
-        Assert.assertNotSame(ctxB, ctxC);
-        Assert.assertNull("no leftover from any previous request",
-                getStringValue(containerC, "user-id"));
+        Assert.assertSame(ctx, ctxC);
+        Assert.assertEquals("shared-val",
+                getStringValue(ctxC.getMetadataContainer(MetadataType.CUSTOM, false), "biz-key"));
     }
 }

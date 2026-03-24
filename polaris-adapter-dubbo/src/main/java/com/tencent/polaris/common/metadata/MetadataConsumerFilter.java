@@ -28,14 +28,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Consumer-side filter that cleans up thread-local {@link com.tencent.polaris.metadata.core.manager.MetadataContext}
- * after each RPC invocation to prevent metadata pollution when threads are reused by thread pools.
+ * Consumer-side filter that initializes thread-local {@link com.tencent.polaris.metadata.core.manager.MetadataContext}
+ * with Dubbo-side static metadata before the RPC invocation.
  *
- * <p>Without this cleanup, metadata written during request A (such as transitive headers or
- * tracing data) would leak into request B if both run on the same pooled thread.</p>
- *
- * <p>Activated with {@code order = Integer.MIN_VALUE} so it wraps the entire consumer filter chain,
- * ensuring cleanup happens after all other filters have completed.</p>
+ * <p>Activated with {@code order = Integer.MIN_VALUE} so it runs first in the consumer filter chain.
+ * Does NOT clean up the context after invocation, because the consumer thread (business thread)
+ * may invoke multiple Dubbo services within the same request and needs to share the same context.</p>
  */
 @Activate(group = CommonConstants.CONSUMER, order = Integer.MIN_VALUE)
 public class MetadataConsumerFilter implements Filter {
@@ -48,10 +46,7 @@ public class MetadataConsumerFilter implements Filter {
 
 	@Override
 	public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-		try {
-			return invoker.invoke(invocation);
-		} finally {
-			MetadataContextHolder.remove();
-		}
+		MetadataContextHolder.get();
+		return invoker.invoke(invocation);
 	}
 }
