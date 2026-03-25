@@ -22,12 +22,22 @@ import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.common.metadata.MetadataContextHolder;
 import com.tencent.polaris.common.parser.QueryParser;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
-import com.tencent.polaris.common.router.RuleHandler;
 import com.tencent.polaris.common.router.InstanceInvoker;
+import com.tencent.polaris.common.router.RuleHandler;
+import com.tencent.polaris.metadata.core.MetadataContainer;
+import com.tencent.polaris.metadata.core.MetadataType;
+import com.tencent.polaris.metadata.core.TransitiveType;
+import com.tencent.polaris.plugins.router.nearby.NearbyRouter;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
@@ -37,8 +47,6 @@ import org.apache.dubbo.rpc.cluster.Constants;
 import org.apache.dubbo.rpc.cluster.router.AbstractRouter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 public class PolarisRouter extends AbstractRouter {
 
@@ -105,7 +113,14 @@ public class PolarisRouter extends AbstractRouter {
         }
         LOGGER.debug("[POLARIS] list service {}, method {}, labels {}, url {}", service,
                 invocation.getMethodName(), arguments, url);
-        List<Instance> resultInstances = polarisOperator.route(service, invocation.getMethodName(), arguments, instances);
+        if (polarisOperator.getPolarisConfig().isNearbyEnabled()) {
+            MetadataContainer metadataContainer = MetadataContextHolder.get()
+                    .getMetadataContainer(MetadataType.CUSTOM, false);
+            metadataContainer.putMetadataMapValue(NearbyRouter.ROUTER_TYPE_NEAR_BY, NearbyRouter.ROUTER_ENABLED,
+                    String.valueOf(true), TransitiveType.NONE);
+        }
+        List<Instance> resultInstances = polarisOperator.route(service, invocation.getMethodName(), arguments,
+                instances);
         return (List<Invoker<T>>) ((List<?>) resultInstances);
     }
 }

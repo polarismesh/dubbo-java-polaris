@@ -83,6 +83,10 @@ public interface Consts {
 
     String KEY_POLARIS_DISCOVER_PORT = "polaris_discover_port";
 
+    String KEY_NEARBY_ENABLED = "polaris_nearby_enabled";
+
+    String KEY_NEARBY_MATCH_LEVEL = "polaris_nearby_match_level";
+
     String INSTANCE_KEY_HEALTHY = "_internal_healthy";
 
     String INSTANCE_KEY_ISOLATED = "_internal_isolated";

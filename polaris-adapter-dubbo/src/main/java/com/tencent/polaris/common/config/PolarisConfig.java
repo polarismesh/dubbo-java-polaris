@@ -46,6 +46,8 @@ public class PolarisConfig {
 
     private final PolarisOperators.OperatorType operatorType;
 
+    private final boolean nearbyEnabled;
+
 
     public PolarisConfig(PolarisOperators.OperatorType operatorType, String host, int port,
             Map<String, String> parameters) {
@@ -90,8 +92,14 @@ public class PolarisConfig {
         if (null != losslessEnabledStr && !losslessEnabledStr.isEmpty()) {
             this.losslessEnabled = Boolean.parseBoolean(losslessEnabledStr);
         } else {
-            this.losslessEnabled = true;
+            this.losslessEnabled = false;
         }
+        if (parameters.containsKey(Consts.KEY_NEARBY_ENABLED)) {
+            this.nearbyEnabled = Boolean.parseBoolean(parameters.get(Consts.KEY_NEARBY_ENABLED));
+        } else {
+            this.nearbyEnabled = false;
+        }
+
         LOG.info("[Common] construct polarisConfig {}", this);
     }
 
@@ -163,6 +171,10 @@ public class PolarisConfig {
         return losslessEnabled;
     }
 
+    public boolean isNearbyEnabled() {
+        return nearbyEnabled;
+    }
+
     @Override
     public String toString() {
         return "PolarisConfig{" +
@@ -173,6 +185,7 @@ public class PolarisConfig {
                 ", operatorType=" + operatorType +
                 ", discoverAddresses=" + discoverAddresses +
                 ", configAddresses=" + configAddresses +
+                ", nearbyEnabled=" + nearbyEnabled +
                 '}';
     }
 }

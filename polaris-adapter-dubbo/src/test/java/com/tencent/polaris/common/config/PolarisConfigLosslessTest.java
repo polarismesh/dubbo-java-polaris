@@ -27,12 +27,12 @@ import org.junit.Test;
 public class PolarisConfigLosslessTest {
 
     @Test
-    public void testLosslessEnabled_defaultTrue() {
+    public void testLosslessEnabled_defaultFalse() {
         Map<String, String> parameters = new HashMap<>();
         PolarisConfig config = new PolarisConfig(PolarisOperators.OperatorType.GOVERNANCE,
                 "127.0.0.1", 8091, parameters);
 
-        Assert.assertTrue("lossless 应默认启用", config.isLosslessEnabled());
+        Assert.assertFalse("lossless 应默认禁用", config.isLosslessEnabled());
     }
 
     @Test
@@ -58,7 +58,7 @@ public class PolarisConfigLosslessTest {
     }
 
     @Test
-    public void testLosslessEnabled_invalidValue_defaultTrue() {
+    public void testLosslessEnabled_invalidValue_defaultFalse() {
         Map<String, String> parameters = new HashMap<>();
         parameters.put(Consts.KEY_POLARIS_LOSSLESS_ENABLED, "invalid");
 

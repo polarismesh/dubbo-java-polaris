@@ -69,5 +69,15 @@
             <artifactId>json-path</artifactId>
             <version>${json_path_version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-test-mock-discovery</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-test-common</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

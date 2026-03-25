@@ -1,0 +1,2 @@
+polaris_metadata_consumer=com.tencent.polaris.common.metadata.MetadataConsumerFilter
+polaris_metadata_provider=com.tencent.polaris.common.metadata.MetadataProviderFilter
