@@ -49,7 +49,7 @@
         <revision>2.1.1.0-2.7.23-SNAPSHOT</revision>
 
         <!-- Polaris SDK version -->
-        <polaris.version>2.1.1.0-SNAPSHOT</polaris.version>
+        <polaris.version>2.1.1.0</polaris.version>
 
         <!-- Apache Dubbo version -->
         <apache.dubbo.version>2.7.23</apache.dubbo.version>
