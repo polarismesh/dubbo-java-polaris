@@ -30,6 +30,7 @@ import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.plugin.lossless.common.LosslessUtils;
 import org.apache.dubbo.common.URL;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -148,7 +149,7 @@ public class PolarisRegistryLosslessTest {
         registry.doUnregister(serviceUrl);
 
         // doUnregister always calls polarisOperator.deregister() regardless of lossless setting
-        Mockito.verify(mockOperator).deregister("com.example.FooService", "192.168.1.1", 20880);
+        Mockito.verify(mockOperator).deregister(Mockito.eq("com.example.FooService"), Mockito.eq("192.168.1.1"), Mockito.eq(20880), Mockito.anyMap());
     }
 
     @Test
@@ -162,7 +163,7 @@ public class PolarisRegistryLosslessTest {
         registry.doRegister(serviceUrl);
         registry.doUnregister(serviceUrl);
 
-        Mockito.verify(mockOperator).deregister("com.example.FooService", "192.168.1.1", 20880);
+        Mockito.verify(mockOperator).deregister(Mockito.eq("com.example.FooService"), Mockito.eq("192.168.1.1"), Mockito.eq(20880), Mockito.anyMap());
         Mockito.verify(mockLosslessAPI, Mockito.never()).losslessDeRegister(Mockito.any());
     }
 

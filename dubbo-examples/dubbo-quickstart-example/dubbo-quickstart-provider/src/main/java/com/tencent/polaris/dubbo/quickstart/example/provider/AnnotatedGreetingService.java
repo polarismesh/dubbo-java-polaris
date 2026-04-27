@@ -28,7 +28,9 @@ import org.apache.dubbo.rpc.RpcContext;
 public class AnnotatedGreetingService implements GreetingService {
 
     public String sayHello(String name) {
-        return "hello, " + name;
+        String host = RpcContext.getContext().getLocalHost();
+        String port = String.valueOf(RpcContext.getContext().getLocalPort());
+        return "hello, " + name + " (provider host: " + host + ", port: " + port + ")";
     }
 
     @Override
