@@ -219,8 +219,8 @@ public class PolarisRegistryLosslessTest {
         URL registryUrl = URL.valueOf("polaris://127.0.0.1:8091");
         PolarisRegistry registry = new PolarisRegistry(registryUrl);
 
-        URL consumerUrl = URL.valueOf("consumer://192.168.1.1/com.example.FooService");
-        registry.doRegister(consumerUrl);
+        URL consumerUrl = URL.valueOf("consumer://192.168.1.1:8091/com.example.FooService");
+        registry.register(consumerUrl);
 
         Mockito.verify(mockLosslessAPI, Mockito.never()).setLosslessActionProvider(Mockito.any(), Mockito.any());
         Mockito.verify(mockLosslessAPI, Mockito.never()).losslessRegister(Mockito.any());

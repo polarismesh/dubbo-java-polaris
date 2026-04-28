@@ -96,23 +96,10 @@ public class PolarisRegistry extends FailbackRegistry {
     }
 
     @Override
-    public void register(URL url) {
-        if (!shouldRegister(url)) {
-            return;
-        }
-        super.register(url);
-    }
-
-    @Override
-    public void unregister(URL url) {
-        if (!shouldRegister(url)) {
-            return;
-        }
-        super.unregister(url);
-    }
-
-    @Override
     public void doRegister(URL url) {
+        if (!shouldRegister(url)) {
+            return;
+        }
         LOGGER.info("[POLARIS] register service to polaris: {}", url);
         Map<String, String> metadata = new HashMap<>(url.getParameters());
         metadata.put(CommonConstants.PATH_KEY, url.getPath());
@@ -166,6 +153,9 @@ public class PolarisRegistry extends FailbackRegistry {
 
     @Override
     public void doUnregister(URL url) {
+        if (!shouldRegister(url)) {
+            return;
+        }
         if (!registeredInstances.contains(url)) {
             LOGGER.info("[POLARIS] url {} has been unregistered.", url);
             return;
