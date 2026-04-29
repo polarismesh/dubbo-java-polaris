@@ -30,6 +30,7 @@ import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.plugin.lossless.common.LosslessUtils;
 import org.apache.dubbo.common.URL;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -148,7 +149,7 @@ public class PolarisRegistryLosslessTest {
         registry.doUnregister(serviceUrl);
 
         // doUnregister always calls polarisOperator.deregister() regardless of lossless setting
-        Mockito.verify(mockOperator).deregister("com.example.FooService", "192.168.1.1", 20880);
+        Mockito.verify(mockOperator).deregister(Mockito.eq("com.example.FooService"), Mockito.eq("192.168.1.1"), Mockito.eq(20880), Mockito.anyMap());
     }
 
     @Test
@@ -162,7 +163,7 @@ public class PolarisRegistryLosslessTest {
         registry.doRegister(serviceUrl);
         registry.doUnregister(serviceUrl);
 
-        Mockito.verify(mockOperator).deregister("com.example.FooService", "192.168.1.1", 20880);
+        Mockito.verify(mockOperator).deregister(Mockito.eq("com.example.FooService"), Mockito.eq("192.168.1.1"), Mockito.eq(20880), Mockito.anyMap());
         Mockito.verify(mockLosslessAPI, Mockito.never()).losslessDeRegister(Mockito.any());
     }
 
@@ -218,8 +219,8 @@ public class PolarisRegistryLosslessTest {
         URL registryUrl = URL.valueOf("polaris://127.0.0.1:8091");
         PolarisRegistry registry = new PolarisRegistry(registryUrl);
 
-        URL consumerUrl = URL.valueOf("consumer://192.168.1.1/com.example.FooService");
-        registry.doRegister(consumerUrl);
+        URL consumerUrl = URL.valueOf("consumer://192.168.1.1:8091/com.example.FooService");
+        registry.register(consumerUrl);
 
         Mockito.verify(mockLosslessAPI, Mockito.never()).setLosslessActionProvider(Mockito.any(), Mockito.any());
         Mockito.verify(mockLosslessAPI, Mockito.never()).losslessRegister(Mockito.any());

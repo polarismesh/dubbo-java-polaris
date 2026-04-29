@@ -41,6 +41,7 @@ dependency-reduced-pom.xml
 *classes
 *.class
 .svn
+docs/
 logs/
 lib/
 backup/

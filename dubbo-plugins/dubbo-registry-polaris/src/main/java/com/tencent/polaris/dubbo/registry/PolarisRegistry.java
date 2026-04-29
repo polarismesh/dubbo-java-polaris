@@ -21,16 +21,22 @@ import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
+import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.pojo.BaseInstance;
 import com.tencent.polaris.api.pojo.DefaultBaseInstance;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.common.registry.*;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.common.utils.ConvertUtils;
 import com.tencent.polaris.common.metadata.StaticMetadataManager;
+import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
+import com.tencent.polaris.plugins.connector.composite.CompositeConnector;
+import com.tencent.polaris.plugins.connector.nacos.NacosConnector;
+import com.tencent.polaris.plugins.connector.nacos.NacosContext;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import com.tencent.polaris.plugin.lossless.common.HttpLosslessActionProvider;
 import org.apache.dubbo.common.URL;
@@ -64,9 +70,13 @@ public class PolarisRegistry extends FailbackRegistry {
 
     private final PolarisOperator polarisOperator;
 
+    /** 双注册 + NacosConnector.isDubboAdapt()=true 时非 null,在 doSubscribe 前用于写入服务名映射 */
+    private final NacosContext nacosContext;
+
     public PolarisRegistry(URL url) {
         super(url);
         polarisOperator = PolarisOperators.loadOrStoreForGovernance(url.getHost(), url.getPort(), url.getParameters());
+        this.nacosContext = resolveNacosContext(polarisOperator.getSdkContext());
         StaticMetadataManager.getOrCreate(url);
         // set instance's location info
         String region = StaticMetadataManager.getInstance().getRegion();
@@ -97,6 +107,10 @@ public class PolarisRegistry extends FailbackRegistry {
         StaticMetadataManager staticMetadataManager = StaticMetadataManager.getInstance();
         metadata.putAll(staticMetadataManager.getMergedStaticMetadata());
         metadata.putAll(staticMetadataManager.getLocationMetadata());
+        // Map Dubbo URL keys to SDK-expected keys for Nacos dubboAdapt service naming
+        metadata.put("dubbo.category", metadata.getOrDefault("category", "providers"));
+        metadata.put("dubbo.version", url.getParameter(CommonConstants.VERSION_KEY, ""));
+        metadata.put("dubbo.group", url.getParameter(CommonConstants.GROUP_KEY, ""));
         int port = url.getPort();
         if (port > 0) {
             int weight = url.getParameter(Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT);
@@ -149,7 +163,12 @@ public class PolarisRegistry extends FailbackRegistry {
         LOGGER.info("[POLARIS] unregister service from polaris: {}", url);
         int port = url.getPort();
         if (port > 0) {
-            polarisOperator.deregister(url.getServiceInterface(), url.getHost(), url.getPort());
+            // Build metadata with dubbo keys for Nacos dubboAdapt service name resolution
+            Map<String, String> metadata = new HashMap<>();
+            metadata.put("dubbo.category", url.getParameter("category", "providers"));
+            metadata.put("dubbo.version", url.getParameter(CommonConstants.VERSION_KEY, ""));
+            metadata.put("dubbo.group", url.getParameter(CommonConstants.GROUP_KEY, ""));
+            polarisOperator.deregister(url.getServiceInterface(), url.getHost(), url.getPort(), metadata);
             registeredInstances.remove(url);
         }
     }
@@ -178,6 +197,11 @@ public class PolarisRegistry extends FailbackRegistry {
 
         serviceListeners.computeIfAbsent(url, dubboUrl -> {
             ServiceListener serviceListener = new DubboServiceListener(url, this);
+            if (nacosContext != null) {
+                String nacosName = buildNacosDubboServiceName(url);
+                nacosContext.putServiceNameMapping(service, nacosName);
+                LOGGER.info("[POLARIS] put nacos service name mapping: {} -> {}", service, nacosName);
+            }
             polarisOperator.watchService(service, serviceListener);
             return serviceListener;
         });
@@ -248,6 +272,39 @@ public class PolarisRegistry extends FailbackRegistry {
     @Override
     public boolean isAvailable() {
         return true;
+    }
+
+    /**
+     * 从 SDKContext 中解析出可用的 NacosContext。
+     * 仅当 1) 多 connector 模式(CompositeConnector) 2) 下属存在 NacosConnector 3) NacosContext.isDubboAdapt()=true
+     * 三个条件同时满足时返回非 null,否则返回 null。
+     *
+     * package-private 以便单测直接调用。
+     */
+    static NacosContext resolveNacosContext(SDKContext sdk) {
+        ServerConnector sc = sdk.getExtensions().getServerConnector();
+        if (!(sc instanceof CompositeConnector)) {
+            return null;
+        }
+        for (DestroyableServerConnector c : ((CompositeConnector) sc).getServerConnectors()) {
+            if (c instanceof NacosConnector) {
+                NacosContext ctx = ((NacosConnector) c).getNacosContext();
+                return (ctx != null && ctx.isDubboAdapt()) ? ctx : null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 拼接消费端订阅用的 Nacos 服务名:providers:{interface}:{version}:{group}。
+     * version/group 为空时保留冒号占位,与 NacosConnector 注册侧拼接逻辑一致。
+     *
+     * package-private 以便单测直接调用。
+     */
+    static String buildNacosDubboServiceName(URL url) {
+        String version = url.getParameter(CommonConstants.VERSION_KEY, "");
+        String group = url.getParameter(CommonConstants.GROUP_KEY, "");
+        return "providers:" + url.getServiceInterface() + ":" + version + ":" + group;
     }
 
     private static class DubboServiceListener implements ServiceListener {

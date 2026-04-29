@@ -114,4 +114,60 @@ public interface Consts {
     String KEY_POLARIS_LOSSLESS_ADMIN_PORT = "polaris_lossless_admin_port";
 
     String KEY_POLARIS_LOSSLESS_HEALTH_CHECK_INTERVAL = "polaris_lossless_health_check_interval";
+
+    // ==================== Nacos Connector 配置 ====================
+
+    String KEY_POLARIS_NACOS_ENABLED = "polaris_nacos_enabled";
+
+    String KEY_POLARIS_NACOS_SERVER_ADDR = "polaris_nacos_server_addr";
+
+    String KEY_POLARIS_NACOS_REGISTER_ENABLED = "polaris_nacos_register_enabled";
+
+    String KEY_POLARIS_NACOS_DISCOVERY_ENABLED = "polaris_nacos_discovery_enabled";
+
+    String KEY_POLARIS_NACOS_USERNAME = "polaris_nacos_username";
+
+    String KEY_POLARIS_NACOS_PASSWORD = "polaris_nacos_password";
+
+    String KEY_POLARIS_NACOS_NAMESPACE = "polaris_nacos_namespace";
+
+    String KEY_POLARIS_NACOS_GROUP = "polaris_nacos_group";
+
+    String KEY_POLARIS_NACOS_CLUSTER = "polaris_nacos_cluster";
+
+    String KEY_POLARIS_NACOS_EPHEMERAL = "polaris_nacos_ephemeral";
+
+    String KEY_POLARIS_NACOS_WEIGHT = "polaris_nacos_weight";
+
+    String KEY_POLARIS_NACOS_CONTEXT_PATH = "polaris_nacos_context_path";
+
+    String KEY_POLARIS_NACOS_DUBBO_ADAPT = "polaris_nacos_dubbo_adapt";
+
+    String NACOS_CONNECTOR_ID = "nacos";
+
+    String NACOS_CONNECTOR_PROTOCOL = "nacos";
+
+    String NACOS_DEFAULT_NAMESPACE = "public";
+
+    String NACOS_DEFAULT_GROUP = "DEFAULT_GROUP";
+
+    String NACOS_DEFAULT_CLUSTER = "DEFAULT";
+
+    String NACOS_METADATA_KEY_GROUP = "nacos.group";
+
+    String NACOS_METADATA_KEY_CLUSTER = "nacos.cluster";
+
+    String NACOS_METADATA_KEY_EPHEMERAL = "nacos.ephemeral";
+
+    String NACOS_METADATA_KEY_WEIGHT = "nacos.weight";
+
+    String NACOS_METADATA_KEY_USERNAME = "username";
+
+    String NACOS_METADATA_KEY_PASSWORD = "password";
+
+    String NACOS_METADATA_KEY_NAMESPACE = "namespace";
+
+    String NACOS_METADATA_KEY_CONTEXT_PATH = "contextPath";
+
+    String NACOS_METADATA_KEY_DUBBO_ADAPT = "nacos.dubboAdapt";
 }

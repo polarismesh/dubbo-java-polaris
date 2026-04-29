@@ -37,7 +37,7 @@ import java.util.Map;
 
 public class Main {
 
-    private static final int LISTEN_PORT = 15700;
+    private static final int LISTEN_PORT = Integer.getInteger("http.listen.port", 15700);
 
     private static final String PATH = "/echo";
     public static void main(String[] args) throws Exception {

@@ -19,13 +19,16 @@ package com.tencent.polaris.dubbo.quickstart.example.provider;
 
 import com.tencent.polaris.dubbo.example.api.EchoService;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.apache.dubbo.rpc.RpcContext;
 
 @DubboService(version = "1.0.0")
 public class AnnotatedEchoService implements EchoService {
 
     @Override
     public String echo(String value) {
-        String echo = "echo: " + value;
+        String host = RpcContext.getContext().getLocalHost();
+        String port = String.valueOf(RpcContext.getContext().getLocalPort());
+        String echo = "echo: " + value + " (provider host: " + host + ", port: " + port + ")";
         System.out.println(echo);
         return echo;
     }

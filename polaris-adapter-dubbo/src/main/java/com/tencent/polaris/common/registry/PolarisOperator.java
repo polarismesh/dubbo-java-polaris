@@ -170,6 +170,10 @@ public class PolarisOperator {
     }
 
     public void deregister(String service, String host, int port) {
+        deregister(service, host, port, null);
+    }
+
+    public void deregister(String service, String host, int port, Map<String, String> metadata) {
         LOGGER.info("[POLARIS] start to deregister: service {}, host {}, port {}", service, host, port);
         InstanceDeregisterRequest instanceDeregisterRequest = new InstanceDeregisterRequest();
         instanceDeregisterRequest.setNamespace(polarisConfig.getNamespace());
@@ -177,6 +181,9 @@ public class PolarisOperator {
         instanceDeregisterRequest.setPort(port);
         instanceDeregisterRequest.setHost(host);
         instanceDeregisterRequest.setToken(polarisConfig.getToken());
+        if (metadata != null) {
+            instanceDeregisterRequest.getRequest().setMetadata(metadata);
+        }
         providerAPI.deRegister(instanceDeregisterRequest);
         LOGGER.info("[POLARIS] deregister service {}", service);
     }
