@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: dubbo-sct-provider
+  config:
+    import: optional:polaris
+  cloud:
+    polaris:
+      address: grpc://119.91.66.223:8091
+      config:
+        enabled: true
+        groups:
+          - name: dubbo-sct-provider
+            files:
+              - application.properties
+demo:
+  dataSource: default-datasource
+dubbo:
+  network:
+    interface:
+      preferred: en0
+  registry:
+    address: polaris://119.91.66.223:8091
+  protocol:
+    name: dubbo
+    port: 20880
+  scan:
+    base-packages: com.tencent.polaris.dubbo.example.sct.provider
+server:
+  port: 18081

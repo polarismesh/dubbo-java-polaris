@@ -300,6 +300,9 @@
                         <excludeArtifact>dubbo-springcloud-example</excludeArtifact>
                         <excludeArtifact>dubbo-springcloud-provider</excludeArtifact>
                         <excludeArtifact>dubbo-springcloud-consumer</excludeArtifact>
+                        <excludeArtifact>dubbo-sct-example</excludeArtifact>
+                        <excludeArtifact>dubbo-sct-provider</excludeArtifact>
+                        <excludeArtifact>dubbo-sct-consumer</excludeArtifact>
                     </excludeArtifacts>
                 </configuration>
             </plugin>

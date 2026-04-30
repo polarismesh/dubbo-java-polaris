@@ -16,6 +16,7 @@
     <modules>
         <module>dubbo-api-example</module>
         <module>dubbo-quickstart-example</module>
+        <module>dubbo-sct-example</module>
     </modules>
 
     <properties>
