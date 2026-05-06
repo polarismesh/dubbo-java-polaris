@@ -125,8 +125,8 @@ public class NacosBootConfigHandler implements BootConfigHandler {
             metadata.put(Consts.NACOS_METADATA_KEY_CONTEXT_PATH, contextPath);
         }
 
-        // Dubbo 适配（默认 false）：开启后 Nacos 服务名使用 category:interface:version:group 格式
-        String dubboAdapt = parameters.getOrDefault(Consts.KEY_POLARIS_NACOS_DUBBO_ADAPT, "false");
+        // Dubbo 适配（默认 true）：开启后 Nacos 服务名使用 category:interface:version:group 格式
+        String dubboAdapt = parameters.getOrDefault(Consts.KEY_POLARIS_NACOS_DUBBO_ADAPT, "true");
         metadata.put(Consts.NACOS_METADATA_KEY_DUBBO_ADAPT, dubboAdapt);
 
         return nacosConnector;
