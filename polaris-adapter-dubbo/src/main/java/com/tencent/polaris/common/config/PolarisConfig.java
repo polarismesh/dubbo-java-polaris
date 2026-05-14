@@ -108,7 +108,12 @@ public class PolarisConfig {
         int configPort = 8093;
         switch (operatorType) {
             case CONFIG:
-                configPort = port;
+                // when config address not set, dubbo use discovery address as config address
+                // but polaris default configPort is 8093
+                if (port != discoverPort) {
+                    // when config address set
+                    configPort = port;
+                }
                 // if config center setting has parameter "discover_port" or "polaris_discover_port" (high priority)
                 String discoverPortStr = parameters.getOrDefault(Consts.KEY_DISCOVER_PORT, discoverPort + "");
                 discoverPortStr = parameters.getOrDefault(Consts.KEY_POLARIS_DISCOVER_PORT, discoverPortStr);
