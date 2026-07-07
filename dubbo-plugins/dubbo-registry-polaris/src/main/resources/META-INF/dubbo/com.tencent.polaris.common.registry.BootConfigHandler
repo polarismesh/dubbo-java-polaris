@@ -1,0 +1,1 @@
+losslessBootConfigHandler=com.tencent.polaris.dubbo.registry.LosslessBootConfigHandler

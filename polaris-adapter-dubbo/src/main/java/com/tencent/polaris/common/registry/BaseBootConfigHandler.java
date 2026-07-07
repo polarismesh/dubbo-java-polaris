@@ -29,7 +29,7 @@ public class BaseBootConfigHandler implements BootConfigHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseBootConfigHandler.class);
 
     @Override
-    public void handle(Map<String, String> parameters, ConfigurationImpl configuration) {
+    public void handle(PolarisConfig polarisConfig, Map<String, String> parameters, ConfigurationImpl configuration) {
         int timeout = 0;
         String timeoutStr = parameters.get(Consts.KEY_TIMEOUT);
         if (null != timeoutStr && timeoutStr.length() > 0) {

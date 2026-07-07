@@ -18,10 +18,12 @@
 package com.tencent.polaris.common.registry;
 
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import org.apache.dubbo.common.extension.SPI;
 
 import java.util.Map;
 
+@SPI
 public interface BootConfigHandler {
 
-    void handle(Map<String, String> parameters, ConfigurationImpl configuration);
+    void handle(PolarisConfig polarisConfig, Map<String, String> parameters, ConfigurationImpl configuration);
 }

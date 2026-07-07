@@ -19,6 +19,7 @@ package com.tencent.polaris.common.registry;
 
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.core.LosslessAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
@@ -57,6 +58,7 @@ import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
+import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,18 +89,20 @@ public class PolarisOperator {
 
     private ConfigFilePublishService configFilePublishAPI;
 
-    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
+    private LosslessAPI losslessAPI;
+
+    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters) {
         polarisConfig = new PolarisConfig(operatorType, host, port, parameters);
-        init(operatorType, parameters, handlers);
+        init(operatorType, parameters);
     }
 
-    private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters, BootConfigHandler... handlers) {
+    private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters) {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
-        if (null != handlers) {
-            for (BootConfigHandler bootConfigHandler : handlers) {
-                bootConfigHandler.handle(parameters, configuration);
-            }
+        ExtensionLoader<BootConfigHandler> extensionLoader =
+                ExtensionLoader.getExtensionLoader(BootConfigHandler.class);
+        for (String extensionName : extensionLoader.getSupportedExtensions()) {
+            extensionLoader.getExtension(extensionName).handle(polarisConfig, parameters, configuration);
         }
         intServerConnectorConfig(configuration);
 
@@ -171,6 +175,7 @@ public class PolarisOperator {
         //
         configFileAPI = ConfigFileServiceFactory.createConfigFileService(sdkContext);
         configFilePublishAPI = ConfigFileServicePublishFactory.createConfigFilePublishService(sdkContext);
+        losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
     }
 
     private void intServerConnectorConfig(ConfigurationImpl configuration) {
@@ -405,6 +410,10 @@ public class PolarisOperator {
 
     public CircuitBreakAPI getCircuitBreakAPI() {
         return circuitBreakAPI;
+    }
+
+    public LosslessAPI getLosslessAPI() {
+        return losslessAPI;
     }
 
     protected static String formatCode(Object val) {
