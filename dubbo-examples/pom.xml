@@ -19,6 +19,7 @@
         <module>dubbo-press-example</module>
         <module>dubbo-governance-example</module>
         <module>dubbo-router-example</module>
+        <module>dubbo-sct-example</module>
     </modules>
 
     <properties>

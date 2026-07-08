@@ -57,6 +57,7 @@
         <byte-buddy.version>1.14.19</byte-buddy.version>
         <mockito.version>4.9.0</mockito.version>
         <assertj.version>3.27.7</assertj.version>
+        <common.lang3.version>3.12.0</common.lang3.version>
 
         <!-- Maven Plugin -->
         <skip.maven.deploy>false</skip.maven.deploy>
