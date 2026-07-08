@@ -17,11 +17,20 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
+import com.tencent.polaris.api.config.global.StatReporterConfig;
+import com.tencent.polaris.api.config.plugin.DefaultPlugins;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.factory.config.global.AdminConfigImpl;
+import com.tencent.polaris.plugins.event.pushgateway.PushGatewayEventReporterConfig;
+import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class BaseBootConfigHandler implements BootConfigHandler {
@@ -32,7 +41,15 @@ public class BaseBootConfigHandler implements BootConfigHandler {
     public void handle(PolarisConfig polarisConfig, Map<String, String> parameters, ConfigurationImpl configuration) {
         int timeout = 0;
         String timeoutStr = parameters.get(Consts.KEY_TIMEOUT);
-        if (null != timeoutStr && timeoutStr.length() > 0) {
+        if (StringUtils.isNotBlank(timeoutStr)) {
+            try {
+                timeout = Integer.parseInt(timeoutStr);
+            } catch (Exception e) {
+                LOGGER.info("[Common] fail to convert ttlStr {}", timeoutStr, e);
+            }
+        }
+        timeoutStr = parameters.get(Consts.KEY_POLARIS_TIMEOUT);
+        if (StringUtils.isNotBlank(timeoutStr)) {
             try {
                 timeout = Integer.parseInt(timeoutStr);
             } catch (Exception e) {
@@ -44,11 +61,137 @@ public class BaseBootConfigHandler implements BootConfigHandler {
         }
         Boolean persistEnable = null;
         String persistEnableStr = parameters.get(Consts.KEY_PERSIST_ENABLE);
-        if (null != persistEnableStr && persistEnableStr.length() > 0) {
+        if (StringUtils.isNotBlank(persistEnableStr)) {
+            persistEnable = Boolean.parseBoolean(persistEnableStr);
+        }
+        persistEnableStr = parameters.get(Consts.KEY_POLARIS_PERSIST_ENABLE);
+        if (StringUtils.isNotBlank(persistEnableStr)) {
             persistEnable = Boolean.parseBoolean(persistEnableStr);
         }
         if (null != persistEnable) {
             configuration.getConsumer().getLocalCache().setPersistEnable(persistEnable);
         }
+
+        initDetectWhen(configuration, parameters);
+        initPrometheusHandlerConfig(configuration, parameters, polarisConfig);
+        initPushGatewayEventReporterConfig(configuration, parameters);
+    }
+
+    private void initDetectWhen(ConfigurationImpl configuration, Map<String, String> parameters) {
+        // polaris_detect_when 优先级高于 detect_when
+        if (!parameters.containsKey(Consts.KEY_DETECT_WHEN) && !parameters.containsKey(Consts.KEY_POLARIS_DETECT_WHEN)) {
+            return;
+        }
+        String detectWhen = parameters.get(Consts.KEY_DETECT_WHEN);
+        if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_DETECT_WHEN))) {
+            detectWhen = parameters.get(Consts.KEY_POLARIS_DETECT_WHEN);
+        }
+        if (StringUtils.isBlank(detectWhen)) {
+            return;
+        }
+        try {
+            configuration.getConsumer().getOutlierDetection()
+                    .setWhen(OutlierDetectionConfig.When.valueOf(detectWhen));
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Invalid detectWhen value: {}, valid values are: {}",
+                    detectWhen, Arrays.toString(OutlierDetectionConfig.When.values()));
+        }
+    }
+
+    private void initPrometheusHandlerConfig(ConfigurationImpl configuration, Map<String, String> parameters,
+                                             PolarisConfig polarisConfig) {
+        PrometheusHandlerConfig prometheusHandlerConfig = configuration.getGlobal().getStatReporter()
+                .getPluginConfig(StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS, PrometheusHandlerConfig.class);
+        AdminConfigImpl adminConfig = configuration.getGlobal().getAdmin();
+
+        // polaris_stat_type 优先级高于 stat_type
+        String statType = parameters.get(Consts.KEY_METRIC_TYPE);
+        if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_METRIC_TYPE))) {
+            statType = parameters.get(Consts.KEY_POLARIS_METRIC_TYPE);
+        }
+        if (StringUtils.isBlank(statType)) {
+            configuration.getGlobal().getStatReporter().setEnable(false);
+            configuration.getGlobal().getStatReporter()
+                    .setPluginConfig(StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS, prometheusHandlerConfig);
+            return;
+        }
+        switch (statType) {
+            case "push":
+                // polaris_stat_push_addr 优先级高于 stat_push_addr
+                String pushAddr = parameters.get(Consts.KEY_METRIC_PUSH_ADDR);
+                if (StringUtils.isNotBlank(parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_ADDR))) {
+                    pushAddr = parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_ADDR);
+                }
+                if (StringUtils.isBlank(pushAddr)) {
+                    pushAddr = polarisConfig.getDiscoverAddress().split(":")[0] + ":9091";
+                }
+                List<String> addresses = Arrays.asList(pushAddr.split(Consts.ADDRESSES_SEPARATOR));
+                configuration.getGlobal().getStatReporter().setEnable(true);
+                prometheusHandlerConfig.setType("push");
+                prometheusHandlerConfig.setAddress(addresses);
+
+                // polaris_stat_push_interval 优先级高于 stat_push_interval
+                long interval = 10 * 1000L;
+                if (parameters.containsKey(Consts.KEY_METRIC_PUSH_INTERVAL)) {
+                    try {
+                        interval = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PUSH_INTERVAL));
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+                if (parameters.containsKey(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL)) {
+                    try {
+                        interval = Integer.parseInt(parameters.get(Consts.KEY_POLARIS_METRIC_PUSH_INTERVAL));
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+                prometheusHandlerConfig.setPushInterval(interval);
+                break;
+            case "pull":
+                // polaris_stat_pull_port 优先级高于 stat_pull_port
+                int port = 9091;
+                if (parameters.containsKey(Consts.KEY_METRIC_PULL_PORT)) {
+                    try {
+                        port = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PULL_PORT));
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+                if (parameters.containsKey(Consts.KEY_POLARIS_METRIC_PULL_PORT)) {
+                    try {
+                        port = Integer.parseInt(parameters.get(Consts.KEY_POLARIS_METRIC_PULL_PORT));
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+                configuration.getGlobal().getStatReporter().setEnable(true);
+                prometheusHandlerConfig.setType("pull");
+                adminConfig.setPort(port);
+                break;
+            default:
+                configuration.getGlobal().getStatReporter().setEnable(false);
+                break;
+        }
+        configuration.getGlobal().getStatReporter()
+                .setPluginConfig(StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS, prometheusHandlerConfig);
+    }
+
+    private void initPushGatewayEventReporterConfig(ConfigurationImpl configuration, Map<String, String> parameters) {
+        PushGatewayEventReporterConfig pushGatewayEventReporterConfig = configuration.getGlobal().getEventReporter()
+                .getPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, PushGatewayEventReporterConfig.class);
+        configuration.getGlobal().getEventReporter().getReporters()
+                .add(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE);
+        if (parameters.containsKey(Consts.KEY_PGW_EVENT_ENABLED)) {
+            boolean enabled = Boolean.parseBoolean(parameters.get(Consts.KEY_PGW_EVENT_ENABLED));
+            pushGatewayEventReporterConfig.setEnable(enabled);
+            if (parameters.containsKey(Consts.KEY_PGW_EVENT_ADDR)) {
+                List<String> addresses = Arrays.asList(
+                        parameters.get(Consts.KEY_PGW_EVENT_ADDR).split(Consts.ADDRESSES_SEPARATOR));
+                pushGatewayEventReporterConfig.setAddress(addresses);
+            }
+            pushGatewayEventReporterConfig.setEventQueueSize(1000);
+            pushGatewayEventReporterConfig.setMaxBatchSize(100);
+            pushGatewayEventReporterConfig.setNamespace("polaris");
+            pushGatewayEventReporterConfig.setService("polaris.pushgateway");
+        }
+        configuration.getGlobal().getEventReporter()
+                .setPluginConfig(DefaultPlugins.PUSH_GATEWAY_EVENT_REPORTER_TYPE, pushGatewayEventReporterConfig);
     }
 }

@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.common.registry;
 
-import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.LosslessAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
@@ -45,9 +44,7 @@ import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
-import com.tencent.polaris.factory.config.global.AdminConfigImpl;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
-import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
@@ -105,60 +102,6 @@ public class PolarisOperator {
             extensionLoader.getExtension(extensionName).handle(polarisConfig, parameters, configuration);
         }
         intServerConnectorConfig(configuration);
-
-        PrometheusHandlerConfig prometheusHandlerConfig = configuration.getGlobal().getStatReporter()
-                .getPluginConfig("prometheus", PrometheusHandlerConfig.class);
-        AdminConfigImpl adminConfig = configuration.getGlobal().getAdmin();
-
-        // 如果设置了改开关
-        if (parameters.containsKey(Consts.KEY_METRIC_TYPE)) {
-            String statType = parameters.get(Consts.KEY_METRIC_TYPE);
-            switch (statType) {
-                case "push":
-                    String pushAddr = parameters.get(Consts.KEY_METRIC_PUSH_ADDR);
-                    if (StringUtils.isBlank(pushAddr)) {
-                        pushAddr = polarisConfig.getDiscoverAddress().split(":")[0] + ":9091";
-                    }
-                    configuration.getGlobal().getStatReporter().setEnable(true);
-                    prometheusHandlerConfig.setType("push");
-                    prometheusHandlerConfig.setAddress(Collections.singletonList(pushAddr));
-
-                    // 默认为 10s
-                    long interval = 10 * 1000L;
-                    if (parameters.containsKey(Consts.KEY_METRIC_PUSH_INTERVAL)) {
-                        try {
-                            interval = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PUSH_INTERVAL));
-                        } catch (NumberFormatException ignore) {}
-                    }
-                    prometheusHandlerConfig.setPushInterval(interval);
-                    break;
-                case "pull":
-                    int port = 9091;
-                    if (parameters.containsKey(Consts.KEY_METRIC_PULL_PORT)) {
-                        try {
-                            port = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PULL_PORT));
-                        } catch (NumberFormatException ignore) {}
-                    }
-                    configuration.getGlobal().getStatReporter().setEnable(true);
-                    prometheusHandlerConfig.setType("pull");
-                    adminConfig.setPort(port);
-                    break;
-            }
-        } else {
-            configuration.getGlobal().getStatReporter().setEnable(false);
-        }
-        configuration.getGlobal().getStatReporter().setPluginConfig("prometheus", prometheusHandlerConfig);
-
-        // 设置主动探测
-        if (parameters.containsKey(Consts.KEY_DETECT_WHEN)) {
-            String detectWhen = parameters.get(Consts.KEY_DETECT_WHEN);
-            try {
-                configuration.getConsumer().getOutlierDetection().setWhen(OutlierDetectionConfig.When.valueOf(detectWhen));
-            } catch (IllegalArgumentException e) {
-                LOGGER.warn("Invalid detectWhen value: {}, valid values are: {}",
-                        detectWhen, Arrays.toString(OutlierDetectionConfig.When.values()));
-            }
-        }
 
         // 设置服务治理连接地址
         configuration.getGlobal().getServerConnector()
