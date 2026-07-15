@@ -12,7 +12,10 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.common.config.BaseBootConfigHandler;
+import com.tencent.polaris.common.config.BootConfigHandler;
 import org.apache.dubbo.common.extension.ExtensionLoader;
+import org.apache.dubbo.rpc.model.ApplicationModel;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,7 +26,7 @@ public class BootConfigHandlerSpiTest {
     @Test
     public void baseHandlerLoadedViaDubboSpi() {
         ExtensionLoader<BootConfigHandler> loader =
-                ExtensionLoader.getExtensionLoader(BootConfigHandler.class);
+                ApplicationModel.defaultModel().getExtensionLoader(BootConfigHandler.class);
         Set<String> names = loader.getSupportedExtensions();
         Assert.assertTrue("expect baseBootConfigHandler in SPI extensions, got " + names,
                 names.contains("baseBootConfigHandler"));

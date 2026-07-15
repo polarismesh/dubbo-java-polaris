@@ -12,6 +12,7 @@
 
 package com.tencent.polaris.common.registry;
 
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.common.utils.Consts;
 import org.junit.Assert;
 import org.junit.Test;

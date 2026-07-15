@@ -15,17 +15,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.common.registry;
+package com.tencent.polaris.common.config;
 
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.config.global.StatReporterConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.factory.config.global.AdminConfigImpl;
+import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.plugins.event.pushgateway.PushGatewayEventReporterConfig;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
+import java.util.Collections;
+import java.util.Objects;
+import org.apache.dubbo.common.utils.NetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,11 +77,38 @@ public class BaseBootConfigHandler implements BootConfigHandler {
             configuration.getConsumer().getLocalCache().setPersistEnable(persistEnable);
         }
 
+        initServerConnectorConfig(polarisConfig, configuration);
         initDetectWhen(configuration, parameters);
         initPrometheusHandlerConfig(configuration, parameters, polarisConfig);
         initPushGatewayEventReporterConfig(configuration, parameters);
-    }
 
+
+        // 禁用服务推空保护
+        configuration.getConsumer().getServiceRouter().getPlugin()
+                .put("recoverRouter", Collections.singletonMap("excludeCircuitBreakInstances", "false"));
+        configuration.getConsumer().getServiceRouter().getPlugin()
+                .put("recoverRouter", Collections.singletonMap("allRecoverEnable", "false"));
+        configuration.getGlobal().getAPI().setBindIP(NetUtils.getLocalHost());
+    }
+    private void initServerConnectorConfig(PolarisConfig polarisConfig, ConfigurationImpl configuration) {
+        if (StringUtils.isNotBlank(polarisConfig.getToken())) {
+            // 设置服务治理 ServerConnector 的配置
+            ServerConnectorConfigImpl connector = configuration.getGlobal().getServerConnector();
+            if (Objects.nonNull(connector)) {
+                connector.setToken(polarisConfig.getToken());
+            }
+            List<ServerConnectorConfigImpl> connectors = configuration.getGlobal().getServerConnectors();
+            if (CollectionUtils.isNotEmpty(connectors)) {
+                connectors.forEach(connectorConfig -> connectorConfig.setToken(polarisConfig.getToken()));
+            }
+
+            // 设置配置中心 ServerConnector 的配置
+            ServerConnectorConfigImpl configConnector = configuration.getConfigFile().getServerConnector();
+            if (Objects.nonNull(connector)) {
+                configConnector.setToken(polarisConfig.getToken());
+            }
+        }
+    }
     private void initDetectWhen(ConfigurationImpl configuration, Map<String, String> parameters) {
         // polaris_detect_when 优先级高于 detect_when
         if (!parameters.containsKey(Consts.KEY_DETECT_WHEN) && !parameters.containsKey(Consts.KEY_POLARIS_DETECT_WHEN)) {

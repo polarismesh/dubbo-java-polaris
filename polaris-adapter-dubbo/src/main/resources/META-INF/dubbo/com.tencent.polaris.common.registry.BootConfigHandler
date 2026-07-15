@@ -1,1 +1,1 @@
-baseBootConfigHandler=com.tencent.polaris.common.registry.BaseBootConfigHandler
+baseBootConfigHandler=com.tencent.polaris.common.config.BaseBootConfigHandler

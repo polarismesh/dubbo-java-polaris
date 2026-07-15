@@ -13,6 +13,8 @@
 package com.tencent.polaris.common.registry;
 
 import com.tencent.polaris.api.config.global.StatReporterConfig;
+import com.tencent.polaris.common.config.BaseBootConfigHandler;
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;

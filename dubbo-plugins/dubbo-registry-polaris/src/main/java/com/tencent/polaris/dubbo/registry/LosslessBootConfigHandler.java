@@ -13,8 +13,8 @@
 package com.tencent.polaris.dubbo.registry;
 
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.common.registry.BootConfigHandler;
-import com.tencent.polaris.common.registry.PolarisConfig;
+import com.tencent.polaris.common.config.BootConfigHandler;
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.factory.config.provider.LosslessConfigImpl;

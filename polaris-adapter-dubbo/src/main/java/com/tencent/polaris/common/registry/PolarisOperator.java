@@ -27,7 +27,6 @@ import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.rpc.*;
-import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.flow.CircuitBreakerFlow;
@@ -35,7 +34,8 @@ import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
-import com.tencent.polaris.common.utils.Consts;
+import com.tencent.polaris.common.config.BootConfigHandler;
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
@@ -44,7 +44,6 @@ import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
-import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
@@ -56,6 +55,7 @@ import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
 import org.apache.dubbo.common.extension.ExtensionLoader;
+import org.apache.dubbo.rpc.model.ApplicationModel;
 import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,11 +97,10 @@ public class PolarisOperator {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
         ExtensionLoader<BootConfigHandler> extensionLoader =
-                ExtensionLoader.getExtensionLoader(BootConfigHandler.class);
+                ApplicationModel.defaultModel().getExtensionLoader(BootConfigHandler.class);
         for (String extensionName : extensionLoader.getSupportedExtensions()) {
             extensionLoader.getExtension(extensionName).handle(polarisConfig, parameters, configuration);
         }
-        intServerConnectorConfig(configuration);
 
         // 设置服务治理连接地址
         configuration.getGlobal().getServerConnector()
@@ -109,6 +108,7 @@ public class PolarisOperator {
         // 设置配置中心连接地址
         configuration.getConfigFile().getServerConnector()
                 .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
+        LOGGER.info("[SDKContext] init {} SDKContext",operatorType.toString());
         sdkContext = SDKContext.initContextByConfig(configuration);
         consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
         providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
@@ -121,25 +121,7 @@ public class PolarisOperator {
         losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
     }
 
-    private void intServerConnectorConfig(ConfigurationImpl configuration) {
-        if (StringUtils.isNotBlank(polarisConfig.getToken())) {
-            // 设置服务治理 ServerConnector 的配置
-            ServerConnectorConfigImpl connector = configuration.getGlobal().getServerConnector();
-            if (Objects.nonNull(connector)) {
-                connector.setToken(polarisConfig.getToken());
-            }
-            List<ServerConnectorConfigImpl> connectors = configuration.getGlobal().getServerConnectors();
-            if (CollectionUtils.isNotEmpty(connectors)) {
-                connectors.forEach(connectorConfig -> connectorConfig.setToken(polarisConfig.getToken()));
-            }
 
-            // 设置配置中心 ServerConnector 的配置
-            ServerConnectorConfigImpl configConnector = configuration.getConfigFile().getServerConnector();
-            if (Objects.nonNull(connector)) {
-                configConnector.setToken(polarisConfig.getToken());
-            }
-        }
-    }
 
     public void destroy() {
         sdkContext.close();

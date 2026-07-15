@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.common.registry;
+package com.tencent.polaris.common.config;
 
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import org.apache.dubbo.common.extension.SPI;

@@ -12,7 +12,7 @@
 
 package com.tencent.polaris.dubbo.registry;
 
-import com.tencent.polaris.common.registry.PolarisConfig;
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.common.utils.Consts;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;

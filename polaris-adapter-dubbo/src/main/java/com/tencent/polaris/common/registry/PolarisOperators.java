@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PolarisOperators {
 
-    enum OperatorType {
+    public enum OperatorType {
         GOVERNANCE,
         CONFIG,
         METADATA_REPORT
