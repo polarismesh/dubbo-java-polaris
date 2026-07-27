@@ -287,6 +287,9 @@
                         <excludeArtifact>dubbo-backend-example</excludeArtifact>
                         <excludeArtifact>dubbo-front-example</excludeArtifact>
                         <excludeArtifact>dubbo-middle-example</excludeArtifact>
+                        <excludeArtifact>dubbo-sct-example</excludeArtifact>
+                        <excludeArtifact>dubbo-sct-provider</excludeArtifact>
+                        <excludeArtifact>dubbo-sct-consumer</excludeArtifact>
                     </excludeArtifacts>
                 </configuration>
             </plugin>
