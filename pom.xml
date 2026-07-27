@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -45,10 +45,10 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>2.1.2.0-3.2.7-SNAPSHOT</revision>
+        <revision>2.1.2.0-3.2.7</revision>
 
         <!-- Polaris SDK version -->
-        <polaris.version>2.1.2.0-SNAPSHOT</polaris.version>
+        <polaris.version>2.1.2.0</polaris.version>
 
         <apache.dubbo.version>3.2.7</apache.dubbo.version>
         <slf4j.version>1.7.25</slf4j.version>
