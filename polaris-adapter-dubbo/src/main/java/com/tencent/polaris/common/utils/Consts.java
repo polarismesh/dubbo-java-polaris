@@ -27,7 +27,11 @@ public interface Consts {
 
     String KEY_TIMEOUT = "timeout";
 
+    String KEY_POLARIS_TIMEOUT = "polaris_timeout";
+
     String KEY_PERSIST_ENABLE = "persist_enable";
+
+    String KEY_POLARIS_PERSIST_ENABLE = "polaris_persist_enable";
 
     String KEY_TOKEN = "token";
 
@@ -35,13 +39,29 @@ public interface Consts {
 
     String KEY_DETECT_WHEN = "detect_when";
 
+    String KEY_POLARIS_DETECT_WHEN = "polaris_detect_when";
+
     String KEY_METRIC_TYPE = "stat_type";
+
+    String KEY_POLARIS_METRIC_TYPE = "polaris_stat_type";
 
     String KEY_METRIC_PULL_PORT = "stat_pull_port";
 
+    String KEY_POLARIS_METRIC_PULL_PORT = "polaris_stat_pull_port";
+
     String KEY_METRIC_PUSH_ADDR = "stat_push_addr";
 
+    String KEY_POLARIS_METRIC_PUSH_ADDR = "polaris_stat_push_addr";
+
     String KEY_METRIC_PUSH_INTERVAL = "stat_push_interval";
+
+    String KEY_POLARIS_METRIC_PUSH_INTERVAL = "polaris_stat_push_interval";
+
+    String KEY_PGW_EVENT_ENABLED = "polaris_pgw_event_enabled";
+
+    String KEY_PGW_EVENT_ADDR = "polaris_pgw_event_addr";
+
+    String ADDRESSES_SEPARATOR = "/";
 
     String INSTANCE_KEY_HEALTHY = "_internal_healthy";
 
@@ -62,4 +82,14 @@ public interface Consts {
     String DISCOVER_PORT = "discover_port";
 
     String DEFAULT_VERSION = "1.0.0";
+
+    String KEY_POLARIS_LOSSLESS_ENABLED = "polaris_lossless_enabled";
+
+    String KEY_POLARIS_LOSSLESS_DELAY_REGISTER_INTERVAL = "polaris_lossless_delay_register_interval";
+
+    String KEY_POLARIS_LOSSLESS_HEALTH_CHECK_PATH = "polaris_lossless_health_check_path";
+
+    String KEY_POLARIS_LOSSLESS_HEALTH_CHECK_INTERVAL = "polaris_lossless_health_check_interval";
+
+    String KEY_POLARIS_LOSSLESS_ADMIN_PORT = "polaris_lossless_admin_port";
 }

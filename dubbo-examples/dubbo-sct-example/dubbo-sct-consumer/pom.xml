@@ -3,14 +3,14 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>dubbo-discovery-example</artifactId>
+        <artifactId>dubbo-sct-example</artifactId>
         <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>dubbo-quick-provider</artifactId>
+    <artifactId>dubbo-sct-consumer</artifactId>
 
     <dependencies>
         <dependency>
@@ -19,25 +19,27 @@
             <version>${revision}</version>
         </dependency>
 
-        <!--    引入 polaris 注册能力    -->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>dubbo-registry-polaris</artifactId>
             <version>${revision}</version>
         </dependency>
 
-        <!--    引入 polaris 元数据中心能力    -->
         <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>dubbo-metadatareport-polaris</artifactId>
-            <version>${revision}</version>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo-spring-boot-starter</artifactId>
+            <version>${apache.dubbo.version}</version>
         </dependency>
 
-        <!--    引入 polaris 配置中心能力    -->
         <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>dubbo-configcenter-polaris</artifactId>
-            <version>${revision}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.tencent.cloud</groupId>
+            <artifactId>spring-cloud-starter-tencent-all</artifactId>
         </dependency>
     </dependencies>
+
 </project>

@@ -45,10 +45,10 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>2.1.0.0-3.2.7-SNAPSHOT</revision>
+        <revision>2.1.2.0-3.2.7-SNAPSHOT</revision>
 
         <!-- Polaris SDK version -->
-        <polaris.version>2.1.0.2</polaris.version>
+        <polaris.version>2.1.2.0-SNAPSHOT</polaris.version>
 
         <apache.dubbo.version>3.2.7</apache.dubbo.version>
         <slf4j.version>1.7.25</slf4j.version>
@@ -57,6 +57,7 @@
         <byte-buddy.version>1.14.19</byte-buddy.version>
         <mockito.version>4.9.0</mockito.version>
         <assertj.version>3.27.7</assertj.version>
+        <common.lang3.version>3.12.0</common.lang3.version>
 
         <!-- Maven Plugin -->
         <skip.maven.deploy>false</skip.maven.deploy>

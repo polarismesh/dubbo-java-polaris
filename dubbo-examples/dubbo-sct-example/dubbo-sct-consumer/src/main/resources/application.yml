@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: dubbo-sct-consumer
+  config:
+    import: optional:polaris
+  cloud:
+    polaris:
+      address: grpc://127.0.0.1:8091
+
+server:
+  port: 18080
+
+dubbo:
+  registry:
+    address: polaris://127.0.0.1:8091
+  consumer:
+    check: false

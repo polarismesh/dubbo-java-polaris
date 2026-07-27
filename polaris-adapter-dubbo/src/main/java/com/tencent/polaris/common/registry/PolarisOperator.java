@@ -17,8 +17,8 @@
 
 package com.tencent.polaris.common.registry;
 
-import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.core.LosslessAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
@@ -27,7 +27,6 @@ import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.rpc.*;
-import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.flow.CircuitBreakerFlow;
@@ -35,7 +34,8 @@ import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
-import com.tencent.polaris.common.utils.Consts;
+import com.tencent.polaris.common.config.BootConfigHandler;
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
@@ -44,9 +44,6 @@ import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
-import com.tencent.polaris.factory.config.global.AdminConfigImpl;
-import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
-import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
@@ -57,6 +54,8 @@ import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
+import org.apache.dubbo.common.extension.ExtensionLoader;
+import org.apache.dubbo.rpc.model.ApplicationModel;
 import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,73 +86,20 @@ public class PolarisOperator {
 
     private ConfigFilePublishService configFilePublishAPI;
 
-    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters, BootConfigHandler... handlers) {
+    private LosslessAPI losslessAPI;
+
+    PolarisOperator(PolarisOperators.OperatorType operatorType, String host, int port, Map<String, String> parameters) {
         polarisConfig = new PolarisConfig(operatorType, host, port, parameters);
-        init(operatorType, parameters, handlers);
+        init(operatorType, parameters);
     }
 
-    private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters, BootConfigHandler... handlers) {
+    private void init(PolarisOperators.OperatorType operatorType, Map<String, String> parameters) {
         ConfigurationImpl configuration = (ConfigurationImpl) ConfigAPIFactory.defaultConfig();
         configuration.setDefault();
-        if (null != handlers) {
-            for (BootConfigHandler bootConfigHandler : handlers) {
-                bootConfigHandler.handle(parameters, configuration);
-            }
-        }
-        intServerConnectorConfig(configuration);
-
-        PrometheusHandlerConfig prometheusHandlerConfig = configuration.getGlobal().getStatReporter()
-                .getPluginConfig("prometheus", PrometheusHandlerConfig.class);
-        AdminConfigImpl adminConfig = configuration.getGlobal().getAdmin();
-
-        // 如果设置了改开关
-        if (parameters.containsKey(Consts.KEY_METRIC_TYPE)) {
-            String statType = parameters.get(Consts.KEY_METRIC_TYPE);
-            switch (statType) {
-                case "push":
-                    String pushAddr = parameters.get(Consts.KEY_METRIC_PUSH_ADDR);
-                    if (StringUtils.isBlank(pushAddr)) {
-                        pushAddr = polarisConfig.getDiscoverAddress().split(":")[0] + ":9091";
-                    }
-                    configuration.getGlobal().getStatReporter().setEnable(true);
-                    prometheusHandlerConfig.setType("push");
-                    prometheusHandlerConfig.setAddress(Collections.singletonList(pushAddr));
-
-                    // 默认为 10s
-                    long interval = 10 * 1000L;
-                    if (parameters.containsKey(Consts.KEY_METRIC_PUSH_INTERVAL)) {
-                        try {
-                            interval = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PUSH_INTERVAL));
-                        } catch (NumberFormatException ignore) {}
-                    }
-                    prometheusHandlerConfig.setPushInterval(interval);
-                    break;
-                case "pull":
-                    int port = 9091;
-                    if (parameters.containsKey(Consts.KEY_METRIC_PULL_PORT)) {
-                        try {
-                            port = Integer.parseInt(parameters.get(Consts.KEY_METRIC_PULL_PORT));
-                        } catch (NumberFormatException ignore) {}
-                    }
-                    configuration.getGlobal().getStatReporter().setEnable(true);
-                    prometheusHandlerConfig.setType("pull");
-                    adminConfig.setPort(port);
-                    break;
-            }
-        } else {
-            configuration.getGlobal().getStatReporter().setEnable(false);
-        }
-        configuration.getGlobal().getStatReporter().setPluginConfig("prometheus", prometheusHandlerConfig);
-
-        // 设置主动探测
-        if (parameters.containsKey(Consts.KEY_DETECT_WHEN)) {
-            String detectWhen = parameters.get(Consts.KEY_DETECT_WHEN);
-            try {
-                configuration.getConsumer().getOutlierDetection().setWhen(OutlierDetectionConfig.When.valueOf(detectWhen));
-            } catch (IllegalArgumentException e) {
-                LOGGER.warn("Invalid detectWhen value: {}, valid values are: {}",
-                        detectWhen, Arrays.toString(OutlierDetectionConfig.When.values()));
-            }
+        ExtensionLoader<BootConfigHandler> extensionLoader =
+                ApplicationModel.defaultModel().getExtensionLoader(BootConfigHandler.class);
+        for (String extensionName : extensionLoader.getSupportedExtensions()) {
+            extensionLoader.getExtension(extensionName).handle(polarisConfig, parameters, configuration);
         }
 
         // 设置服务治理连接地址
@@ -162,6 +108,7 @@ public class PolarisOperator {
         // 设置配置中心连接地址
         configuration.getConfigFile().getServerConnector()
                 .setAddresses(Collections.singletonList(polarisConfig.getConfigAddress()));
+        LOGGER.info("[SDKContext] init {} SDKContext",operatorType.toString());
         sdkContext = SDKContext.initContextByConfig(configuration);
         consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
         providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
@@ -171,27 +118,10 @@ public class PolarisOperator {
         //
         configFileAPI = ConfigFileServiceFactory.createConfigFileService(sdkContext);
         configFilePublishAPI = ConfigFileServicePublishFactory.createConfigFilePublishService(sdkContext);
+        losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
     }
 
-    private void intServerConnectorConfig(ConfigurationImpl configuration) {
-        if (StringUtils.isNotBlank(polarisConfig.getToken())) {
-            // 设置服务治理 ServerConnector 的配置
-            ServerConnectorConfigImpl connector = configuration.getGlobal().getServerConnector();
-            if (Objects.nonNull(connector)) {
-                connector.setToken(polarisConfig.getToken());
-            }
-            List<ServerConnectorConfigImpl> connectors = configuration.getGlobal().getServerConnectors();
-            if (CollectionUtils.isNotEmpty(connectors)) {
-                connectors.forEach(connectorConfig -> connectorConfig.setToken(polarisConfig.getToken()));
-            }
 
-            // 设置配置中心 ServerConnector 的配置
-            ServerConnectorConfigImpl configConnector = configuration.getConfigFile().getServerConnector();
-            if (Objects.nonNull(connector)) {
-                configConnector.setToken(polarisConfig.getToken());
-            }
-        }
-    }
 
     public void destroy() {
         sdkContext.close();
@@ -405,6 +335,10 @@ public class PolarisOperator {
 
     public CircuitBreakAPI getCircuitBreakAPI() {
         return circuitBreakAPI;
+    }
+
+    public LosslessAPI getLosslessAPI() {
+        return losslessAPI;
     }
 
     protected static String formatCode(Object val) {

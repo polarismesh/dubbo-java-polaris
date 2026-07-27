@@ -19,6 +19,8 @@ package com.tencent.polaris.dubbo.registry;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
+import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
+import com.tencent.polaris.api.pojo.DefaultBaseInstance;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.pojo.ServiceInfo;
@@ -29,6 +31,7 @@ import com.tencent.polaris.common.context.Context;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.utils.Consts;
+import com.tencent.polaris.plugin.lossless.common.HttpLosslessActionProvider;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.utils.CollectionUtils;
 import org.apache.dubbo.common.utils.ConcurrentHashSet;
@@ -74,15 +77,31 @@ public class PolarisServiceDiscovery extends AbstractServiceDiscovery {
         }
         metadata.replaceAll((s, s2) -> StringUtils.defaultString(s2));
         String version = instance.getMetadata(Consts.INSTANCE_VERSION);
-        operator.register(
-                serviceName,
-                instance.getHost(),
-                instance.getPort(),
-                "dubbo",
-                version,
-                Integer.parseInt(instance.getMetadata(Consts.INSTANCE_WEIGHT, "100")),
-                metadata
-        );
+        int weight = Integer.parseInt(instance.getMetadata(Consts.INSTANCE_WEIGHT, "100"));
+        if (operator.getPolarisConfig().isLosslessEnabled()) {
+            doLosslessRegister(instance, metadata, version, weight);
+        } else {
+            operator.register(serviceName, instance.getHost(), instance.getPort(), "dubbo",
+                    version, weight, metadata);
+        }
+    }
+
+    private void doLosslessRegister(ServiceInstance instance, Map<String, String> metadata, String version, int weight) {
+        DefaultBaseInstance baseInstance = new DefaultBaseInstance();
+        baseInstance.setNamespace(operator.getPolarisConfig().getNamespace());
+        baseInstance.setService(serviceName);
+        baseInstance.setHost(instance.getHost());
+        baseInstance.setPort(instance.getPort());
+
+        Runnable registerAction = () -> operator.register(
+                serviceName, instance.getHost(), instance.getPort(), "dubbo", version, weight, metadata);
+        Runnable deregisterAction = () -> operator.deregister(
+                serviceName, instance.getHost(), instance.getPort());
+        LosslessActionProvider actionProvider = new HttpLosslessActionProvider(
+                registerAction, deregisterAction, instance.getPort(), baseInstance,
+                operator.getSdkContext().getExtensions());
+        operator.getLosslessAPI().setLosslessActionProvider(baseInstance, actionProvider);
+        operator.getLosslessAPI().losslessRegister(baseInstance);
     }
 
     @Override

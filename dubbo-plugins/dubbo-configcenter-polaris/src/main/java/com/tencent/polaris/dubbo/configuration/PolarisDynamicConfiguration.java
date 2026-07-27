@@ -20,7 +20,7 @@ package com.tencent.polaris.dubbo.configuration;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.common.registry.PolarisConfig;
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.configuration.api.core.ChangeType;

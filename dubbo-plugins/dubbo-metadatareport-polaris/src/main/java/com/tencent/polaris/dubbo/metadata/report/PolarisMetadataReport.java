@@ -28,7 +28,7 @@ import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.common.context.Context;
-import com.tencent.polaris.common.registry.PolarisConfig;
+import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
 import com.tencent.polaris.common.utils.Consts;
