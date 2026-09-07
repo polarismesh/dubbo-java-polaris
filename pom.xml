@@ -282,6 +282,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central-portal</publishingServerId>
+                    <deploymentName>dubbo-java-polaris-${project.version}</deploymentName>
                     <excludeArtifacts>
                         <excludeArtifact>dubbo-examples</excludeArtifact>
                         <excludeArtifact>dubbo-api-example</excludeArtifact>
