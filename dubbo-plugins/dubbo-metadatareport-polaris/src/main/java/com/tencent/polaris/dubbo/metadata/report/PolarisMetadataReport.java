@@ -27,7 +27,6 @@ import com.tencent.polaris.api.rpc.GetServiceContractRequest;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.common.context.Context;
 import com.tencent.polaris.common.config.PolarisConfig;
 import com.tencent.polaris.common.registry.PolarisOperator;
 import com.tencent.polaris.common.registry.PolarisOperators;
@@ -52,6 +51,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.dubbo.metadata.MetadataConstants.REPORT_CONSUMER_URL_KEY;
@@ -67,6 +67,8 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     private final ConsumerAPI consumerAPI;
 
     private final Map<String, ServiceContractProto.ServiceContract> mappingSubscribes = new ConcurrentHashMap<>();
+
+    private final Map<String, ScheduledFuture<?>> mappingFetchTasks = new ConcurrentHashMap<>();
 
     private final Map<String, Set<MappingListener>> mappingListeners = new ConcurrentHashMap<>();
 
@@ -125,8 +127,8 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         request.setName(formatAppMetaName(identifier));
         request.setService(identifier.getApplication());
         request.setContent(metadataInfo.getContent());
-        // TODO 需要设置 version
-        request.setVersion(Context.getFromGlobal(Consts.INSTANCE_VERSION, Consts.DEFAULT_VERSION));
+        // The name already includes the metadata revision; an instance version can trigger offline cleanup.
+        request.setVersion("");
         List<InterfaceDescriptor> descriptors = new ArrayList<>(metadataInfo.getServices().size());
         metadataInfo.getServices().forEach((s, serviceInfo) -> {
             InterfaceDescriptor descriptor = new InterfaceDescriptor();
@@ -150,7 +152,7 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
         GetServiceContractRequest request = new GetServiceContractRequest();
         request.setName(formatAppMetaName(identifier));
         request.setService(identifier.getApplication());
-        request.setVersion(Context.getFromGlobal(Consts.INSTANCE_VERSION, Consts.DEFAULT_VERSION));
+        request.setVersion("");
 
         Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
         if (!result.isPresent()) {
@@ -328,24 +330,18 @@ public class PolarisMetadataReport extends AbstractMetadataReport {
     }
 
     private Set<String> commonGetServiceAppMapping(String serviceKey, URL url) {
-        if (!mappingSubscribes.containsKey(serviceKey)) {
+        mappingFetchTasks.computeIfAbsent(serviceKey, s -> {
             GetServiceContractRequest request = new GetServiceContractRequest();
             request.setName(formatMappingName(serviceKey));
             request.setService("");
             request.setVersion("");
 
-            Optional<ServiceContractProto.ServiceContract> result = getServiceContract(request);
-            if (!result.isPresent()) {
-                return Collections.emptySet();
-            }
-            // 添加一个定时任务获取最新的 mapping 数据信息
-            mappingSubscribes.computeIfAbsent(serviceKey, s -> {
-                fetchMappingExecutor.scheduleAtFixedRate(new FetchMapping(serviceKey, this), 5, 5, TimeUnit.SECONDS);
-                return result.get();
-            });
-        }
+            getServiceContract(request).ifPresent(contract -> mappingSubscribes.put(serviceKey, contract));
+            // Poll even when providers have not published mapping data yet.
+            return fetchMappingExecutor.scheduleAtFixedRate(new FetchMapping(serviceKey, this), 5, 5, TimeUnit.SECONDS);
+        });
         ServiceContractProto.ServiceContract contract = mappingSubscribes.get(serviceKey);
-        return getAppNames(contract);
+        return contract == null ? Collections.emptySet() : getAppNames(contract);
     }
 
     @Override
